@@ -12,7 +12,7 @@
     <artifactId>ospedale-webapp</artifactId>
     <version>1.0</version>
     <packaging>war</packaging>
-    <name>ospedale-webapp</name>
+    <name>CenturiaMedical-webapp</name>
     <url>http://maven.apache.org</url>
     <properties>
         <zkel.version>1.0.1</zkel.version>
@@ -263,7 +263,7 @@
    
     <build>
         <defaultGoal>package</defaultGoal>
-        <finalName>ospedale</finalName>
+        <finalName>CenturiaMedical</finalName>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -272,7 +272,7 @@
                 <configuration>
                     <jbossHome>${appserver.home}</jbossHome>
                     <serverName>all</serverName>
-                    <fileName>target/ospedale.war</fileName>
+                    <fileName>target/CenturiaMedical.war</fileName>
                     <unpack>true</unpack>
                 </configuration>
             </plugin>
@@ -294,8 +294,8 @@
                 <artifactId>maven-jetty-plugin</artifactId>
                 <version>6.1.8</version>
                 <configuration>
-                    <contextPath>/ospedale</contextPath>
-                    <webAppSourceDirectory>target/ospedale</webAppSourceDirectory>
+                    <contextPath>/CenturiaMedical</contextPath>
+                    <webAppSourceDirectory>target/CenturiaMedical</webAppSourceDirectory>
                     <!--
                                     <webDefaultXml>src/test/resources/webdefault.xml</webDefaultXml>
                     -->

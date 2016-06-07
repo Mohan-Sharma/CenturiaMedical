@@ -1,7 +1,0 @@
-<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
-<?init class="org.zkoss.zk.ui.util.Composition" arg0="/WEB-INF/layout/practiceTemplate.zul"?>
-<zk>
-<window self="@{define(applicationContent)}">
-	<include src="/patient/patient.zul"/>
-</window>
-</zk>
