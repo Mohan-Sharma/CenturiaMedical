@@ -1,0 +1,80 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./createProduct"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+	xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native"
+	xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript><![CDATA[
+	import  com.nzion.oms.zkoss.ProductManagementController;
+	import com.nzion.service.common.CommonCrudService;
+	CommonCrudService commonCrudService = com.nzion.util.Infrastructure.getSpringBean("commonCrudService");
+	ProductManagementController productController = null;
+	com.nzion.domain.product.Product productArg = arg.get("entity");
+	if(productArg != null){
+		productController = new ProductManagementController(productArg);
+	}
+	else
+	   productController = new ProductManagementController();
+	com.nzion.domain.product.ProductDetails.ProductType[] productTypesList = com.nzion.domain.product.ProductDetails.ProductType.values();
+]]></zscript>
+	<div id="createProduct" apply="${productController}">
+	<div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>New Product</h:small>
+                  <button type="button" zclass="close" onClick="createProduct.detach();">×</button>
+            </h:h1>
+         </div>
+			<div class="container-fluid">
+		       <div zclass="row-fluid">
+                 <div zclass="span5">
+			<label value="${c:l('productName')}"  mold="required"/>
+			<textbox id="prouctNameTxtbox" value="@{productController.product.productDetails.productName}" sclass="span12"  w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" constraint="no empty"  maxlength="255"/>
+			</div>
+            <div zclass="span3">
+			<label value="${c:l('productCode')}"  mold="required" />
+			<textbox id="productCode" value="@{productController.product.productDetails.productCode}" sclass="span12"  w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" constraint="no empty"/>
+			</div>
+                 <div zclass="span2" style="margin-top:8 px">
+				<label value="Can be Sold :" />
+				<checkbox checked="@{productController.product.canBeSold,save-when='Save.onClick'}" sclass="span12" />
+				</div>
+                 <div zclass="span2" style="margin-top:6px">
+				<label value="Can be Purchased :"/>
+				<checkbox checked="@{productController.product.canBePurchased,save-when='Save.onClick'}" sclass="span12"/>
+				</div>
+				</div>
+				</div>
+				
+				
+	<div align="center">
+	<tabbox width="98%">
+		<tabs>
+			<tab label="Information" onClick='productController.setIncludeInTabPanel(productInformationTab,"/oms/product/productInformationTab.zul");' 
+				onCreate='self.addForward("onCreate",self,"onClick")'/>
+			<tab label="Unit Of Measurement" onClick='productController.setIncludeInTabPanel(productUomTab,"/oms/product/productUomTab.zul");'/>
+			<tab label="Sales Pricing" onClick='productController.setIncludeInTabPanel(salesPricingTab,"/oms/product/productPricingTab.zul");' />
+			<tab id="supplierTab" label="Supplier" onClick='productController.setIncludeInTabPanel(productSupplierTab,"/oms/product/productSupplierTab.zul");' 
+				onCreate="productController.disableSupplierTab(self);"/>
+		</tabs>
+		<tabpanels>
+			<tabpanel style="padding:20px;" id="productInformationTab"/>
+			<tabpanel style="padding:20px;" id="productUomTab"/>
+			<tabpanel style="padding:20px;" id="salesPricingTab"/>
+			<tabpanel style="padding:20px;" id="productSupplierTab"/>
+		</tabpanels>
+	</tabbox>
+	</div>
+	<separator></separator>
+	<div sclass="panelFoot" align="center">
+		<button label="Save" id="Save" sclass="saveBtn" zclass="btn-success btn">
+			<attribute name="onClick">	
+			 productCode.getValue();
+			 prouctNameTxtbox.getValue();	
+			 productController.save();
+			</attribute>
+		</button>
+		<button label="Cancel" onClick='appendContent("productList")' sclass="cancelBtn"/>
+	</div>
+	
+	</div>
+</zk>

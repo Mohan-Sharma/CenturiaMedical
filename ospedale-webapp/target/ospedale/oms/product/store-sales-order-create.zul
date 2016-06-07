@@ -1,0 +1,204 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./storeSalesOrderCreate"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript>
+	import com.nzion.domain.inpatient.InPatientDrugOrderRequest;
+	import com.nzion.domain.inpatient.InPatientDrugOrder;
+	com.nzion.domain.product.order.SalesOrder salesOrder = arg.get("salesOrder");
+		com.nzion.oms.zkoss.StoreSalesOrderController storeSalesOrderController = null;
+		if(salesOrder == null)
+			storeSalesOrderController = new com.nzion.oms.zkoss.StoreSalesOrderController();
+		else
+		    storeSalesOrderController = new com.nzion.oms.zkoss.StoreSalesOrderController(salesOrder);
+	</zscript>
+	<window id="storeSalesOrderCreate" apply="${storeSalesOrderController}">
+	  <div sclass="container-fluid">
+        <div sclass="row-fluid">
+           <div sclass="span3">
+            <label value="External Patient"/>
+            <checkbox id="outPationCheckBox" value="@{storeSalesOrderController.salesOrder.isOutPatient}" onCheck="@command('changeSalesOrderDetail',checkBox=self)">
+             <attribute name="onCreate">
+              if(salesOrder != null){
+	              	if(salesOrder.isOutPatient()){
+	              		self.setChecked(true);
+	              		Events.postEvent("onClick",self,null);
+	              	}
+              }else{
+              	storeSalesOrderController.getSalesOrder().setOutPatient(false);
+              }
+              	
+             </attribute>
+             <attribute name="onClick">
+             	if(self.isChecked()){
+             		storeSalesOrderController.getSalesOrder().setOutPatient(true);
+             		storeSalesOrderController.setOutPatientComp(patientLookup,outSidePatient,providerLookup,outSideDoctor,admissionNoDiv);
+             	}else{
+             		storeSalesOrderController.getSalesOrder().setOutPatient(false);
+             		storeSalesOrderController.setInPatientComp(patientLookup,outSidePatient,providerLookup,outSideDoctor,admissionNoDiv);
+             	}
+             </attribute>
+            </checkbox>
+           </div>
+        </div>
+        <div sclass="row-fluid">
+           <div sclass="span4">
+            <label value="Patient Name" id="patientLabel" />
+			 <patientlookup id="patientLookup" onChange="storeSalesOrderController.setPatientFromLookup((com.nzion.domain.Patient)event.getOrigin().getData())" 
+			 sclass="span12">
+			 <attribute name="onCreate">
+			 <![CDATA[
+			 if(salesOrder != null && !outPationCheckBox.isChecked()&&salesOrder.getPatient()!=null)
+			 	patientLookupTxt.setValue(salesOrder.getPatient().getFirstName() + " " + salesOrder.getPatient().getLastName());
+			// if(salesOrder != null && outPationCheckBox.isChecked()&&salesOrder.getPatient()!=null)
+				// outSidePatient.setValue(salesOrder.getPatient().getFirstName() + " " + salesOrder.getPatient().getLastName());
+			 ]]>
+			 </attribute>
+			 </patientlookup>
+			 <textbox id="outSidePatient" value="@{storeSalesOrderController.salesOrder.outSidePatient}" visible="false" sclass="span12"/>
+           </div>
+           <div sclass="span4">
+            <label value="Doctor Name" id="doctorLabel"/>
+			 <providerlookup id="providerLookup" onChange="storeSalesOrderController.setProviderFromLookup((com.nzion.domain.Provider)event.getOrigin().getData())" 
+			 sclass="span12">
+			 <attribute name="onCreate">
+			 <![CDATA[
+			 if(salesOrder != null && !outPationCheckBox.isChecked()&&salesOrder.getPatient()!=null &&salesOrder.getProvider()!=null )
+			 	providerLookupTxt.setValue(salesOrder.getProvider().getFirstName() + " " + salesOrder.getProvider().getLastName());
+			 //if(salesOrder != null && outPationCheckBox.isChecked()&&salesOrder.getPatient()!=null)
+				// outSideDoctor.setValue(salesOrder.getProvider().getFirstName() + " " + salesOrder.getProvider().getLastName());
+			 ]]>
+			 </attribute>
+			 </providerlookup>
+			 <textbox id="outSideDoctor" value="@{storeSalesOrderController.salesOrder.outSideProvider}" visible="false" sclass="span12"/>
+           </div>
+           <div sclass="span2" id="admissionNoDiv">
+            <label value="Admission Number"/>
+			 <textbox id="admissionNoTextBox" value="@{storeSalesOrderController.salesOrder.outSideProvider.admissionNumber}">
+			  <attribute name="onCreate">
+			  	if(salesOrder != null)
+			  	 self.setValue(salesOrder.getAdmissionNumber());
+			  </attribute>
+			 </textbox>
+           </div>
+           <div sclass="span2">
+           	   <label value="Status" mold="required"/>
+	           <combobox id="statusCombobox" model="@{storeSalesOrderController.status,load-after=self.onReload}" selectedItem="@{storeSalesOrderController.selectedStatus}"
+	           constraint="no empty" w:showError_="function(mesg){displayError(this,mesg);}" 
+	           w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+				 <comboitem self="@{each='data'}" value="@{data}" label="@{data}"/>
+			   </combobox>
+		   </div>
+        </div>
+        
+       </div>
+       <separator/>
+       <div align="center" sclass="panelFoot">
+         <button id="Add" label="Add" onClick='storeSalesOrderController.addOrderItem();Events.postEvent("onReloadRequest",salesDrugList,null)' sclass="btn"/>
+       </div>
+       <separator/>
+	   <panel title="Drug Ordered" id="oredrDetails">
+			<panelchildren>
+				<div style="overflow: auto;" >
+				    <listbox id="salesDrugList" model="@{storeSalesOrderController.orderItems, load-after='self.onReloadRequest'}">
+						<listhead>
+							<listheader label="Product Name" width="25%"/>
+							<listheader label="Quantity" width="10%"/>
+							<listheader label="Unit Price"  width="13%"/>
+                            <listheader label="Batch No"  width="15%"/>
+                            <listheader label="Expiry Date" width="15%"/>
+                            <listheader label="Brand Name" width="15%"/>
+							<listheader label="Action" width="8%"/>
+						</listhead>
+						<listitem self="@{each='orderItem'}" value="@{orderItem}">
+							 <listcell>
+							  <combobox sclass="span4" model="@{storeSalesOrderController.products}" selectedItem="@{orderItem.product,save-when='Add.onClick,save.onClick,removeBtn.onClick'}" constraint="no empty"
+							   w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+							   <attribute name="onChange">
+							   	storeSalesOrderController.setUnitPrice(self.getSelectedItem().getValue(),self.getParent().getParent());
+							   </attribute>
+							     <attribute name="onCreate">
+							     <![CDATA[
+							      if((self.getParent().getParent().getValue()).getPrice()==null && salesOrder!=null)
+							     	storeSalesOrderController.setUnitPrice(self.getSelectedItem().getValue(),self.getParent().getParent());
+							    else
+							   	storeSalesOrderController.setPrice(self.getParent().getParent().getValue(),self.getParent().getParent());
+							      ]]>
+							   </attribute>
+							  	<comboitem self="@{each='product'}" value="@{product}" label="@{product.productDetails.productName}"/>
+							  </combobox>
+							 </listcell>
+							 <listcell >
+							  <intbox value="@{orderItem.quantity,save-when='Add.onClick,save.onClick,removeBtn.onClick'}" constraint="no empty" 
+							  	w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"/>
+							 </listcell>
+							 <listcell>
+							  <decimalbox cols="10" sclass="span2" value="@{orderItem.price,save-when='Add.onClick,save.onClick,removeBtn.onClick'}" constraint="no empty"
+							   w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"/>
+							 </listcell>
+                            <listcell>
+                                <textbox sclass="span2" value="@{orderItem.batchNo,save-when='Add.onClick,save.onClick,removeBtn.onClick'}"/>
+                            </listcell>
+                            <listcell>
+                                <datebox value="@{orderItem.expiryDate,save-when='Add.onClick,save.onClick,removeBtn.onClick'}"/>
+                            </listcell>
+                            <listcell>
+                                <textbox sclass="span2" value="@{orderItem.brandName,save-when='Add.onClick,save.onClick,removeBtn.onClick'}"/>
+                            </listcell>
+							 <listcell>
+							 <a href="#" sclass="btn mini-btn" label="Remove" id="removeBtn">
+							 	<attribute name="onClick">
+							 		storeSalesOrderController.removeOrderItem((com.nzion.domain.product.order.OrderItem)self.getParent().getParent().getValue());
+							 		Events.postEvent("onReloadRequest",salesDrugList,null);
+							 	</attribute>
+							 </a>
+							 </listcell>
+						</listitem>
+					</listbox>
+				</div>
+			</panelchildren>
+		</panel>
+		<separator/>
+		<div sclass="panelFoot" align="center">
+			<button id="save" label="Save"   sclass="btn-success btn">
+			<attribute name="onCreate">
+			if(salesOrder!=null)
+			self.setDisabled(com.nzion.domain.product.order.SalesOrder.STATUS.PAID.equals(salesOrder.getStatus())
+			||com.nzion.domain.product.order.SalesOrder.STATUS.DELIVERED.equals(salesOrder.getStatus())||com.nzion.domain.product.order.SalesOrder.STATUS.INVOICED.equals(salesOrder.getStatus()));
+			
+			</attribute>
+			 <attribute name="onClick">
+			 	<![CDATA[
+			 	storeSalesOrderController.saveSalesOrder();
+			 ]]>
+			 </attribute>
+			</button>
+			<button label ="Deliver" sclass="btn-success btn" id="deliverBtn">
+			  <attribute name="onCreate">
+			<![CDATA[
+		  if(salesOrder!=null){
+			 if((salesOrder.getInPatientDrugOrderRequest() == null && salesOrder.getOutSidePatient() == null)||salesOrder.getOutSidePatient() != null)
+			 	self.setDisabled(!com.nzion.domain.product.order.SalesOrder.STATUS.PAID.equals(salesOrder.getStatus()));
+			 if(salesOrder.getInPatientDrugOrderRequest() != null){
+			 	self.setDisabled(!com.nzion.domain.product.order.SalesOrder.STATUS.INVOICED.equals(salesOrder.getStatus()));
+			 	}
+			 }
+		else
+			self.setDisabled(true);
+		]]>
+			 </attribute>  
+			 
+			 <attribute name="onClick">
+				 if(salesOrder.getInPatientDrugOrderRequest() != null){
+				 	storeSalesOrderController.setSelectedStatus(com.nzion.domain.product.order.SalesOrder.STATUS.PAID);
+				 }
+			 	 storeSalesOrderController.deliverDrugs();
+			 	 storeSalesOrderController.setSelectedStatus(com.nzion.domain.product.order.SalesOrder.STATUS.DELIVERED);
+				 storeSalesOrderController.setStatus(storeSalesOrderController.getSelectedStatus().getAllowedModifications());
+				 Events.postEvent("onReload",statusCombobox,null);
+				deliverBtn.setDisabled(true);
+			 
+			 </attribute>
+			</button>
+		</div>
+	</window>
+</zk>

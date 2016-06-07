@@ -1,0 +1,62 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./concessionWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+    xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native"
+    xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript>
+        Object invoiceItem =  arg.get("invoiceItem");
+        if(invoiceItem == null){
+        	invoiceItem = arg.get("invoice");
+        	invoiceItem.setAmountRefundedToPatient(false);
+        }else{
+        	com.nzion.domain.billing.Invoice inv = invoiceItem.getInvoice();
+        	inv.setAmountRefundedToPatient(false);
+        	commonCrudService.save(inv);
+        }
+        Button saveBtn = null;
+        if(arg.get("saveBtn") != null)
+        	saveBtn = arg.get("saveBtn");
+    </zscript>
+    <window id="concessionWin" style="margin-top:0px;" mode="modal" sclass="modalStyle">
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Concession Details</h:small>
+                <button type="button" zclass="close" onClick="concessionWin.detach();">×</button>
+            </h:h1>
+        </div>
+        <div class="container-fluid">
+            <div zclass="row-fluid">
+
+                <div zclass="span4">
+                    <label value="Concession Authorizer" />
+                    <textbox value="@{invoiceItem.concessionAuthoriser}"
+                              sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}"
+                             w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"/>
+                </div>
+                <div zclass="span4">
+                    <label value="Reason" />
+                    <textbox
+                            value="@{invoiceItem.concessionReason}"
+                             sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}"
+                            w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"  />
+                </div>
+            </div>
+
+        </div>
+
+        <div sclass="panelFoot">
+            <button label="Save" zclass="btn-success btn">
+                <attribute name="onClick">
+                    commonCrudService.save(invoiceItem);
+                    if(saveBtn != null)
+                    	Events.postEvent("onClick",saveBtn,null);
+                    concessionWin.detach();
+                    com.nzion.util.UtilMessagesAndPopups.showSuccess();
+                </attribute>
+            </button>
+        </div>
+
+    </window>
+</zk>

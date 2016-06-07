@@ -1,0 +1,77 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./recommendationSectionWindow"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native">
+    <window width="100%" id="recommendationSectionWindow" >
+        <zscript>
+            import com.nzion.zkoss.composer.PatientSoapNoteController;
+            PatientSoapNoteController controller = desktop.getAttribute("controller");
+            com.nzion.zkoss.composer.SoapRecommendationController recommendationController = new com.nzion.zkoss.composer.SoapRecommendationController(desktop);
+            com.nzion.domain.emr.soap.RecommendationSection recommendationSection = recommendationController.getRecommendationSection();
+        </zscript>
+        <div id="remarksDiv" style="padding:10px;">
+            <hbox>
+                <vbox>
+                    <div>
+                        <label value="Follow Up Days"  style="font-weight:bold;font-size:14px"/>
+                        <intbox placeholder="Follow Up Days" id="followupDaysIntbox" width="10%" value="@{recommendationSection.followupDays, save-when='save.onClick'}" constraint="no negative">
+                            <attribute name="onChange">
+                                <![CDATA[
+                                disableWantedComponent(self, followupDatebox);
+                                followupDatebox.setValue(com.nzion.util.UtilDateTime.getDateWhenGivenFollowupDays(self.getValue()));
+                                    Events.postEvent("onClick", save, null);
+                                ]]>
+                            </attribute>
+                            <attribute name="onCreate">
+                                <![CDATA[
+                                disableWantedComponent(self, followupDatebox);
+                                ]]>
+                            </attribute>
+                        </intbox>
+                        <label value="Follow Up Date" style="margin-left: 20px;font-weight:bold;font-size:14px"/>
+                        <datebox  format="dd/MM/yyyy" placeholder="Follow Up Date" id="followupDatebox" width="12%" constraint="no past" value="@{recommendationSection.followupDate, save-when='save.onClick'}">
+                            <attribute name="onChange">
+                                disableWantedComponent(self, followupDaysIntbox);
+                                Events.postEvent("onClick", save, null);
+                            </attribute>
+                            <attribute name="onCreate">
+                                <![CDATA[
+                                if(followupDaysIntbox.getValue() == null)
+                                    disableWantedComponent(self, followupDaysIntbox);
+                                ]]>
+                            </attribute>
+                        </datebox>
+                    </div>
+                    <label value="Counselling Notes/Follow Up Notes" style="font-weight:bold;font-size:14px"/>
+                    <textbox cols="60" rows="3" style="width:75%;font-family:calibri" value="@{recommendationSection.recommendedNotes}">
+                        <attribute name="onChange">
+                            <![CDATA[
+                                    Events.postEvent("onClick", save, null);
+                                ]]>
+                        </attribute>
+                    </textbox>
+                    <div sclass="buttonPanel">
+                        <button disabled="${controller.readonly}" label="Save" zclass="btn btn-success" onClick="controller.saveSoapSection();" id="save"/>
+                    </div>
+                </vbox>
+            </hbox>
+        </div>
+        <panel apply="${recommendationController}" open="false" collapsible="true">
+            <panelchildren>
+                <!-- <include src="/soap/plans/patientEducation.zul" rc="${recommendationController}"
+                    rs="${recommendationSection}" id="patientEducationInclude" /> -->
+            </panelchildren>
+        </panel>
+        <zscript>
+            <![CDATA[
+                void disableWantedComponent(Component self, Component toDisable){
+                if(self.getValue() != null){
+                  toDisable.setDisabled(true);
+                } else{
+                    toDisable.setDisabled(false);
+                  }
+            }
+            ]]>
+        </zscript>
+    </window>
+</zk>

@@ -1,0 +1,112 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./patientDepositAddWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client"
+    xmlns:schemaLocation="http://www.zkoss.org/2005/zul http://www.zkoss.org/2005/zul/zul.xsd">
+    <zscript>
+    	Component patientDepositListBox = arg.get("patientDepositListBox");
+    </zscript>
+    
+    <window width="70%" id="patientDepositAddWin" mode="modal" closable="true"
+            apply="org.zkoss.bind.BindComposer" viewModel="@id('vm') @init('com.nzion.zkoss.composer.PatientDepositAddViewModel')">
+        <custom-attributes patientDepositListBox="${patientDepositListBox}"/>
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Patient Deposit</h:small>
+                <button type="button" zclass="close" onClick="patientDepositAddWin.detach();">×</button>
+            </h:h1>
+        </div>
+        
+            <div zclass="container-fluid">
+	            <div zclass="row-fluid">
+					<div zclass="span3">
+	                    <label value="Patient" class="z-label-bold"/>
+	                    <patientlookup style="height:24px"
+	                                   onChange="vm.getPatientDeposit().setPatient((com.nzion.domain.Patient)event.getOrigin().getData())"/>
+	                </div>
+	            </div>
+	            
+	            <div zclass="row-fluid">
+	                <div zclass="span3">
+	                    <label value="Deposit Date" class="z-label-bold" />
+	                    <datebox id="fromDate" sclass="span10" value="@bind(vm.patientDeposit.depositDate)" constraint="no future"/>
+	                </div>
+	                <div zclass="span3">
+	                    <label value="Deposit Amount" class="z-label-bold"/>
+	                    <decimalbox id="depositAmount" sclass="span10" value="@bind(vm.patientDeposit.depositAmount)" format="#,##0.000"/>
+	                </div>
+	            </div>
+	            
+	            <div zclass="row-fluid">
+					<div zclass="span3">
+	                    <label value="Deposit Mode" class="z-label-bold"/>
+	                    <combobox selectedItem="@bind(vm.patientDeposit.depositMode)" sclass="span10" >
+	                    <attribute name="onSelect">
+	                    	if("CASH".equals(self.getSelectedItem().getValue())){
+		                    	divInfo.setVisible(false);
+		                     	checqueDateDiv.setVisible(false);
+		                     	chequeNumber.setVisible(false);
+		                     	transactionNumber.setVisible(false);
+	                    	}
+	                    	if("CHEQUE".equals(self.getSelectedItem().getValue())){
+		                    	divInfo.setVisible(true);
+		                     	checqueDateDiv.setVisible(true);
+		                     	chequeNumber.setVisible(true);
+		                     	transactionNumber.setVisible(false);
+	                    	}
+	                    	if("CREDIT_CARD".equals(self.getSelectedItem().getValue())){
+		                    	divInfo.setVisible(true);
+		                     	checqueDateDiv.setVisible(false);
+		                     	chequeNumber.setVisible(false);
+		                     	transactionNumber.setVisible(true);
+	                    	}
+	                    	if("DEBIT_CARD".equals(self.getSelectedItem().getValue())){
+		                    	divInfo.setVisible(true);
+		                     	checqueDateDiv.setVisible(false);
+		                     	chequeNumber.setVisible(false);
+		                     	transactionNumber.setVisible(true);
+	                    	}
+	                    </attribute>
+	                     <comboitem label="Cash" value="CASH"/>
+	                     <comboitem label="Cheque" value="CHEQUE"/>
+	                     <comboitem label="Credit Card" value="CREDIT_CARD"/>
+	                     <comboitem label="Debit Card" value="DEBIT_CARD"/>
+	                    </combobox>
+	                </div>
+	                <div zclass="span3">
+	                    <label value="Notes" class="z-label-bold"/>
+	                    <textbox id="depositNotes" sclass="span12" value="@bind(vm.patientDeposit.depositNotes)" />
+	                </div>
+	            </div>
+	            
+	            <div zclass="row-fluid" id="divInfo" visible="false">
+	                <div zclass="span3">
+	                    <label value="Bank Name" class="z-label-bold"/>
+	                    <textbox id="bankName" sclass="span12" value="@bind(vm.patientDeposit.bankName)" />
+	                </div>
+	                <div zclass="span3" id="chequeNumber" visible="false">
+	                    <label value="Cheque Number" class="z-label-bold"/>
+	                    <textbox sclass="span12" value="@bind(vm.patientDeposit.txnNumber)" />
+	                </div>
+	                <div zclass="span3" id="transactionNumber" visible="false">
+	                    <label value="Transaction Number" class="z-label-bold"/>
+	                    <textbox sclass="span12" value="@bind(vm.patientDeposit.txnNumber)" />
+	                </div>
+	                <div zclass="span3" visible="false" id="checqueDateDiv">
+	                    <label value="Cheque Date" class="z-label-bold"/>
+	                    <datebox id="chequeDate" sclass="span10" value="@bind(vm.patientDeposit.chequeDate)"/>
+	                </div>
+	            </div>
+	            
+	            <div style="margin-top:5px" sclass="panelFoot">
+	                <button label="Save" id="Save" visible="true" zclass="btn-success btn" onClick="@command('save')"></button>
+	                <button label="Close" onClick='patientDepositAddWin.detach()' sclass="btn"></button>
+            	</div>
+	            
+            </div>
+            
+            
+    </window>
+
+</zk>

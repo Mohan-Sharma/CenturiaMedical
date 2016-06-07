@@ -1,0 +1,68 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./addEditProduct"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+<zscript><![CDATA[
+                import com.nzion.domain.emr.UnitOfMeasurement;
+                  
+				com.nzion.domain.pms.Product product = arg.get("entity");
+				product = product == null ? new com.nzion.domain.pms.Product() : product;
+				List uomList = commonCrudService.findByEquality(UnitOfMeasurement.class, new String[] { "uomType" },
+						new String[] { "PRODUCT" });
+	]]></zscript>
+<window id="addEditProduct" mode="modal" closable="true"  width="50%"  position="center" >
+			<div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                  <h:small>Add/Edit Product</h:small>
+                  <button type="button" zclass="close" onClick="addEditProduct.detach();">×</button>
+            </h:h1>
+        </div>
+        
+         <div zclass="container-fluid">
+           
+            <div zclass="row-fluid">
+                <div zclass="span4">
+	              <label value="Trade Name"></label> 
+				  <label value=" *" zclass="labelReq"/>
+				  <textbox sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" 
+				  	value="@{product.tradeName,save-when='Save.onClick'}" constraint="no empty"/>
+                </div>
+                <div zclass="span4">
+	              <label value="Generic Name"></label> 
+				  <textbox sclass="span12" value="@{product.genericName,save-when='Save.onClick'}"/>
+                </div>
+             </div>
+             
+             <div zclass="row-fluid">
+                <div zclass="span4">
+	              <label value="Brand Name"></label> 
+				  <textbox sclass="span12" value="@{product.brandName,save-when='Save.onClick'}"/>
+                </div>
+                <div zclass="span4">
+	              <label value="Base UOM" mold="required"/>
+				  <combobox sclass="span12" model="@{uomList}" selectedItem="@{product.baseUom,save-when='Save.onClick'}" disabled="${!(empty drug.id)}"
+					w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" constraint="no empty" >
+					<comboitem self="@{each='baseSaleUom'}" label="@{baseSaleUom}" value="@{baseSaleUom}"/> 
+				  </combobox>
+                </div>
+                <div zclass="span4">
+                    <label value="Sales Price" mold="required"></label>
+                    <textbox sclass="span12" value="@{product.salesPrice,save-when='Save.onClick'}" constraint="no empty"/>
+                </div>
+             </div> 
+              
+             
+              
+         </div>
+          
+		<div sclass="panelFoot">					
+			<button label="Save" zclass="btn-success btn" id="Save">
+			<attribute name="onClick">
+				commonCrudService.save(product);
+				addEditProduct.detach();
+			</attribute>
+			</button>
+			<button  label="Cancel" id="Cancel" onClick='addEditProduct.detach()' ></button>
+		</div>
+</window>
+</zk>

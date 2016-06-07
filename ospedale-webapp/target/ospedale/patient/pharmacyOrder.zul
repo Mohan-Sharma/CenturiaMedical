@@ -1,0 +1,47 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./patientPharmacyOrder"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client"
+    xmlns:schemaLocation="http://www.zkoss.org/2005/zul http://www.zkoss.org/2005/zul/zul.xsd">
+    <zscript>
+        import com.nzion.domain.Patient;
+        Patient patient = arg.get("patient");
+    </zscript>
+
+    <window id="patientPharmacyOrder"
+            apply="org.zkoss.bind.BindComposer" viewModel="@id('vm') @init('com.nzion.zkoss.composer.PharmacyOrderViewModel', patient = patient)">
+            
+        <listbox model="@{vm.pharmacyOrders,load-after='self.onReload'}" mold="paging" pageSize="10" id="pharmacyOrderListBox" emptyMessage="No Results Found">
+            <listhead>
+                <listheader label="Order ID" sort="auto"/>
+                <listheader label="Total Amount" />
+                <listheader label="Order Status" />
+                <listheader label="Action" />
+            </listhead>
+
+            <listitem self="@{each='pharmacyOrder'}" value="@{pharmacyOrder}">
+                <listcell>
+                    <label value="@{pharmacyOrder.orderId} " />
+                </listcell>
+                <listcell>
+                	<div align="right" width="100%">
+	                    <label value="@{pharmacyOrder.totalAmount} " />
+	                    <label value="KD"/>
+                    </div>
+                </listcell>
+                <listcell>
+                    <label value="@{pharmacyOrder.pharOrderStatus.name} " />
+                </listcell>
+                <listcell>
+                	<button label="Received">
+                	<attribute name="onClick">
+                		vm.update(self.getParent().getParent().getValue());
+                	</attribute>
+                	</button>
+                </listcell>
+            </listitem>
+        </listbox>
+
+    </window>
+</zk>

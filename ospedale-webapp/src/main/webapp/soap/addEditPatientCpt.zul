@@ -1,0 +1,64 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./addEditPatientCpt"?>
+<?component name="cptlookup" macro-uri="/utilities/cptlookup.zul" inline="false"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:w="http://www.zkoss.org/2005/zk/client" xmlns:n="http://www.zkoss.org/2005/zk/native">
+    <zscript>
+        <![CDATA[
+	com.nzion.zkoss.composer.SoapDiagnosisComposer diagnosisComposer = arg.get("diagComposer");
+	com.nzion.zkoss.composer.PatientSoapNoteController controller = diagnosisComposer.getMainCtl();
+	//com.nzion.domain.emr.soap.DiagnosisSection section = diagnosisComposer.getSection();
+	com.nzion.domain.emr.soap.PatientCpt patientCpt = arg.get("patientCpt") == null ? new com.nzion.domain.emr.soap.PatientCpt() : arg.get("patientCpt");
+	com.nzion.domain.emr.soap.PatientCpt.CPTSTATUS[] cptStatusList = com.nzion.domain.emr.soap.PatientCpt.CPTSTATUS.values();
+	Component labProcedureButton = arg.get("labProcedureButton");
+	]]>
+    </zscript>
+    <window id="addEditPatientCpt" closable="true" title="Patient Procedures" mode="modal" width="50%">
+        <div sclass="form">
+            <vlayout spacing="5px">
+                <hlayout spacing="5px">
+                    <label value="Procedures" sclass="name" style="width:250px;font-size:14px;font-weight:bold" mold="required"/>
+                    <cptlookup style="margin-left:0px;" onChange="patientCpt.setCpt(event.getOrigin().getData())" value="${patientCpt.cpt.description}"
+                               id="cptlookupbox" multiple="false">
+                        <attribute name="onCreate"><![CDATA[
+                            if(self.getFellowIfAny("cptTextBox") != null){
+                                if(patientCpt != null && patientCpt.getCpt() != null)
+                                    self.getFellowIfAny("cptTextBox").setValue(patientCpt.getCpt().getDescription());
+                            }
+                        ]]></attribute>
+                    </cptlookup>
+                </hlayout>
+                <hlayout spacing="5px">
+                    <label value="Unit" sclass="name" style="width:250px;font-size:14px;font-weight:bold" />
+                    <intbox value="@{patientCpt.unit,save-when='addBtn.onClick'}" style="width:183px" constraint="no zero"/>
+                </hlayout>
+                <hlayout spacing="5px">
+                    <label value="Home Service Required" sclass="name" style="width:250px;font-size:14px;font-weight:bold" />
+                    <checkbox>
+                        <attribute name="onClick">
+                            patientCpt.setHomeServiceRequired(self.isChecked());
+                        </attribute>
+                    </checkbox>
+                </hlayout>
+                <hlayout spacing="5px">
+                    <label value="Status" sclass="name" style="width:250px;font-size:14px;font-weight:bold" />
+                    <listbox model="@{cptStatusList}" selectedItem="@{patientCpt.cptStatus,save-when='addBtn.onClick'}" mold="select">
+                        <listitem self="@{each='cptStatus'}" value="@{cptStatus}" label="@{cptStatus}">
+                        </listitem>
+                    </listbox>
+                </hlayout>
+            </vlayout>
+            <separator></separator>
+            <div align="center">
+                <button disabled="${controller.readonly}" id="addBtn" label="Add">
+                    <attribute name="onClick">
+                        patientCpt.setPatient(diagnosisComposer.getSection().getSoapNote().getPatient());
+                        diagnosisComposer.addPatientCpt(patientCpt,cptlookupbox);
+                        Events.postEvent("onClick",labProcedureButton,null);
+                        addEditPatientCpt.detach();
+                    </attribute>
+                </button>
+            </div>
+        </div>
+    </window>
+</zk>

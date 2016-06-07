@@ -1,0 +1,281 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./collectionReportWindow"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+<zscript>
+    <![CDATA[
+		import com.nzion.util.UtilValidator;
+		import com.nzion.report.dto.CollectionReportDto;
+		import java.math.BigDecimal;
+		import com.nzion.domain.billing.InvoiceItem;
+		import com.nzion.util.UtilValidator;
+		import java.math.RoundingMode;
+
+		com.nzion.zkoss.ext.DataExporter exporter = new com.nzion.zkoss.ext.CsvDataExporter();
+        com.nzion.zkoss.composer.emr.BillingSearchController billingSearchController = new com.nzion.zkoss.composer.emr.BillingSearchController(); 
+		com.nzion.service.billing.BillingService billingService=com.nzion.util.Infrastructure.getSpringBean("billingService");
+		
+		//com.nzion.zkoss.composer.emr.CollectionReportController collectionReportController=new com.nzion.zkoss.composer.emr.CollectionReportController();
+		
+		List collectionList;
+		List dischargeCollectionList;
+		List advanceCollectionList;
+		Map invoiceItemsGroup;
+		List listMap;
+		
+		List chargeTypeList= new ArrayList();
+		chargeTypeList.add(com.nzion.domain.billing.AcctgTransTypeEnum.OPD);
+		//chargeTypeList.add(com.nzion.domain.billing.AcctgTransTypeEnum.IPD);
+		com.nzion.domain.billing.AcctgTransTypeEnum chargeType=null;com.nzion.report.dto.CollectionReportDto dischargeItemDto;
+		StringBuilder content = null;
+		StringBuilder header = null; 
+		
+		
+		List invoiceItemByConcession = null;
+		BigDecimal totalInvoiceAmount = BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);
+        BigDecimal totalConcessionAmount = BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);
+        String totalAmountDisplayString = "0.000 KD";
+        boolean admin = com.nzion.domain.Roles.hasRole(com.nzion.domain.Roles.ADMIN);
+      //  boolean provider = com.nzion.domain.Roles.hasRole(com.nzion.domain.Roles.PROVIDER);
+        List consultant = new ArrayList();
+          if(admin) {
+              consultant = commonCrudService.getAll(com.nzion.domain.Provider.class); }
+         else if(com.nzion.domain.Roles.hasRole(com.nzion.domain.Roles.PROVIDER)) {
+              consultant.add(com.nzion.util.Infrastructure.getLoggedInPerson()); }
+		
+		]]>
+</zscript>
+
+<window id="collectionReportWindow" apply="${billingSearchController}">
+<div style="padding:5px" zclass="page-header titled-well">
+    <h:h1>
+        <h:small>Concession Report</h:small>
+    </h:h1>
+</div>
+
+     <div class="container-fluid">
+        <div zclass="row-fluid">
+            <div zclass="span2"  style="margin-left: -10px;">
+                <label value="Doctor"/>
+               <!-- <listbox id="consultant" model="@{consultant}" selectedItem="@{billingSearchController.billingSearchVO.consultant}"  itemRenderer="${dropdownRenderer}"
+                          mold="select"  sclass="span12" /> -->
+                  <combobox id = "providerId" selectedItem="@save(billingSearchController.billingSearchVO.consultant)" sclass="span12" readonly="true">
+                      <comboitem value="" label="" if="${admin}" />
+                      <comboitem forEach = "${consultant}" value="${each}" label="${each.firstName}">
+                        <attribute name = "onCreate">
+                          if(consultant.size() == 1) {
+                           self.getParent().setSelectedItem(self);
+                           billingSearchController.getBillingSearchVO().setConsultant(self.getValue());
+                          }
+                        </attribute>
+                      </comboitem>
+                        <attribute name = "onSelect">
+                         if("".equals(providerId.getSelectedItem().getValue())){
+                              billingSearchController.getBillingSearchVO().setConsultant(null);
+                         }else {
+                            billingSearchController.getBillingSearchVO().setConsultant(self.getSelectedItem().getValue());
+                         }
+                         </attribute>
+                  </combobox>
+             </div>
+
+            <div zclass="span2">
+                <label value="From Date" class="z-label-bold"/>
+                    <datebox id="fromDate" value="@{billingSearchController.billingSearchVO.fromDate}" sclass="span12"/>
+            </div>
+            <div zclass="span2" style="margin-left:30px;">
+                 <label value="To Date" class="z-label-bold"/>
+                     <datebox id="thruDate" value="@{billingSearchController.billingSearchVO.thruDate}" sclass="span12"/>
+            </div>
+          <div zclass="span2" style="margin-left: 50px;">
+                <label value="Authorizer"/>
+                <textbox id="authoriser" value="@{billingSearchController.billingSearchVO.authoriser}" sclass="span12"/>
+            </div>
+            
+             <div zclass="span2" style="margin-left: 30px;">
+                <label value="User" />
+                <textbox id="user" value="@{billingSearchController.billingSearchVO.user}" sclass="span12"/>
+            </div>
+        </div>
+    </div>
+<space height="5px"/>
+<div align="center" sclass="panelFoot">
+    <button label="Search Invoice" id="searchButton" zclass="btn btn-primary">
+        <attribute name="onClick">
+            <![CDATA[
+                     content = new StringBuilder();
+                    if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getConsultant())){
+                                				content.append("Doctor :"+billingSearchController.getBillingSearchVO().getConsultant()).append(" | ");
+                	}
+                    
+ 					if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getFromDate())){
+ 						content.append("Invoice Date From: "+com.nzion.util.UtilDateTime.format( billingSearchController.getBillingSearchVO().getFromDate())).append(" | ");
+ 					}
+ 					if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getThruDate())){
+ 						content.append("Invoice Date Thru: "+com.nzion.util.UtilDateTime.format(billingSearchController.getBillingSearchVO().getThruDate())).append(" | ");
+ 					}
+ 					if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getAuthoriser())){
+ 						content.append("Authorizer: "+billingSearchController.getBillingSearchVO().getAuthoriser()).append(" | ");
+ 					}
+ 					
+ 					if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getCollectedByUser())){
+ 						content.append("User: "+billingSearchController.getBillingSearchVO().getUser()).append(" | ");
+ 					}
+                   	
+                     invoiceItemByConcession = billingSearchController.searchInvoiceItemByConcession(fromDate.getValue(),thruDate.getValue());
+                     
+                     java.util.Iterator itr = invoiceItemByConcession.iterator();
+                     totalInvoiceAmount = BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);
+                     totalConcessionAmount = BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);
+                     while(itr.hasNext()){
+                        com.nzion.domain.billing.InvoiceItem invoiceItem = itr.next();
+                        totalInvoiceAmount = totalInvoiceAmount.add(invoiceItem.getPrice().getAmount());
+                        java.math.BigDecimal concessionAmount = invoiceItem.getConcessionAmount();
+            		    java.math.BigDecimal grossAmount = invoiceItem.getGrossAmount();
+							 if("PERCENTAGE".equals(invoiceItem.getConcessionType())){
+	                				concessionAmount = com.nzion.zkoss.composer.BillingController.percentage(grossAmount,invoiceItem.getConcessionAmount());
+           					 }
+                        totalConcessionAmount = totalConcessionAmount.add(concessionAmount);
+                     }
+                     totalAmountDisplayString = "Total Invoice Amount= "+ totalInvoiceAmount.setScale(3, RoundingMode.HALF_UP) + " KD   Total Concession Amount= "+ totalConcessionAmount.setScale(3, RoundingMode.HALF_UP)+" KD";
+                    	   	searchResults.setVisible(true);
+							searchResultsSplitter.setVisible(true);
+													
+			]]>
+        </attribute>
+    </button>
+</div>
+<separator></separator>
+<space height="5px"/>
+<hlayout width="100%" style="text-align:center;background-color:grey" id="searchResultsSplitter" visible="false">
+    <image src="/images/collapse-content.png" style="text-align:center">
+        <attribute w:name="onClick">
+            jq(this.$f('searchForm')).slideToggle(1000);
+        </attribute>
+        <attribute name="onClick">
+            if(self.getSrc().contains("expand")){
+            self.setSrc("/images/collapse-content.png");
+            }
+            else if(self.getSrc().contains("collapse")){
+            self.setSrc("/images/expand-content.png");
+            }
+        </attribute>
+    </image>
+</hlayout>
+<space height="5px"/>
+<panel visible="false" id="searchResults" title="Search Results" width="100%">
+    <caption height="15px">
+        <div style="float:right; margin-right: 2%; background-color: white;width: 15%;text-align: center;text-decoration: none;">
+					<a tooltiptext="Export" label="Export" sclass="reminderBtn">
+                        <attribute name="onClick">
+                            	exportData();
+                          </attribute>
+                    </a>
+        </div>
+    </caption>
+
+    <panelchildren>
+    	
+       	 <div height="500px" style="overflow:auto" id="searchResultDiv">
+             <div align="center">
+                 <label value="@{totalAmountDisplayString,load-after='searchButton.onClick'}" style="font-weight:bold;"/>
+             </div>
+            <listbox id="groupByForInvoiceItems" model="@{invoiceItemByConcession,load-after='searchButton.onClick'}">
+                <listhead>
+                    <listheader label="Afya ID"/>
+                    <listheader label="Civil ID"/>
+                    <listheader label="File No."/>
+                    <listheader label="Doctor Name" />
+                    <listheader label="Patient Name"/>
+                    <listheader label="Invoice No"/>
+                    <listheader label="Invoice Amount"/>
+                    <listheader label="Concession Amount"/>
+                    <listheader label="Authorizer"/>
+                    <listheader label="Concession Reason"/>
+                    <listheader label="User"/>
+                </listhead>
+                <listitem self="@{each='invoiceItem'}" value="@{invoiceItem}">
+                    <listcell>
+                        <label value="@{invoiceItem.invoice.patient.afyaId}"/>
+                    </listcell>
+                    <listcell>
+                        <label value="@{invoiceItem.invoice.patient.civilId}"/>
+                    </listcell>
+                    <listcell>
+                        <label value="@{invoiceItem.invoice.patient.fileNo}"/>
+                    </listcell>
+                     <listcell>
+                        <name object="@{invoiceItem.invoice.consultant}"/>
+                    </listcell>
+                    <listcell>
+                        <name value="@{invoiceItem.invoice.patient}"/>
+                    </listcell>
+                     <listcell>
+                        <label value="@{invoiceItem.invoice.invoiceNumber}"/>
+                    </listcell>
+                    <listcell>
+                        <label value="@{invoiceItem.price.amount}"/>
+                    </listcell>
+                    <listcell>
+                        <label>
+                        <attribute name="onCreate">
+                       		 com.nzion.domain.billing.InvoiceItem  invoiceItem = self.getParent().getParent().getValue();
+                       		 java.math.BigDecimal concessionAmount = invoiceItem.getConcessionAmount();
+            				 java.math.BigDecimal grossAmount = invoiceItem.getGrossAmount();
+							 if("PERCENTAGE".equals(invoiceItem.getConcessionType())){
+	                				concessionAmount = com.nzion.zkoss.composer.BillingController.percentage(grossAmount,invoiceItem.getConcessionAmount());
+           					 }
+        					self.setValue(concessionAmount.setScale(3,java.math.RoundingMode.HALF_UP).toString());
+                        </attribute>
+                        </label>
+                    </listcell>
+                    <listcell>
+                        <label value="@{invoiceItem.concessionAuthoriser}"/><label value="@{invoiceItem.invoice.concessionAuthoriser}"/>
+                    </listcell>
+                    <listcell>
+                        <label value="@{invoiceItem.concessionReason}"/><label value="@{invoiceItem.invoice.concessionReason}"/>
+                    </listcell>
+                    <listcell>
+                        <label value="@{invoiceItem.updatedBy}"/>
+                    </listcell> 
+                </listitem>
+<!-- 
+                <listfoot>
+                    <listfooter></listfooter>
+                    <listfooter>
+                        <label value="Total Amount" style="font-weight:bold"/>
+                    </listfooter>
+                    <listfooter>
+                        <div>
+                            <label id="collectedAmount" style="font-weight:bold"/> -
+                            <label id="writeoffAmount" style="font-weight:bold"/>(Discounted Amount) =
+                            <label id="totalAmountLabel" zclass="blackHeading" style="font-weight:bold"> </label>
+                        </div>
+                    </listfooter>
+                </listfoot> -->
+
+            </listbox>
+
+        </div>
+    </panelchildren>
+</panel>
+
+   <zscript>
+    <![CDATA[
+        void exportData(){
+        	 if(content.length()> 0)
+               	header = new StringBuilder(content.substring(0, content.length() - 1));
+         	
+        	exporter.exportWithHeader(header,invoiceItemByConcession,
+                    new String[]{"invoice.patient.afyaId","invoice.patient.civilId","invoice.patient.fileNo","invoice.consultant","invoice.patient","invoice.invoiceNumber",
+        			"price.amount","concessionAmount","concessionAuthoriser","concessionReason","updatedBy"}, 
+        			new String[]{"Afya Id","Civil Id","File No.","Doctor Name","Patient Name",
+                    "Invoice Number","Invoice Amount","Concession Amount", "Authorizer", "Concession Reason", "User"}, 
+                    "concession.xlsx","CONCESSION ANALYSIS REPORT",null);
+                   
+        }
+        ]]>
+          </zscript>
+</window>
+</zk>	

@@ -1,0 +1,95 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./receiveInventoryWin"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript> <![CDATA[
+		com.nzion.oms.zkoss.ReceiveInventoryController receiveInvController = new com.nzion.oms.zkoss.ReceiveInventoryController();
+	]]></zscript>
+	<window id="receiveInventoryWin" apply="${receiveInvController}">
+	<panel style="padding:5px" title="Receive Inventory">
+	 <panelchildren>
+		<vlayout spacing="20px" sclass="form">
+			<hlayout spacing="6px">
+				<hlayout spacing="3px">
+					<label value="PO Number" sclass="name"/>
+					<textbox value="@{receiveInvController.poCode}"/>
+				</hlayout>
+				    <hlayout spacing="3px">
+					<label value="Supplier" sclass="name"/>
+					<combobox model="@{receiveInvController.suppliers}" selectedItem="@{receiveInvController.supplier}">
+						<comboitem self="@{each='supplierObj'}" label="@{supplierObj.name}" value="@{supplierObj}"/>
+					</combobox>
+			</hlayout>
+				<hlayout spacing="3px" visible="false">
+					<label value="Product Name" sclass="name"/>
+					<textbox value="@{receiveInvController.productName}"/>
+				</hlayout>
+			</hlayout>
+		</vlayout>
+		<separator/>
+		<div sclass="panelFoot" align="center">
+			<button label="Search" id="btnSearch" zclass="btn btn-primary">
+				<attribute name="onClick">
+					receiveInvController.searchByCriteria();
+					noRecordFoundLabel.setVisible(com.nzion.util.UtilValidator.isEmpty(receiveInvController.getPurchaseOrders()));
+					self.addForward("onClick",groupByResultGrid,"onReload");
+				</attribute>
+			</button>
+		</div>
+		<separator />
+		<label value="No Records Found" visible="false" id="noRecordFoundLabel" style="font-weight:bold"/>
+		<panel title="Results" id="resultPanel">
+			<panelchildren>
+				<div style="overflow: auto;" height="400px">
+				<grid id="groupByResultGrid" model="@{receiveInvController.purchaseOrders,load-after='self.onReload'}">
+				<columns>
+					<column width="40px"/>
+					<column label="PO Number"/>
+					<column label="Action"/> 
+				</columns>
+				<rows>
+					<row self="@{each='po'}" value="@{po}">
+						<label value="@{po.poNumber}"/>
+						<detail open="false">
+								<listbox>
+									<listhead>
+										<listheader label="Product Name" /> 
+										<listheader label="Quantity" />
+										<listheader label="Accepted Qty" />
+										<listheader label="Rejected Qty" />
+										<listheader label="Batch Number" />
+										<listheader label="Supplier" />
+										<listheader label="Unit Cost" />
+										<listheader label="Total Cost" />
+									</listhead>
+									<listitem self="@{each='inventoryItem'}" value="@{inventoryItem}">
+										<listcell label="@{inventoryItem.product.tradeName}"/>
+										<listcell label="@{inventoryItem.atp}" />
+										<listcell label="@{inventoryItem.qoh}" />
+										<listcell label="@{inventoryItem.rejectedQuantity}" />
+										<listcell label="@{inventoryItem.batchNumber}" />
+										<listcell label="@{inventoryItem.supplier.name}" />
+										<listcell label="@{inventoryItem.unitCost}"/>
+										<listcell style="@{inventoryItem, converter='com.nzion.oms.zkoss.ReceiveInventoryController'}"/>
+									</listitem>
+								</listbox>
+								<attribute name="onOpen">
+										receiveInvController.getCommonCrudService().refreshEntity((((Row) self.getParent()).getValue()));
+										List mapValue = (((Row) self.getParent()).getValue()).getInventoryItems();
+										
+										((Listbox) self.getFirstChild()).setModel(new BindingListModelList(new ArrayList(mapValue), false));
+								</attribute>
+						</detail>
+						<hlayout>
+						<button label="Receive Product" image="@{po,converter='com.nzion.inpatient.zkoss.ReceiveInventoryConverter'}"/>
+						<label visible="false" value="Product Received" image="@{po,converter='com.nzion.inpatient.zkoss.ReceiveInventoryConverter'}"/>
+						</hlayout>
+					</row>
+				</rows>
+			</grid>		
+			</div>
+			</panelchildren>
+		</panel>
+		</panelchildren>
+		</panel>
+	</window>
+</zk>

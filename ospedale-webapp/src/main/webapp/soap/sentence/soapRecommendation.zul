@@ -1,0 +1,18 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+	xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native">
+	<zscript>
+	import com.nzion.zkoss.composer.SoapSentenceComposer;
+	import com.nzion.domain.emr.soap.*;
+	SoapSentenceComposer sentenceComposer = (SoapSentenceComposer) arg.get("controller");
+	RecommendationSection recommendationSection = (RecommendationSection) sentenceComposer.getSoapNoteController().getSoapSection(RecommendationSection.class,false);
+	sentenceComposer.setSelectedSection(recommendationSection);
+	</zscript>
+	<div style="margin-left:10px">
+		<n:h4>Recommendation</n:h4>
+		<n:h4>
+			<label>${recommendationSection.recommendedNotes}</label>
+		</n:h4>
+	</div>
+</zk>

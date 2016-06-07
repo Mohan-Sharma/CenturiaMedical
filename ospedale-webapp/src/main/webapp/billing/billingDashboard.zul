@@ -1,0 +1,32 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?link rel="shortcut icon" type="image/x-icon" href="/images/afya/afya_favicon.ico"?>
+<?component name="dashboard" macroURI="/dashboards/dashboard-macro.zul"?>
+<?init class="org.zkoss.zk.ui.util.Composition" arg0="/WEB-INF/layout/practiceTemplate.zul"?>
+<zk>
+    <zscript>
+        import com.nzion.util.Infrastructure;
+
+        setPageTitle("Dashboard", "");
+        List portletDatas = new ArrayList();
+        portletDatas.add(new com.nzion.view.PortletData("Invoice", "/portlets/frontdeskBillingPortlet.zul","../images/folder_invoices_256.png"));
+        portletDatas.add(new com.nzion.view.PortletData("Patient Deposit", "/portlets/patient-deposit.zul","../images/patient_account/deposit.jpg"));
+        portletDatas.add(new com.nzion.view.PortletData("Patient Refund", "/portlets/patient-refund.zul","../images/patient_account/withdrawal.jpg"));
+        portletDatas.add(new com.nzion.view.PortletData("Referral Details", "/portlets/referral_details.zul","../images/patient_account/referral-connection.jpg"));
+		portletDatas.add(new com.nzion.view.PortletData("Messages/Tasks", "/portlets/message-portlet-view.zul","../images/new-message-icon.png", true));
+      <!--   portletDatas.add(new com.nzion.view.PortletData("Discharge", "/inPatient/dischargeRequestBilling.zul","../images/hospital-discharge.jpg"));-->
+      <!--   portletDatas.add(new com.nzion.view.PortletData("Lab Order", "/billing/labOrderPortlet.zul", "../images/labresults.jpg",true)); -->
+      <!--   portletDatas.add(new com.nzion.view.PortletData("Transactions", "/report/acc-transaction-report.zul", "../images/billed_transaction.png",true)); -->
+      <!--   portletDatas.add(new com.nzion.view.PortletData("UnBilled Transactions", "/billing/billingTransactionReport.zul", "../images/unbilled_transaction.png",true)); -->
+
+        com.nzion.service.PersonService personService=Infrastructure.getSpringBean("personService");
+        com.nzion.domain.Person person = Infrastructure.getLoggedInPerson();
+        long roles =  Infrastructure.getRolesOfLoggedInUser();
+        int unreadMsgCount =  personService.getUnreadMessageCount(person, roles);
+        String msg = "Number of unread messages- "+unreadMsgCount;
+
+    </zscript>
+    <window self="@{define(applicationContent)}" title="Dashboard">
+        <dashboard portlets="${portletDatas}" width="100%"/>
+        <caption label="${msg}" style="text-decoration:blink;"></caption>
+    </window>
+</zk>

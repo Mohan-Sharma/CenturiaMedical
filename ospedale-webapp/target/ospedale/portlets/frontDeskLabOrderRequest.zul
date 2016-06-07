@@ -1,0 +1,139 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./patientLabOrderReq"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.zkoss.org/2005/zk/native ">
+    <window id="patientLabOrderReq" self="@define(applicationContent)" apply="org.zkoss.bind.BindComposer"
+            viewModel="@id('vm') @init('com.nzion.zkoss.composer.emr.lab.LabOrderRequestViewModel')">
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>New Lab Test Request</h:small>
+            </h:h1>
+        </div>
+        <div zclass="container-fluid">
+            <div zclass="row-fluid">
+                <div zclass="span4">
+                    <label value="Patient" mold="required"/>
+                    <quickpatientlookup id="labPatientlookupbox"
+                                   onChange="vm.getLabOrderRequest().setPatient((com.nzion.domain.Patient)event.getOrigin().getData());"/>
+                </div>
+                <div zclass="span6">
+                    <label value="Clinical History"/>
+                    <textbox rows="2" sclass="span12"
+                             value="@bind(vm.labOrderRequest.clinicalHistory)"/>
+                </div>
+            </div>
+            <div zclass="row-fluid">
+                <div zclass="span4">
+                    <label value="Referral"/>
+                    <referrallookup
+                            onChange="vm.getLabOrderRequest().setReferral((com.nzion.domain.Referral)event.getOrigin().getData())"/>
+                </div>
+                   <!--  <div zclass="span4">
+                    <label value="Doctor"/>
+                    <providerlookup
+                            onChange="vm.getLabOrderRequest().setProvider((com.nzion.domain.Provider)event.getOrigin().getData())"/>
+                </div> -->
+                
+                <div zclass="span6">
+                    <label value="Remarks"/>
+                    <textbox rows="2" sclass="span12" value="@bind(vm.labOrderRequest.remarks)"/>
+                </div> 
+            
+                
+            </div>
+
+            <div zclass="row-fluid">
+            <div zclass="span4">
+                    <label value="Doctor"/>
+                    <providerlookup
+                            onChange="vm.getLabOrderRequest().setProvider((com.nzion.domain.Provider)event.getOrigin().getData())"/>
+                </div>
+               
+              <!--   <div zclass="span4">
+                    <label value="Test Name" mold="required"/>
+                    <suggest id="labTestPanelTxt" entity="com.nzion.domain.emr.lab.LabTestPanel" sclass="span12"
+                             searchcolumns="panelName" displaycolumns="panelName" requiredcolumn="panelName"/>
+                </div> -->
+                  <div zclass="span4">
+                    <label value="Test Name" mold="required"/>
+                    <suggest id="labTestPanelTxt" entity="com.nzion.domain.emr.lab.LabTestPanel" sclass="span12"
+                             searchcolumns="panelName" displaycolumns="panelName" requiredcolumn="panelName"/>
+                </div>
+            </div>
+
+            <div sclass="panelFoot">
+                <button label="Add" id="addBtn" sclass="saveBtn">
+                    <attribute name="onClick">
+                        <![CDATA[
+                        import com.nzion.domain.emr.soap.PatientLabOrder;
+                        if(com.nzion.util.UtilValidator.isEmpty(vm.getLabOrderRequest().getPatient()))
+                        throw new WrongValueException(labPatientlookupbox , "Patient Required");
+                        if(com.nzion.util.UtilValidator.isEmpty( labTestPanelTxt.getValue()))
+                        throw new WrongValueException(labTestPanelTxt , "Test Name Required");
+
+                        PatientLabOrder patientLabOrder = new PatientLabOrder();
+                        patientLabOrder.setLabTestPanel(labTestPanelTxt.getResult());
+                        patientLabOrder.setPatient(vm.getLabOrderRequest().getPatient());
+                        vm.getLabOrderRequest().addPatientLabOrder(patientLabOrder);
+                        patientLabOrder.setLabOrderRequest(vm.getLabOrderRequest());
+                        labTestPanelTxt.setValue(null);
+                        Events.postEvent("onReloadRequest",inPLabOrderListBox,null);
+                        ]]>
+                    </attribute>
+                </button>
+                <button label="Cancel" sclass="cancelBtn"> 
+                <attribute name="onClick">
+                  Events.postEvent("onClick",session.getAttribute("portletImg"),null);
+             		  patientLabOrderReq.detach();
+             		  </attribute>
+                </button>
+            </div>
+            <div sclass="boxStyle" style="width:100%;float:left;">
+                <panel>
+                    <panelchildren>
+                        <listbox id="inPLabOrderListBox" mold="paging" pageSize="7" width="20%"
+                                 model="@{vm.labOrderRequest.patientLabOrders,load-after='self.onReloadRequest'}">
+                            <listhead>
+                                <listheader label="${c:l('testName')}" style="font-weight:bold"/>
+                                <listheader label="Rate" style="font-weight:bold"/>
+                            </listhead>
+                            <listitem self="@{each='labOrder'}" value="@{labOrder}">
+                                <listcell>
+                                    <label value="@{labOrder.labTestPanel.panelName}"/>
+                                </listcell>
+                                <listcell>
+                                    <label value="@{labOrder.labTestPanel.price}"/>
+                                </listcell>
+                            </listitem>
+                        </listbox>
+                        <div align="center" sclass="panelFoot">
+                            <button label="Save" id="Save" sclass="saveBtn">
+                                <attribute name="onClick"><![CDATA[
+					  private final Long INHOUSE_REFERRAL_ID=9000L;
+					  if(com.nzion.util.UtilValidator.isEmpty(vm.getLabOrderRequest().getPatient()))
+					  throw new WrongValueException(labPatientlookupbox , "Patient Required"); 
+					  
+					  if(com.nzion.util.UtilValidator.isEmpty(vm.getLabOrderRequest().getPatientLabOrders())){
+						     com.nzion.util.UtilMessagesAndPopups.showError("Please Add atleast One test name");
+						     return;
+				        }
+					  vm.getLabOrderRequest().setOrderStatus(com.nzion.domain.emr.lab.LabOrderRequest.ORDERSTATUS.BILLING_REQUIRED);
+					  if(vm.getLabOrderRequest().getProvider()==null && vm.getLabOrderRequest().getReferral()==null){
+						  com.nzion.domain.Referral referral = commonCrudService.getById(com.nzion.domain.Referral.class, INHOUSE_REFERRAL_ID);
+						  vm.getLabOrderRequest().setReferral(referral);
+					  }
+					  commonCrudService.save(vm.getLabOrderRequest());
+					  com.nzion.util.UtilMessagesAndPopups.displaySuccess(); 
+             		  Events.postEvent("onClick",session.getAttribute("portletImg"),null);
+             		  patientLabOrderReq.detach();
+					]]></attribute>
+                            </button>
+                        </div>
+                    </panelchildren>
+                </panel>
+            </div>
+        </div>
+    </window>
+</zk>

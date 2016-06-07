@@ -1,0 +1,183 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./showBenefitPlans"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client"
+    xmlns:schemaLocation="http://www.zkoss.org/2005/zul http://www.zkoss.org/2005/zul/zul.xsd">
+    <zscript>
+        String benefitId = arg.get("benefitId");
+        Map data = com.nzion.util.RestServiceConsumer.getModulesAndServiceDetailsByBenefitId(benefitId);
+        List moduleDetails = data.get("moduleDetails");
+        List associatedServiceDetailsOfTheModule = data.get("associatedServiceDetailsOfTheModule");
+    </zscript>
+    <window width="80%" id="showBenefitPlans" mode="modal"
+            apply="org.zkoss.bind.BindComposer" viewModel="@id('vm') @init('com.nzion.zkoss.composer.PatientInsuranceBenefitPlanVM')">
+        <caption label="Benefit Plan"/>
+        <tabbox>
+            <tabs>
+                <tab label="Benefit Details"/>
+                <tab label="Service Details"/>
+            </tabs>
+            <tabpanels>
+                <tabpanel>
+                    <grid model="@{moduleDetails}" hflex="1">
+                        <columns>
+                            <column align="left" >Benefits</column>
+                           <!--  <column align="left" width="12%">Coverage Amt(KD)</column> -->
+                            <column align="left" width="10%">Pre Auth Reqd.?</column>
+                            <column align="left" width="10%">Deductible Amt</column>
+                            <column align="left" width="8%">Deductible %</column>
+                            <column align="left" width="10%">Patient Amt</column>
+                            <column align="left" width="8%">Patient %</column>
+                            <column align="left" width="10%">Calculation On</column>
+                            <!-- <column align="left" width="10%">Is Cons Inc.?</column> -->
+                            <!-- <column align="left">Is Cons Pre Auth Req?</column> -->
+                        </columns>
+                        <rows>
+                            <row self="@{each='module'}" value="@{module}">
+                                <cell><label value="@{module.moduleName}"/></cell>
+                                <!-- <cell align="right"><label value="@{module.sumInsured,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell> -->
+                                <cell>
+                                <label value="No" visible="@{module.authorization}"/>
+                                <label value="Yes" visible="@{!module.authorization}"/>
+                                </cell>
+                                <cell align="right"><label value="@{module.deductibleAmount,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell>
+                                <cell align="right"><label value="@{module.deductiblePercentage,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell>
+                                <cell align="right"><label value="@{module.copayAmount,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell>
+                                <cell align="right"><label value="@{module.copayPercentage,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell>
+                                <cell><label value="@{module.computeBy}"/></cell>
+                               <!--  <cell><label value="@{module.authorizationInclusiveConsultation}"/></cell> -->
+                                <!-- <cell><label value="@{module.authorizationRequiredConsultation}"/></cell> -->
+                            </row>
+                        </rows>
+                    </grid>
+                </tabpanel>
+                <tabpanel>
+                    <grid model="@{associatedServiceDetailsOfTheModule}" height="400px;">
+                        <columns>
+                            <column align="left">Services</column>
+                            <column align="left">Benefits</column>
+                            <column align="left">Pre Auth Reqd.?</column>
+                            <column align="left">Max Insurance Amt</column>
+                            <column align="left">Deductible Amt</column>
+                            <column align="left">Deductible %</column>
+                            <column align="left">Patient Amt</column>
+                            <column align="left">Patient %</column>
+                            <!-- <column align="left">Service Limit Amt</column>
+                            <column align="left">No of Times</column> -->
+                        </columns>
+                        <rows>
+                            <row self="@{each='service'}" value="@{service}">
+                                <cell><label value="@{service.serviceName}"/></cell>
+                                <cell><label value="@{service.moduleName}"/></cell>
+                                
+                                <!-- <cell><label value="@{service.authorization}"/></cell> -->
+                                
+                                <cell>
+	                                <label value="No" visible="@{service.authorization}"/>
+	                                <label value="Yes" visible="@{!service.authorization}"/>
+                                </cell>
+                                
+                                <cell align="right"><label value="@{service.maxAmount,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell>
+                                
+                                <cell align="right"><label value="@{service.deductibleAmount,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell>
+                                <cell align="right"><label value="@{service.deductiblePercentage,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell>
+                                <cell align="right"><label value="@{service.copayAmount,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell>
+                                <cell align="right"><label value="@{service.copayPercentage,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell>
+                                <!-- <cell align="right"><label value="@{service.individualLimitAmount,converter='com.nzion.view.component.BigDecimalConverter'}"/></cell>
+                                <cell><label value="@{service.numberOfCases}"/></cell> -->
+                                <cell></cell>
+                            </row>
+                        </rows>
+                    </grid>
+                </tabpanel>
+            </tabpanels>
+        </tabbox>
+        <div style="margin-top:5px" sclass="panelFoot">
+            <button label="Close" onClick='showBenefitPlans.detach()' sclass="btn"></button>
+        </div>
+        <!--<custom-attributes patient="${patient}"/>
+        <custom-attributes patientInsListBox="${patientInsListBox}"/>
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Patient Insurance</h:small>
+                <button type="button" zclass="close" onClick="patientInsuranceWin.detach();">×</button>
+            </h:h1>
+        </div>
+        
+        <div zclass="container-fluid">
+            <div zclass="row-fluid">
+                <div zclass="span2">
+                    <label value="TPA"/>
+                    <combobox model="@bind(vm.tpaPayersDtos)" selectedItem="@bind(vm.selectedTpaPayer)"
+                              readonly="true" onChange="@command('updateInsuranceDetailsDtos')">
+                        <template name="model" var="item">
+                            <comboitem label="@bind(item.insuranceName)" value="@bind{item}"/>
+                        </template>
+                    </combobox>
+                </div>
+                <div zclass="span2">
+                    <label value="Insurance" mold="required"/>
+                    <combobox model="@bind(vm.insuranceDetailsDtos)" selectedItem="@bind(vm.selectInsuranceDetailsDto)"
+                              constraint="no empty" readonly="true" onChange="@command('updateGroup')">
+                        <template name="model" var="item">
+                            <comboitem label="@bind(item.insuranceName)" value="@bind{item}"/>
+                        </template>
+                    </combobox>
+                </div>
+                <div zclass="span2">
+                    <label value="Group" mold="required"/>
+                    <combobox id="insurenceMaster" model="@bind(vm.groupDtos)" selectedItem="@bind(vm.selectedGroup)"
+                    	constraint="no empty" readonly="true" onChange="@command('getGroupDetails')">
+                        <template name="model" var="item">
+                            <comboitem label="@bind(item.groupName)" value="@bind{item}"/>
+                        </template>
+                    </combobox>
+                </div>
+
+            </div>
+
+            <div zclass="row-fluid">
+
+                <div zclass="span2">
+                    <label value="Policy No"/>
+                    <textbox readonly="true" value="@bind(vm.igpdDto.policyNumber)"/>
+                </div>
+                <div zclass="span2">
+                    <label value="Start Date"/>
+                    <datebox readonly="true" value="@bind(vm.igpdDto.planStartDate)"/>
+                </div>
+                <div zclass="span2">
+                    <label value="End Date"/>
+                    <datebox readonly="true" value="@bind(vm.igpdDto.planEndDate)"/>
+                </div>
+
+            </div>
+
+            <div zclass="row-fluid">
+                <div zclass="span2">
+                    <label value="Health Plan"/>
+                    <textbox readonly="true" value="@bind(vm.igpdDto.healthPolicy.healthPolicyName)"/>
+                </div>
+                <div zclass="span2">
+                    <label value="Benefits" mold="required"/>
+                    <combobox model="@bind(vm.igpdDto.benefits)"
+                              constraint="no empty" readonly="true" selectedItem="@bind(vm.selectedBenefitsDto)">
+                        <template name="model" var="item">
+                            <comboitem label="@bind(item.benefitPlan)" value="@bind{item}"/>
+                        </template>
+                    </combobox>
+                </div>
+                <div zclass="span2">
+                    <label value="Membership ID"/>
+                    <textbox value="@bind(vm.uhid)" />
+                </div>
+            </div>
+
+            <div style="margin-top:5px" sclass="panelFoot">
+                <button label="Save" id="Save" visible="true" zclass="btn-success btn" onClick="@command('Save')"/>
+                <button label="Close" onClick='patientInsuranceWin.detach()' sclass="btn"></button>
+            </div>
+        </div>-->
+    </window>
+</zk>

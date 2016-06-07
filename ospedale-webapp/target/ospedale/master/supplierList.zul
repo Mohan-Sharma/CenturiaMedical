@@ -1,0 +1,11 @@
+ <?page title="Supplier Lists" contentType="text/html;charset=UTF-8"?>
+<zk>
+<zscript>
+setPageTitle("Supplier Lists", "");
+</zscript>
+	<window self="@{define(content)}">
+		<screen width="100%" pagetitle="Supplier list" listtitle="List of Suppliers" addpage="addEditSupplier" editpage="addEditSupplier" addmodepopup="true"
+			fields="name,contactFields.postalAddress.address1,contactFields.postalAddress.city,contactFields.mobileNumber,contactFields.officePhone"
+			entityclass="com.nzion.domain.pms.Supplier" hidedeletebtn="true" labels="Supplier Name,Address,City,Mobile No,Office Phone" />
+	</window>
+</zk>

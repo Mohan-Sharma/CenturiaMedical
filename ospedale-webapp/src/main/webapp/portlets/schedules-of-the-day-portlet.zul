@@ -1,0 +1,140 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?component name="signinmenu" macro-uri="/portlets/signin-menus.zul" inline="true"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./signinPortletWindow"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native">
+    <zscript>
+        import com.nzion.view.component.StringAscendingComparator;
+        import com.nzion.view.component.GenericDescendingCompartor;
+        import com.nzion.view.component.GenericAscendingComparator;
+        import com.nzion.util.*;
+        com.nzion.zkoss.ext.DataExporter exporter = new com.nzion.zkoss.ext.CsvDataExporter();
+        com.nzion.zkoss.composer.appointment.SigninPortletController signinController = new com.nzion.zkoss.composer.appointment.SigninPortletController(false);
+        GenericAscendingComparator ascComp = new GenericAscendingComparator("patient.firstName");
+        GenericDescendingCompartor descComp = new GenericDescendingCompartor("patient.firstName");
+        com.nzion.zkoss.ext.EntityDropdownRenderer dropdownRenderer = new com.nzion.zkoss.ext.EntityDropdownRenderer(new com.nzion.zkoss.ext.EntityDropDownPersonNameAdapter());
+        com.nzion.domain.Schedule.STATUS[] statuses = com.nzion.domain.Schedule.STATUS.values();
+        StringBuilder content = new StringBuilder();
+        StringBuilder header = null;
+
+        signinController.setSelectedBookingStatus("Tentative");
+        
+    </zscript>
+    <window id="signinPortletWindow" apply="${signinController}">
+        <panel sclass="gridCont">
+            <panelchildren>
+                <div sclass="grid clr prel">
+                    <hlayout width="100%" spacing="13px" style="margin-top:5px">
+                    	<space width="15px"></space>
+                        <label value="Doctor" class="z-label-bold"/>
+                        <combobox id="providerCombo" model="@{signinController.schedulableResourcesByLocation}" selectedItem="@{signinController.person}" itemRenderer="${dropdownRenderer}"/>
+                        <space width="15px"></space>
+                        <label value="Status" class="z-label-bold"/>
+                        <combobox  id="statusCombo" selectedItem="@{signinController.status}">
+                            <comboitem forEach="${statuses}" label="${each.description}" value="${each}"/>
+                        </combobox>
+                        <space width="15px"></space>
+                        <label value="From Date" class="z-label-bold"/>
+                        <datebox id="searchFromDate" value="@{signinController.searchFromDate}"></datebox>
+                        <space width="15px"></space>
+                        <label value="To Date" class="z-label-bold"/>
+                        <datebox id="searchToDate" value="@{signinController.searchToDate}"></datebox>
+                        <!-- <space width="15px"></space>
+                        <label value="Patient" class="z-label-bold"/>
+                        <patientlookup id="patientLookup" onChange="signinController.setPatient(event.getOrigin().getData())"/> -->
+                        <space width="15px"></space>
+                        <label value="Civil Id" class="z-label-bold"/>
+                        <textbox value="@{signinController.civilId}"/>
+                    </hlayout>
+                    <hlayout width="100%" spacing="13px" style="margin-top:5px">
+                    	<space width="5px"></space>
+                        <label value="File Num" class="z-label-bold"/>
+                        <textbox value="@{signinController.fileNo}"/>
+                        <space width="8px"></space>
+                        <label value="Mobile No" class="z-label-bold"/>
+                        <textbox value="@{signinController.mobileNo}"/>
+                        <space width="8px"></space>
+                        <label value="Booking Status" class="z-label-bold"/>
+                        <combobox id="bookingStatusCombo" selectedItem="@{signinController.selectedBookingStatus}">
+                        	<comboitem label="TENTATIVE" value="Tentative"></comboitem>
+                        	<comboitem label="ACKNOWLEDGED" value="Confirmed"></comboitem>
+                        	<comboitem label="CONFIRMED" value="Paid"></comboitem>
+                        </combobox>
+                        <space width="15px"></space>
+                    </hlayout>
+                    <space height="10px"></space>
+                    <div sclass="panelFoot">
+                        <button label="Search" id="searchSchedules" sclass="btn btn-primary">
+                            <attribute name="onClick">
+                                <![CDATA[
+                                    signinController.refurbishSchedules();
+                                    populateHeaders();
+                                ]]>
+                            </attribute>
+                            <attribute name="onCreate">
+                            	Events.postEvent("onClick",searchSchedules,null);
+                            </attribute>
+                        </button>
+                    </div>
+                    <zscript>
+                        <![CDATA[
+                        void populateHeaders(){
+                            content = new StringBuilder();
+                            java.text.SimpleDateFormat dateFormat = UtilDateTime.DEFAULT_DATE_FORMATTER;
+                            if(UtilValidator.isNotEmpty(signinController.getPerson()))
+					        	content.append("Doctor : "+signinController.getPerson()).append(" | ");
+                            if(UtilValidator.isNotEmpty (signinController.status))
+					        	content.append("Status : "+signinController.status.description).append(" | ");
+                            if(UtilValidator.isNotEmpty (signinController.searchFromDate))
+					        	content.append("From Date : "+dateFormat.format(signinController.searchFromDate)).append(" | ");
+					        if(UtilValidator.isNotEmpty (signinController.searchToDate))
+					        		content.append("To Date : "+dateFormat.format(signinController.searchToDate)).append(" | ");
+					        if(UtilValidator.isNotEmpty (signinController.patient))
+					        	content.append("Patient : "+signinController.patient).append(" | ");
+					    }
+					    void exportToExcel(List schedules){
+         	                header = content.length() > 0 ? new StringBuilder(content.substring(0, content.length() - 1)) : new StringBuilder();
+           	                exporter.exportWithHeader(header, schedules, new String[]{"id", "startDate", "patient.afyaId", "patient.civilId","patient","person", "status.description","tentativeStatus", "visitType", "startTime", "lastPatientVisit.time"},
+           	                new String[]{"Appointment Number","Appointment Date", "Afya Id", "Civil Id", "Patient Name","Doctor Name", "Visit Status", "Booking Status", "Visit Type","Appointment Time","Arrival Time"}, "appointments.xlsx","APPOINTMENTS",null);
+					    }
+                        ]]>
+                    </zscript>
+                    <space height="10px"></space>
+                    <div style="float:right; margin-right: 1%;background-color: white;text-align: center;text-decoration: none;">
+                        <a  tooltiptext="Export Appointment" label="Export" sclass="reminderBtn">
+                            <attribute name="onClick">
+                                <![CDATA[
+                                    if(com.nzion.util.UtilValidator.isNotEmpty(signinController.todaysSchedules))
+                                        exportToExcel(signinController.getTodaysSchedules());
+                                    else {
+                                        com.nzion.util.UtilMessagesAndPopups.displayError("No data to export");
+                                    }
+                                ]]>
+                            </attribute>
+                        </a>
+                    </div>
+                    <listbox model="@{signinController.todaysSchedules, load-after='searchSchedules.onClick'}"
+                             sclass="whiteBackground" itemRenderer="${signinController}" width="100%" id="schedulesOfTheDayListBox" mold="paging" pageSize="20">
+                        <listhead>
+                            <listheader label="Appt No." style="font-weight:bold" sort="auto(id)"/>
+                            <listheader label="Afya Id" style="font-weight:bold" sort="auto(patient.afyaId)"/>
+                            <listheader label="Civil Id" style="font-weight:bold" sort="auto(patient.civilId)"/>
+                            <listheader label="Patient Name" style="font-weight:bold" sort="auto(patient.firstName)"/>
+                            <listheader label="Mobile No" style="font-weight:bold"/>
+                            <listheader label="Doctor Name" style="font-weight:bold" sort="auto(person.firstName)"/>
+                            <listheader label="Appointment Status" style="font-weight:bold" width="130px" sort="auto(status.description)"/>
+                            <listheader label="Booking Status" style="font-weight:bold" sort="auto(tentativeStatus)"/>
+                            <listheader label="Visit Type" style="font-weight:bold" id="visitType" sort="auto(visitType.name)"/>
+                            <listheader label="Date" style="font-weight:bold" sort="auto(startDate)"/>
+                            <listheader label="Appt Time" style="font-weight:bold" sort="auto(startTime)"/>
+                            <listheader label="Arrival Time" style="font-weight:bold" sort="auto(lastPatientVisit.time)"/>
+                            <listheader label="Action" style="font-weight:bold" sort="auto(cancelReason)"/>
+                        </listhead>
+                    </listbox>
+                </div>
+            </panelchildren>
+        </panel>
+        <signinmenu />
+    </window>
+</zk>

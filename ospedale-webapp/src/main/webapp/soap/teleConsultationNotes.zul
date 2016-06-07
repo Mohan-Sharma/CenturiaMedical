@@ -1,0 +1,90 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript>
+		<![CDATA[
+			import com.nzion.domain.*;
+			import com.nzion.domain.emr.*;
+			import com.nzion.domain.emr.soap.*;
+			import com.nzion.util.*;
+			Schedule schedule = arg.get("currentSchedule");
+			String status = schedule.getStatus().toString();
+			boolean hideButtons = Boolean.FALSE;
+			if(status.equals("SOAPSIGNEDOUT")){
+				hideButtons = Boolean.TRUE;
+			}
+			com.nzion.zkoss.composer.PatientSoapNoteController patientSoapNoteController = new com.nzion.zkoss.composer.PatientSoapNoteController(schedule.getId().toString());
+			SoapModule soapModule = null;
+			OtherSoapNoteSection otherSoapNoteSection = null;
+			for(SoapModule sm : patientSoapNoteController.modules){
+				if(sm.getModuleName().toLowerCase().trim().equals("notes")){
+					patientSoapNoteController.setSelectedModule(sm);
+					soapModule = sm;
+				} else{
+					com.nzion.util.UtilMessagesAndPopups.showError("Notes Module not setup. Please setup Notes Module for Teleconsultation Visit  from the Masters.");
+                    return;
+				}
+			}
+			otherSoapNoteSection =  (OtherSoapNoteSection) patientSoapNoteController.getSoapSection(OtherSoapNoteSection.class);
+			if(UtilValidator.isEmpty(otherSoapNoteSection)){
+				otherSoapNoteSection =  new OtherSoapNoteSection();
+				otherSoapNoteSection.setSoapNote(patientSoapNoteController.getSoapNote());
+				patientSoapNoteController.setSelectedSection(otherSoapNoteSection);
+				otherSoapNoteSection.setSoapModule(soapModule);
+			}
+		]]>
+	</zscript>
+<window id="teleConsultationNotesWin" mode="modal" sclass="modalStyle" closable="true">
+	<div style="padding:5px" zclass="page-header titled-well">
+		<h:h1>
+			<h:small>Tele Consultation Notes</h:small>
+			<button type="button" zclass="close" onClick="teleConsultationNotesWin.detach();">×</button>
+		</h:h1>
+	</div>
+	<div zclass="container-fluid">
+		<div zclass="row-fluid">
+			<div id="remarksDiv" style="padding:10px">
+				<hlayout>
+					<label value="Remarks" sclass="formLabel"></label>
+					<textbox cols="60" rows="7" width="550px" value="@{otherSoapNoteSection.remarks, save-when='Save.onClick, signOut.onClick'}" id="remarks" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+						<attribute name="onCreate">
+							<![CDATA[
+								if(UtilValidator.isNotEmpty(otherSoapNoteSection)){
+									self.setValue(otherSoapNoteSection.getRemarks());
+								} else{
+									teleConsultationNotesWin.detach();
+								}
+							]]>
+						</attribute>
+					</textbox>
+				</hlayout>
+			</div>
+		</div>
+	</div>
+	<div sclass="panelFoot">
+		<button label="Save" id="Save" zclass="btn-success btn" visible="${!hideButtons}">
+			<attribute name="onClick">
+				if(UtilValidator.isEmpty(remarks.getValue())){
+					throw new WrongValueException(remarks, "Required");
+				}
+				otherSoapNoteSection.setRemarks(remarks.getValue());
+				patientSoapNoteController.saveUpdateSoapSection();
+				teleConsultationNotesWin.detach();
+			</attribute>
+		</button>
+		<button label="Sign Out" id="signOut" zclass="btn-danger btn" visible="${!hideButtons}">
+			<attribute name="onClick">
+				if(UtilValidator.isEmpty(remarks.getValue())){
+					throw new WrongValueException(remarks, "Required");
+				}
+				if(!patientSoapNoteController.isReadonly()){
+					otherSoapNoteSection.setRemarks(remarks.getValue());
+					patientSoapNoteController.saveUpdateSoapSection();
+					patientSoapNoteController.signOutSoapNote();
+				}
+			</attribute>
+		</button>
+		<button label="Cancel" onClick='teleConsultationNotesWin.detach();'/>
+	</div>
+</window>
+</zk>

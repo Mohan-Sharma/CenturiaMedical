@@ -1,0 +1,57 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./personDrugWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?component name="toolbar" macro-uri="/toolbar.zul"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native">
+	<window  id="personDrugWin">
+	<zscript>
+	com.nzion.zkoss.composer.PersonProfileController profileController = desktop.getAttribute("profileController");
+	List personDrugs = profileController.getPersonFavourites(com.nzion.domain.person.ProviderDrug.class);
+	</zscript>
+	<panel title="Person Favourite Drugs" id="drugPanel" 
+	onAddClick='profileController.favouriteAddClicked(personDrugWin,personFavouriteDrugDisplayGrid,personDrugs,"/person/add-person-drug.zul")'
+	onDeleteClick="profileController.deleteFavourites(personFavouriteDrugDisplayGrid,personDrugs);">
+		<attribute name="onSearchClick">
+			personDrugs=personService.searchPersonFavouriteDrugs((String)event.getData(),profileController.getPerson());
+		</attribute>
+		<panelchildren>
+		<toolbar listenercomponent="${drugPanel}" hidecancel="true"/>
+				<listbox multiple="true" id="personFavouriteDrugDisplayGrid" checkmark="true" mold="paging" pageSize="10" pagingPosition="top"
+ 					model="@{personDrugs,load-after='drugPanel.onSearchClick, self.onReloadRequest'}">
+                    <attribute name="onReloadRequest">
+                        personDrugs = profileController.getPersonFavourites(com.nzion.domain.person.ProviderDrug.class);
+                    </attribute>
+				<listhead>
+					<listheader label="Drug Group"/>
+					<listheader label="Drug Trade Name"/>
+					<listheader label="Frequency"/>
+					<listheader label="Frequency Qualifier"/>
+					<listheader label="Number Of Days"/>
+					<listheader label="Total Count"/>
+				</listhead>
+					<listitem self="@{each='personDrug'}" value="@{personDrug}" >
+					<listcell>
+						<label value="@{personDrug.drugGroup.drugGroup}"/>
+					</listcell>
+					<listcell>
+						<label value="@{personDrug.drug.tradeName}"/>
+					</listcell>
+					<listcell>
+						<label value="@{personDrug.frequency}" width="100px"/>
+					</listcell>
+					<listcell>
+						<label value="@{personDrug.frequencyQualifier.description}" width="100px"/>
+					</listcell>
+					<listcell>
+						<label value="@{personDrug.numberOfDays}"  width="100px"/>
+					</listcell>
+					<listcell>
+						<label value="@{personDrug.totalCount}"  width="100px"/>
+					</listcell>
+					</listitem>
+				</listbox>
+			</panelchildren>
+		</panel>
+</window>
+</zk>

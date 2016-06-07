@@ -1,0 +1,1101 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zk.ui.util.Composition" arg0="/WEB-INF/layout/billingtemplate.zul"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./txnItemWindow"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<?xel-method prefix="display" name="fd" class="com.nzion.util.UtilDateTime" signature="String formatDateToDatetimeFormat(java.util.Date)"?>
+<zk xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client"
+    xmlns:h="http://www.w3.org/1999/xhtml">
+
+    <style>
+        .divLast
+        {
+
+
+            border: 1px solid #c9d2d7;
+
+        }
+    </style>
+
+    <zscript>
+        <![CDATA[
+	import com.nzion.domain.billing.InvoiceType;
+	import com.nzion.domain.Roles;
+	import com.nzion.domain.billing.Invoice;
+	import com.nzion.domain.billing.InvoiceItem;
+	import com.nzion.util.UtilValidator;
+	import com.nzion.domain.billing.InvoiceStatusItem;
+	import com.nzion.util.UtilDateTime;
+	import com.nzion.domain.billing.Invoice;
+	import com.nzion.domain.billing.Invoice.INSURANCESTATUS;
+
+	com.nzion.zkoss.composer.BillingController billingController = new com.nzion.zkoss.composer.BillingController();
+	com.nzion.service.common.CommonCrudService service = com.nzion.util.Infrastructure.getSpringBean("commonCrudService");
+	com.nzion.domain.billing.Contract contract = billingController.getInvoice().getContract();
+	com.nzion.domain.emr.soap.PatientSoapNote  patientSoapNote;
+	boolean isInsurance = false;
+	String hisModuleName = null;
+	String billedItemType = billingController.getInvoice().getItemType();
+                    Invoice invoice = billingController.getInvoice();
+	if(billedItemType.equals(com.nzion.domain.emr.soap.PatientSoapNote.class.getName())){
+	patientSoapNote = billingController.getPatientSoapNote();
+	if(patientSoapNote!=null)
+	    patientSoapNote.getEncounterDate();
+	}
+	List decdutibleItems  = null;
+	List invPrevBalanceItems  = null;
+	Boolean advanceAvailable = Boolean.FALSE;
+	if(billingController.getInvoiceDeductibleItemMap()!=null){
+	 decdutibleItems  = billingController.getInvoiceDeductibleItemMap().get(InvoiceType.DEDUCTIBLE.name());
+	 invPrevBalanceItems  = billingController.getInvoiceDeductibleItemMap().get("PREVIOUSBALANCE");
+	}
+	Boolean invPrevBalanceAvailable = com.nzion.util.UtilValidator.isNotEmpty(invPrevBalanceItems);
+	Boolean deductiblesAvailable = com.nzion.util.UtilValidator.isNotEmpty(decdutibleItems);
+	
+     com.nzion.domain.Location location = com.nzion.util.Infrastructure.getSelectedLocation();
+     com.nzion.domain.Practice practice=com.nzion.util.Infrastructure.getPractice();
+     boolean receptionist = Roles.hasRole(Roles.RECEPTION);
+     String isSave = Executions.getCurrent().getParameter("isSave");
+     if(UtilValidator.isNotEmpty(isSave))
+       com.nzion.util.UtilMessagesAndPopups.showSuccess();
+     if(patientSoapNote != null && patientSoapNote.getSelectedHisModuleId() != null){
+        hisModuleName =   com.nzion.util.RestServiceConsumer.getHISModuleNameByBenefitId(patientSoapNote.getSelectedHisModuleId());
+     }
+     if(invoice.getSelectedHisModuleId() != null){
+         hisModuleName =   com.nzion.util.RestServiceConsumer.getHISModuleNameByBenefitId(invoice.getSelectedHisModuleId());
+     }
+     
+     com.nzion.domain.Patient patient = invoice.getPatient();
+     
+     String insuranceOrCorporate = "Ins Payable";
+     if("CORPORATE".equals(patient.getPatientType()))
+    	 insuranceOrCorporate = "Corp Payable";
+
+     if(patientSoapNote != null)
+        setPageTitle("Patient Invoice", billingController.getInvoice().getInvoiceNumber() ,patientSoapNote.getEncounterDate().toString(), "Save" ,true, true , true, invoice );
+     else
+        setPageTitle("Patient Invoice", billingController.getInvoice().getInvoiceNumber() ,UtilDateTime.format(billingController.getInvoice().getInvoiceDate()), "Save",true, true , true, invoice);
+     
+     allowEdit(billingController.isAllowEdit());
+     
+     boolean corporatePatientContinue = true;
+     if("CORPORATE".equals(patient.getPatientType()) && patient.getPatientCorporate() != null){
+     	if("OneTime".equals(patient.getPatientCorporate().getModeOfClaim())){
+     		Set corporateDocuments = patient.getPatientCorporate().getPatientCorporateDocuments();
+     		if(UtilValidator.isEmpty(corporateDocuments)){
+     			com.nzion.util.UtilMessagesAndPopups.showError("No valid document available");
+     		}
+     		corporatePatientContinue = true;
+     	}else if(patient.getPatientCorporate().getPatientCorporateDocuments() != null){
+     		Set corporateDocuments = patient.getPatientCorporate().getPatientCorporateDocuments();
+     		Iterator itr = corporateDocuments.iterator();
+     		com.nzion.domain.PatientCorporateDocument lastElement = null;
+     		corporatePatientContinue = false;
+     	    while(itr.hasNext()) {
+     	        lastElement= (com.nzion.domain.PatientCorporateDocument) itr.next();
+     	        if(lastElement.getValidUpTo().compareTo(new Date()) >= 0)
+     	        	corporatePatientContinue = true;
+     	    }
+     	    if(!corporatePatientContinue){
+     	    	corporatePatientContinue = true;
+     	    	com.nzion.util.UtilMessagesAndPopups.showError("No valid document available");
+     	    	
+     	    }
+     	}
+     }
+     
+     boolean corporate = billingController.isCorporate();
+    ]]>
+    </zscript>
+    <zscript>
+        <![CDATA[
+        public boolean displayDetailsAccordingToConsent(com.nzion.domain.Patient patient){
+            List consents = com.nzion.util.RestServiceConsumer.getPatientPrivacyPolicyConsents(patient.getAfyaId());
+           return getPatientPrivacyPolicyConsentByCriteria(consents, "I have verified my Insurance details and confirm they are correct.");
+        }
+        public boolean getPatientPrivacyPolicyConsentByCriteria(List patientPrivacyPolicyConsents, String question) {
+            for(Map patientPrivacyPolicyConsent : patientPrivacyPolicyConsents){
+                if(patientPrivacyPolicyConsent.get("question").equals(question)){
+                    if(com.nzion.util.UtilValidator.isEmpty(patientPrivacyPolicyConsent.get("answer")))
+                        return Boolean.FALSE;
+                        return Boolean.valueOf(patientPrivacyPolicyConsent.get("answer").toString());
+                    }
+                }
+            return Boolean.FALSE;
+        }
+        ]]>
+    </zscript>
+    <style>
+        .form-horizontal .control-label{padding-top:0px;font-weight:bold;font-size:+2;}
+        .form-horizontal .control-group{margin-bottom:5px;}
+    </style>
+    <window id="txnItemWindow" apply="${billingController}" self="@{define(content)}">
+        <div align="right" style="margin-right:7.2%">
+            <div  visible="false">
+                <button label="Go to Appointment Screen" zclass="btn btn-success" visible="${receptionist}">
+                    <attribute name="onClick">
+                        Executions.sendRedirect("/dashboards/frontDeskDashBoard.zul");
+                    </attribute>
+                </button>
+            </div>
+            <!--<button label="Print" id="printBtn" >
+                <attribute name="onClick">
+                    Map map = new HashMap();
+                    session.setAttribute("map",map);
+                    Executions.getCurrent().sendRedirect("/billing/billingTransactionPrint.zul?invoiceId=" +
+                    billingController.getInvoice().getId(),"_blank");
+
+                </attribute>
+            </button>-->
+        </div>
+        <div sclass="container-fluid" >
+
+            <div zclass="span2">
+                <div zclass="form-horizontal">
+                    <div sclass="control-group">
+                        <image hover="@{patient,converter='com.nzion.view.component.GenderImageConverter'}" height="80px" width="100px"/>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- -->
+            <div zclass="span4">
+                <div zclass="form-horizontal">
+                    <div zclass="container-fluid">
+                        <label zclass="control-label" value="Afya ID :"/>
+                        <div zclass="controls">
+                            <label value="@{billingController.invoice.patient.afyaId}"/>
+                        </div>
+                    </div>
+                    <div zclass="container-fluid">
+                        <label zclass="control-label" class="control-label" value="Name :"/>
+                        <div zclass="controls" width="150px">
+                            <name object="@{billingController.invoice.patient}"/>
+                        </div>
+                    </div>
+                    <div zclass="container-fluid">
+                        <label zclass="control-label" class="control-label" value="Patient Type :"/>
+                        <div zclass="controls" width="250px;">
+                            <attribute name="onCreate">
+                                <![CDATA[
+                                    boolean insuranceDetailsVerified = displayDetailsAccordingToConsent(patient);
+                                    if(patient.getPatientType().equals("INSURANCE")){
+                        		        verifiedIcon.setVisible(insuranceDetailsVerified);
+                        	        }
+                                ]]>
+                            </attribute>
+                            <label value="@{billingController.invoice.patient.patientType}"/>
+                            <image visible="false" id="verifiedIcon" src="/images/verified-icon-modified.png" style="margin-left: 10px;" tooltiptext="Insurance details confirmed by Patient"/>
+                            <a label="View Document" visible="@{billingController.corporate}" style="font-size: x-small;margin-left:2px;">
+                                <attribute name="onClick">
+                                    <![CDATA[
+									Window w = (Window) Executions.createComponents("/patient/patientCorporateDocumentList.zul",null,
+		                              	    			com.nzion.util.UtilMisc.toMap("patient",billingController.getInvoice().getPatient(),"corporatePatientContinue",true));
+		                              	    	w.setMode("modal");
+		                              	    	w.setWidth("80%");
+		                              	    	w.setClosable(true);
+		                              	    	]]>
+                                </attribute>
+                            </a>
+
+                        </div>
+                    </div>
+                    
+                    <div zclass="container-fluid">
+                        <label zclass="control-label" class="control-label" value="Referral Clinic :"/>
+                        <label>
+                            <attribute name="onCreate">
+                                if(billingController.getInvoice().getReferralConsultantId() != null){
+                                self.setValue(service.getById(com.nzion.domain.Referral.class,billingController.getInvoice().getReferralConsultantId()).getClinicName());
+                                }
+                            </attribute>
+                                </label>
+                    </div>
+                    
+                </div>
+            </div>
+            <div zclass="span4">
+                <div width="100%" zclass="form-horizontal">
+
+                    <!-- <div if="${patientSoapNote != null}">
+                        <label zclass="control-label" sclass="control-label" value="Visit Date :"/>
+                        <div zclass="controls">
+                            <label value="@{patientSoapNote.date,converter='com.nzion.view.component.DateConverter'}"/>
+                        </div>
+                    </div> -->
+
+                    <!-- <div if="${patientSoapNote != null}">
+                        <label zclass="control-label" sclass="control-label" value="Visit Type :"/>
+                        <div zclass="controls">
+                            <label value="@{patientSoapNote.encounterType}"/>
+                        </div>
+                    </div> -->
+
+                    <!-- <div >
+                        <label zclass="control-label" sclass="control-label" value="Charge Type :"/>
+                        <div zclass="controls">
+                            <label value="OUTPATIENT"/>
+
+                        </div>
+                    </div> -->
+
+                    <div zclass="container-fluid">
+                        <label zclass="control-label" value="Civil ID :"/>
+                        <div zclass="controls">
+                            <label value="@{billingController.invoice.patient.civilId}"/>
+                        </div>
+                    </div>
+
+                    <div zclass="container-fluid">
+                        <label zclass="control-label" sclass="control-label" value="Benefit:"/>
+                        <div zclass="controls" width="160px">
+                            <label  value="${hisModuleName}"/>
+                            <a label="View Plan" style="font-size: x-small">
+                                <attribute name="onClick">
+                                    <![CDATA[
+                                      if(invoice.getPatientInsuranceId() != null){    
+                                        com.nzion.domain.PatientInsurance patientInsurance = service.getById(com.nzion.domain.PatientInsurance.class,invoice.getPatientInsuranceId());
+                                        String benefitId = patientInsurance.getBenefitId();
+                                        Executions.createComponents("/patient/showBenefitDetails.zul", null,com.nzion.util.UtilMisc.toMap("benefitId",benefitId));
+                                      }
+                                 ]]>
+                                </attribute>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div zclass="container-fluid">
+                        <label zclass="control-label" value="Insurance :"/>
+                        <div zclass="controls">
+                            <label value="@{billingController.insuranceName}"/>
+                        </div>
+                    </div>
+                    
+                    <div zclass="container-fluid">
+                        <label zclass="control-label" class="control-label" value="Referral Doctor Name :"/>
+                        <label value="@{billingController.invoice.referralDoctorFirstName} "/>
+                        <label value="@{billingController.invoice.referralDoctorLastName} "/>
+                    </div>
+                    
+                </div>
+            </div>
+            <div zclass="span4">
+                <div width="100%" zclass="form-horizontal">
+
+
+                    <div zclass="container-fluid">
+                        <label zclass="control-label" class="control-label" value="Age / Gender :"/>
+                        <div zclass="controls" width="300px">
+                            <label>
+                                <attribute name="onCreate">
+                                    self.setValue(billingController.getInvoice().getPatient().getAge()+ " / " + billingController.getInvoice().getPatient().getGender());
+                                </attribute>
+                            </label>
+                        </div>
+                    </div>
+
+
+
+                    <div zclass="container-fluid">
+                        <label zclass="control-label" sclass="control-label" value="Consultant :"/>
+                        <div zclass="controls" width="250px">
+                            <name object="@{billingController.invoice.consultant}"/>
+                        </div>
+                    </div>
+
+                    <div zclass="container-fluid">
+                        <label value="Concession:" zclass="control-label" sclass="control-label"/>
+                        <div width="200px" zclass="controls">
+                            <popup width="300px">
+                                <vlayout spacing="10px">
+                                    <hlayout spacing="10px">
+                                        <label value="Authorizer : "/>
+                                        <label value="@{invoice.concessionAuthoriser}"/>
+                                    </hlayout>
+                                    <hlayout spacing="10px">
+                                        <label value="Reason : "/>
+                                        <label value="@{invoice.concessionReason}"/>
+                                    </hlayout>
+                                </vlayout>
+                            </popup>
+
+                            <combobox width="100px" selectedItem="@{invoice.concessionType,save-when='saveBtn.onClick'}">
+
+                                <attribute name="onCreate"><![CDATA[
+	                            	if( invoice.getConcessionAmount() != null 
+	                            		&& invoice.getConcessionAmount().compareTo(java.math.BigDecimal.ZERO) > 0 ){
+	                            		self.setDisabled(true);
+	                            	}
+						   ]]></attribute>
+
+                                <attribute name="onSelect">
+                                    invoice.setConcessionType((String)self.getSelectedItem().getValue());
+
+                                    //Executions.createComponents("/billing/insuranceCancelDetails.zul", null,
+                                    //com.nzion.util.UtilMisc.toMap("invoice", invoice,"saveBtn",saveBtn ));
+                                </attribute>
+                                <comboitem label="" value=""/>
+                                <comboitem label="Amount" value="AMOUNT"/>
+                                <comboitem label="Percentage" value="PERCENTAGE"/>
+                            </combobox>
+
+                            <decimalbox width="48px" height="24px;" value="@{invoice.concessionAmount,save-when='saveBtn.onClick'}"
+                                        constraint="no negative" format="#,##0.000" >
+                                <attribute name="onCreate"><![CDATA[
+	                            	if( invoice.getConcessionAmount() != null 
+	                            		&& invoice.getConcessionAmount().compareTo(java.math.BigDecimal.ZERO) > 0 ){
+	                            		self.setDisabled(true);
+	                            	}
+								]]></attribute>
+                                <attribute name="onChange"><![CDATA[
+	                           java.math.BigDecimal hundred = new java.math.BigDecimal("100");
+	                           if(self.getValue() != null){
+	                           if( self.getValue().compareTo(hundred) > 0 && "PERCENTAGE".equals(invoice.getConcessionType()) ){
+	                           	  self.setValue(java.math.BigDecimal.ZERO);
+	                           	  throw new WrongValueException(self,"Concession must be less than 100");
+	                           }
+	                           if(invoice.getTotalAmount().getAmount().compareTo(self.getValue()) < 0 && "AMOUNT".equals(invoice.getConcessionType()) ){
+	                        	   self.setValue(java.math.BigDecimal.ZERO);
+		                           throw new WrongValueException(self,"Concession must be less than " + invoice.getTotalAmount().getAmount()); 
+	                           }
+	                            Executions.createComponents("/billing/insuranceCancelDetails.zul", null,
+	                               com.nzion.util.UtilMisc.toMap("invoice", invoice,"saveBtn",saveBtn ));
+	                            }
+	                            ]]></attribute>
+                            </decimalbox>
+                            <a label="View">
+                            	<attribute name="onClick">
+                            		((Popup)self.getParent().getFirstChild()).open(self,"after_pointer");
+                            	</attribute>
+                            </a>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- <div zclass="span4">
+                <div width="100%" zclass="form-horizontal">
+                    
+                    
+                </div>
+            </div> -->
+
+
+
+
+            <div sclass="clr chiefComp soapNoteCont curSOAP ui-resizable">
+                <listbox model="@{invoice.invoiceItems}" oddRowSclass="false" >
+                    <listhead>
+                        <listheader label="Service" width="22%"/>
+                        <listheader label="Unit Price" width="6.25%"/>
+                        <listheader label="Quantity" width="6.25%"/>
+                        <listheader label="Gross Amount" width="12%"/>
+                        <listheader label="Concession" width="18%"/>
+                        <listheader label="Net Amount" width="9%"/>
+                        <listheader label="Patient Payable" width="12%"/>
+                        <listheader label="@{insuranceOrCorporate}" width="8%"/>
+                        <listheader label="Deductible" width="7%"/>
+                        <listheader label="Authorized" width="7%"/>
+                        <listheader label="Action" width="6%"/>
+                    </listhead>
+
+                    <listitem self="@{each='invoiceItem'}" value="@{invoiceItem}">
+
+                        <listcell>
+                            <div style="margin-top:6px;">
+                                <label value="@{invoiceItem.description}" />
+                            </div>
+                        </listcell>
+                        <listcell>
+                            <div style="margin-top:6px;" align="right">
+                                <label value="@{invoiceItem.factor}"/>
+                                <label value="KD"></label>
+                            </div>
+                        </listcell>
+                        <listcell>
+                            <div style="margin-top:6px;" align="right">
+                                <hlayout spacing="3px">
+                                    <label value="@{invoiceItem.quantity}"/>
+                                    <label value="@{invoiceItem.quanityDesc}"/>
+                                </hlayout>
+                            </div>
+                        </listcell>
+                        <listcell>
+                            <div  align="right">
+                                <!-- <label value="@{invoiceItem.grossAmount}"
+                                       tooltiptext="@{invoiceItem,converter='com.nzion.view.component.BillingAmountConverter'}"/> -->
+                                <decimalbox value="@{invoiceItem.grossAmount,save-when='saveBtn.onClick'}" constraint="no empty"
+                                            disabled="@{invoiceItem.isNotMinMax}" format="#,##0.000">
+                                    <attribute name="onChange">
+                                        <![CDATA[
+                              		InvoiceItem invoiItem = self.getParent().getParent().getParent().getValue();
+                              		if(invoiItem.getBillableAmountMax() != null){
+	                              		if(self.getValue().compareTo(invoiItem.getBillableAmountMax()) > 0){
+	                              			throw new WrongValueException(self,"Gross Amount can not be greater than max amount");
+	                              		}
+                              		}
+                              		if(invoiItem.getBillableAmountMin() != null){
+	                              		if(self.getValue().compareTo(invoiItem.getBillableAmountMin()) < 0){
+	                              			throw new WrongValueException(self,"Gross Amount can not be smaller than min amount");
+	                              		}
+                              		}
+                              		
+                              		]]></attribute>
+                                </decimalbox>
+                                <label value="KD"></label>
+                            </div>
+                        </listcell>
+                        <listcell >
+                            <div width="200px">
+
+                                <popup width="300px">
+                                    <vlayout spacing="10px">
+                                        <hlayout spacing="10px">
+                                            <label value="Authorizer : "/>
+                                            <label value="@{invoiceItem.concessionAuthoriser}"/>
+                                        </hlayout>
+                                        <hlayout spacing="10px">
+                                            <label value="Reason : "/>
+                                            <label value="@{invoiceItem.concessionReason}"/>
+                                        </hlayout>
+                                    </vlayout>
+                                </popup>
+
+                                <combobox width="100px" selectedItem="@{invoiceItem.concessionType,save-when='saveBtn.onClick'}">
+                                    <attribute name="onCreate"><![CDATA[
+										InvoiceItem invoiceIItem = ((InvoiceItem) self.getParent().getParent().getParent().getValue());
+		                            	if( invoiceIItem.getConcessionAmount() != null 
+		                            		&& invoiceIItem.getConcessionAmount().compareTo(java.math.BigDecimal.ZERO) > 0 ){
+		                            		self.setDisabled(true);
+		                            	}
+								    ]]></attribute>
+                                    <attribute name="onSelect">
+                                        InvoiceItem iinItem = ((InvoiceItem) self.getParent().getParent().getParent().getValue());
+                                        iinItem.setConcessionType((String)self.getSelectedItem().getValue());
+
+                                        //Executions.createComponents("/billing/insuranceCancelDetails.zul", null,
+                                        //com.nzion.util.UtilMisc.toMap("invoiceItem", iinItem,"saveBtn",saveBtn));
+
+                                    </attribute>
+                                    <comboitem label="" value=""/>
+                                    <comboitem label="Amount" value="AMOUNT"/>
+                                    <comboitem label="Percentage" value="PERCENTAGE"/>
+                                </combobox>
+
+                                <decimalbox width="48px" height="24px;" value="@{invoiceItem.concessionAmount,save-when='saveBtn.onClick'}"
+                                            constraint="no negative" format="#,##0.000" >
+                                    <attribute name="onCreate"><![CDATA[
+										InvoiceItem invoiceIItem = ((InvoiceItem) self.getParent().getParent().getParent().getValue());
+		                            	if( invoiceIItem.getConcessionAmount() != null 
+		                            		&& invoiceIItem.getConcessionAmount().compareTo(java.math.BigDecimal.ZERO) > 0 ){
+		                            		self.setDisabled(true);
+		                            	}
+									   ]]></attribute>
+                                    <attribute name="onChange"><![CDATA[
+                                      InvoiceItem iinItem = ((InvoiceItem) self.getParent().getParent().getParent().getValue());
+                                       java.math.BigDecimal hundred = new java.math.BigDecimal("100");
+			                           if(self.getValue().compareTo(hundred) > 0 && "PERCENTAGE".equals(iinItem.getConcessionType()) ){
+			                           	  self.setValue(java.math.BigDecimal.ZERO);
+			                           	  throw new WrongValueException(self,"Concession must be less than 100");
+			                           }
+			                           if(iinItem.getNetPrice().compareTo(self.getValue()) < 0 && "AMOUNT".equals(iinItem.getConcessionType()) ){
+			                        	   self.setValue(java.math.BigDecimal.ZERO);
+				                           throw new WrongValueException(self,"Concession must be less than " + iinItem.getNetPrice()); 
+			                           }
+                                      Executions.createComponents("/billing/insuranceCancelDetails.zul", null,
+                                          com.nzion.util.UtilMisc.toMap("invoiceItem", iinItem,"saveBtn",saveBtn));
+                                      ]]></attribute>
+                                </decimalbox>
+                                
+                                <a label="View">
+	                            	<attribute name="onClick">
+	                            		((Popup)self.getParent().getFirstChild()).open(self,"after_pointer");
+	                            	</attribute>
+                            	</a>
+
+                            </div>
+                        </listcell>
+                        <listcell>
+                            <div align="right">
+                                <!-- <decimalbox  height="24px;" value="@{invoiceItem.priceValue,load-after='saveBtn.onClick'}"
+                                            readonly="true"
+                                            tooltiptext="@{invoiceItem,converter='com.nzion.view.component.BillingAmountConverter'}"
+                                            onChange='Events.postEvent("onReload",amountLabel,null);Events.postEvent("onReload",remaingValueLabel,null);Events.postEvent("onReload",amountToBePaidLabel,null);'
+                                            constraint="no negative,no empty"/> -->
+                                <div style="margin-top:6px;" align="right">
+                                    <label value="@{invoiceItem.priceValue,load-after='saveBtn.onClick'}"/>
+                                    <!--<label value="@{invoiceItem.factorDescription}"></label>-->
+                                    <label value="KD"></label>
+                                </div>
+                            </div>
+                        </listcell>
+                        <listcell>
+                            <div style="margin-top:6px;" align="right">
+                                <label value="@{invoiceItem.copayAmountOrPercent}"/> <label value="@{invoiceItem.maxAmountDif}"/>
+                                <label  value="KD"></label>
+                            </div>
+                        </listcell>
+                        <listcell>
+                            <div style="margin-top:6px;" align="right">
+                                <label value="@{invoiceItem.insuranceAmount}"/> <label  value="KD"></label>
+                            </div>
+                        </listcell>
+                        <listcell>
+                            <div style="margin-top:6px;" align="right">
+                                <label value="@{invoiceItem.deductableAmountOrPercent}"/> <label  value="KD"></label>
+                            </div>
+                        </listcell>
+                        <listcell>
+                            <popup width="300px">
+                                <vlayout spacing="10px">
+                                    <hlayout spacing="10px">
+                                        <label value="Authorization Number : "/>
+                                        <label value="@{invoiceItem.authorizationNo}"/>
+                                    </hlayout>
+                                    <hlayout spacing="10px">
+                                        <label value="Authorization Amount : "/>
+                                        <label value="@{invoiceItem.authorizationAmount}"/>
+                                    </hlayout>
+                                    <hlayout spacing="10px">
+                                        <label value="Note : "/>
+                                        <label value="@{invoiceItem.authorizationNote}"/>
+                                    </hlayout>
+                                </vlayout>
+                            </popup>
+                            <div style="margin-top:10px;" align="center">
+                                <checkbox checked="@{invoiceItem.IsAuthorized}" disabled="@{invoiceItem.preauthorized}"
+                                          visible="@{invoiceItem.insurancePatient}">
+                                    <attribute name="onClick">
+                                        if(billingController.isAllowEdit()){
+                                        if(self.isChecked()){
+                                        Window w = Executions.createComponents("/billing/insuranceAuthrizationDetails.zul", null,
+                                        com.nzion.util.UtilMisc.toMap("invoiceItem", self.getParent().getParent().getParent().getValue(),
+                                        "billingController", billingController,"saveBtn",saveBtn));
+                                        }else{
+                                        InvoiceItem ii = self.getParent().getParent().getParent().getValue();
+                                        ii.setAuthorization(false);
+                                        }
+                                        }
+                                    </attribute>
+                                    <attribute name="onMouseOver">
+                                        if( "OPD_REGISTRATION".equals( ((InvoiceItem)self.getParent().getParent().getParent().getValue()).getItemType().toString())  )
+                                        self.setDisabled(true);
+                                        if(billingController.isPaymentReceived())
+                                        self.setDisabled(true);
+                                    </attribute>
+                                </checkbox>
+                                
+                                <a label="View" visible="@{invoiceItem.insurancePatient}">
+	                            	<attribute name="onClick">
+	                            		((Popup)self.getParent().getParent().getFirstChild()).open(self,"after_pointer");
+	                            	</attribute>
+                            	</a>
+                            	
+                            </div>
+                        </listcell>
+                        <listcell>
+                            <popup width="300px">
+                                <vlayout spacing="10px">
+                                    <hlayout spacing="10px">
+                                        <label value="Cancel Authorizer : "/>
+                                        <label value="@{invoiceItem.cancelAuthoriser}"/>
+                                    </hlayout>
+                                    <hlayout spacing="10px">
+                                        <label value="Reason : "/>
+                                        <label value="@{invoiceItem.cancelReason}"/>
+                                    </hlayout>
+                                </vlayout>
+                            </popup>
+                            <image src="/images/BillingIcon/DeleteCancel.png" width="30px" height="30px" visible="@{invoiceItem.isStatusNotCancel}">
+                                <attribute name="onClick">
+                                    //if(billingController.isAllowEdit()){
+                                    InvoiceItem ii = (InvoiceItem) self.getParent().getParent().getValue();
+                                    billingController.cancelLineItemConformation(ii);
+                                    //}
+                                </attribute>
+                            </image>
+                            <div style="margin-top:6px;" visible="@{invoiceItem.isStatusCancel}">
+                                <label value="CANCELLED" visible="@{invoiceItem.isStatusCancel}"/>
+                                <a label="View">
+	                            	<attribute name="onClick">
+	                            		((Popup)self.getParent().getParent().getFirstChild()).open(self,"after_pointer");
+	                            	</attribute>
+                            	</a>
+                            </div>
+                        </listcell>
+                    </listitem>
+                    <listfoot>
+                        <listfooter></listfooter>
+                        <listfooter></listfooter>
+                        <listfooter></listfooter>
+                        <listfooter>
+                            <div align="right">
+                                <label style="font-weight:bold;" value="@{billingController.totalGrossAmount}"/> <label style="font-weight:bold;" value="KD"/>
+                            </div>
+                        </listfooter>
+                        <listfooter></listfooter>
+                        <listfooter>
+                            <div align="right">
+                                <label id="amountLabel"
+                                       tooltiptext="@{billingController.invoice,converter='com.nzion.view.component.BillingAmountConverter'}"
+                                       value="@{billingController.totalNetAmount,load-after='self.onReload'}"
+                                       style="font-weight:bold"/>
+                                <label style="font-weight:bold" value="KD"></label>
+                            </div>
+                        </listfooter>
+
+                        <listfooter>
+                            <div align="right">
+                                <label style="font-weight:bold;" value="@{billingController.totalCopayPatient}"/>
+                                <label value="@{billingController.totalMaxCopayAmountStr}" style="font-weight:bold"/>
+                                <label style="font-weight:bold" value="KD"></label>
+                            </div>
+                        </listfooter>
+
+                        <listfooter>
+                            <div align="right">
+                                <label style="font-weight:bold;" value="@{billingController.totalCopayInsurance}"/>
+                                <label style="font-weight:bold" value="KD"></label>
+                            </div>
+                        </listfooter>
+
+                        <listfooter>
+                            <div align="right">
+                                <label style="font-weight:bold;" value="@{billingController.totalDeductable}"/>
+                                <label style="font-weight:bold" value="KD"></label>
+                            </div>
+                        </listfooter>
+
+                    </listfoot>
+                </listbox>
+
+
+                <div style="margin-left:45px;">
+                    <n:table>
+                        <n:tr>
+                            <n:td>
+                                <label value="Patient Payable" style="font-weight:bold"/>
+                                <label id="coPaymentLabel"
+                                       tooltiptext="@{billingController.invoice,converter='com.nzion.view.component.BillingAmountConverter'}"
+                                       value="@{billingController.coPayment,load-after='self.onReload'}"
+                                       style="font-weight:bold"/>
+                                <label value="KD" style="font-weight:bold"/>
+                            </n:td>
+                            <n:td>
+                                <label value="@{insuranceOrCorporate}" style="font-weight:bold"/>
+                                <label id="insurancePaymentLabel"
+                                       tooltiptext="@{billingController.invoice,converter='com.nzion.view.component.BillingAmountConverter'}"
+                                       value="@{billingController.insurancePayment,load-after='self.onReload'}"
+                                       style="font-weight:bold"/>
+                                <label value="KD" style="font-weight:bold"/>
+                            </n:td>
+                        </n:tr>
+                    </n:table>
+                </div>
+
+
+                <div sclass="panelFoot" visible="false">
+                    <button label="Save" id="saveBtn"
+                            visible="false" zclass="btn btn-success">
+                        <attribute name="onClick">
+                            com.nzion.util.UtilMessagesAndPopups.showSuccess();
+                            billingController.saveInvoice();
+                            Executions.getCurrent().sendRedirect("/billing/billingTxnItem.zul?invoiceId=" + billingController.getInvoice().getId() + "&amp;isSave=true");
+                            //com.nzion.util.UtilMessagesAndPopups.showSuccess();
+                        </attribute>
+                    </button>
+                    <button label="Cancel" id="cancelBtn" zclass="btn btn-danger btn-xs" width="50px" sclass="btn btn-danger btn-xs" visible="false">
+                        <attribute name="onClick">
+                            billingController.cancelLineItemConformation(invoice);
+                        </attribute>
+                    </button>
+                    <button label="Receive Payment" id="payBtn" sclass="btn btn-warning" visible="${!billingController.paymentReceived}">
+                        <attribute name="onClick">
+                            <!-- boolean isNotAutorized = false;
+                            for(InvoiceItem ii : invoice.getInvoiceItems()){
+                                if("Cancel".equals(ii.getInvoiceItemStatus()))
+                                    continue;
+                                if(!ii.getAuthorization())
+                                    isNotAutorized = true;
+                            }
+                            if(isNotAutorized){
+                                com.nzion.util.UtilMessagesAndPopups.showError("There are services in the bill which require Authorization.");
+                                return;
+                            } -->
+                            billingController.calculateCashInsuranceCorporateAmount();
+                            paymentSection.setVisible(true);
+                            Events.postEvent("onReload",paymentListbox,null);
+                            Events.postEvent("onReload",remaingValueLabel,null);
+                        </attribute>
+                    </button>
+
+                </div>
+
+                <div id="paymentSection">
+                    <div sclass="panelCont" height="40px" visible="${!billingController.paymentReceived}">
+                        <div>
+                            <div width="120px" align="right">
+                                <label value="Payment Mode" mold="required"/>
+                            </div>
+                            <enumeration enumType="PAYMENT_MODE"
+                                         selectedItem="@{billingController.invoicePayment.paymentMethod,save-when='addButton.onClick',load-after='addButton.onClick'}"
+                                         constraint="no empty:Payment Mode Require" id="paymentModeBox">
+                                <attribute name="onCreate">
+                                    self.setValue("Cash");
+                                </attribute>
+                                <attribute name="onSelect">
+                                    if(self.getSelectedItem() != null)
+                                    {
+                                    com.nzion.domain.Enumeration tmpPayMode =
+                                    self.getSelectedItem().getValue();
+                                    if(tmpPayMode.getEnumCode().equals("CASH")){
+                                    bankNameDiv.setVisible(false);
+                                    transactionNumbDiv.setVisible(false);
+                                    chequeOrDDNumbDiv.setVisible(false);
+                                    chequeOrDDDateDiv.setVisible(false);
+                                    advanceNameDiv.setVisible(false);
+                                    policyNoDiv.setVisible(false);
+                                    }
+                                    if(tmpPayMode.getEnumCode().equals("DEBIT_CARD")){
+                                    bankNameDiv.setVisible(true);
+                                    transactionNumbDiv.setVisible(true);
+                                    chequeOrDDNumbDiv.setVisible(false);
+                                    chequeOrDDDateDiv.setVisible(false);
+                                    advanceNameDiv.setVisible(false);
+                                    policyNoDiv.setVisible(false);
+                                    }
+                                    if(tmpPayMode.getEnumCode().equals("CREDIT_CARD")){
+                                    bankNameDiv.setVisible(true);
+                                    transactionNumbDiv.setVisible(true);
+                                    chequeOrDDNumbDiv.setVisible(false);
+                                    chequeOrDDDateDiv.setVisible(false);
+                                    advanceNameDiv.setVisible(false);
+                                    policyNoDiv.setVisible(false);
+                                    }
+                                    if(tmpPayMode.getEnumCode().equals("PERSONAL_CHEQUE")){
+                                    bankNameDiv.setVisible(true);
+                                    transactionNumbDiv.setVisible(false);
+                                    chequeOrDDNumbDiv.setVisible(true);
+                                    chequeOrDDDateDiv.setVisible(true);
+                                    advanceNameDiv.setVisible(false);
+                                    policyNoDiv.setVisible(false);
+                                    }
+                                    if(tmpPayMode.getEnumCode().equals("ADVANCE_AMOUNT")){
+                                    bankNameDiv.setVisible(false);
+                                    advanceNameDiv.setVisible(true);
+                                    policyNoDiv.setVisible(false);
+                                    transactionNumbDiv.setVisible(false);
+                                    chequeOrDDNumbDiv.setVisible(false);
+                                    chequeOrDDDateDiv.setVisible(false);
+
+
+                                    }
+                                    if(tmpPayMode.getEnumCode().equals("INSURANCE_AMOUNT")){
+                                    bankNameDiv.setVisible(false);
+                                    advanceNameDiv.setVisible(false);
+                                    policyNoDiv.setVisible(false);
+                                    transactionNumbDiv.setVisible(false);
+                                    chequeOrDDNumbDiv.setVisible(false);
+                                    chequeOrDDDateDiv.setVisible(false);
+                                    }
+                                    }
+
+                                </attribute>
+                            </enumeration>
+                        </div>
+                        <div>
+                            <div width="120px" align="right">
+                                <label value="Patient Payable" mold="required"/>
+                            </div>
+                            <decimalbox id="amountInpBox"  format="#,##0.000"
+                                        value="@{billingController.cashAmount,load-after='addButton.onClick',save-when='addButton.onClick'}"
+                                        constraint="no negative">
+                                <attribute name="onCreate">
+                                    self.setValue(billingController.getCashAmount());
+                                </attribute>
+                            </decimalbox>
+                        </div>
+
+
+                        <div visible="false">
+                            <attribute name="onCreate">
+                                <![CDATA[
+                    	if(invoice.getInsuranceStatus() != null && 
+                    	    !(com.nzion.domain.billing.Invoice.INSURANCESTATUS.CLOSED.equals(invoice.getInsuranceStatus()) || 
+                    	    		com.nzion.domain.billing.Invoice.INSURANCESTATUS.SENT_FOR_CLAIM.equals(invoice.getInsuranceStatus()) ) ){
+                    		self.setVisible(true);
+                    	}
+                    ]]>
+                            </attribute>
+                            <!--Mohan Sharma : commented as requested by kk-->
+                            <div width="260px" align="right">
+                                     <label value="Insurance Payable"/>
+
+                                 <label >
+                                     <attribute name="onCreate">
+                                         self.setValue(billingController.getInsuranceAmount().toString());
+                                     </attribute>
+                                 </label>
+                                 <button label="Sent for Claim">
+                                  <attribute name="onClick">
+                                      invoice.setInsuranceStatus(com.nzion.domain.billing.Invoice.INSURANCESTATUS.SENT_FOR_CLAIM);
+                                      service.save(invoice);
+                                      Executions.sendRedirect(null);
+                                  </attribute>
+                                 </button>
+                            </div>
+                        </div>
+
+                        <div  visible="false">
+                            <attribute name="onCreate">
+                                <![CDATA[
+                      	          if(com.nzion.domain.billing.Invoice.INSURANCESTATUS.SENT_FOR_CLAIM.equals(invoice.getInsuranceStatus())){
+                      	        	  self.setVisible(true);
+                      	        	  insuranceAmountInpBox.setValue(billingController.getInsuranceAmount());
+                      	          }
+						 ]]>
+                            </attribute>
+                            <div width="260px" align="right">
+                                <label value="Insurance Approve" mold="required" />
+                                <decimalbox id="insuranceAmountInpBox"  format="#,##0.000" disabled="true">
+                                </decimalbox>
+                                <button label="Approve">
+                                    <attribute name="onClick">
+                                        <![CDATA[
+                             	billingController.approveInsuranceAmount(insuranceAmountInpBox.getValue());
+                             ]]>
+                                    </attribute>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div  visible="false">
+                            <attribute name="onCreate">
+                                <![CDATA[
+                      	          if("CORPORATE".equals(patient.getPatientType()) && !"RECEIVED".equals(invoice.getInvoiceStatus()) ){
+                      	        	self.setVisible(true);
+                      	        	corporateAmountLabel.setValue(billingController.getInsuranceAmount().toString());
+                      	          }
+						 ]]>
+                            </attribute>
+                            <div width="260px" align="right">
+                                <label value="Corporate Approve" mold="required" />
+                                <label id="corporateAmountLabel"/>
+                                <button label="Approve">
+                                    <attribute name="onClick">
+                                        <![CDATA[
+                             	billingController.approveCorporateAmount();
+                             ]]>
+                                    </attribute>
+                                </button>
+                            </div>
+                        </div>
+
+
+
+
+                        <div id="bankNameDiv" visible="false">
+                            <div width="120px" align="right">
+                                <label value="Bank Name" mold="required"/>
+                            </div>
+                            <textbox id="bankNameBox"
+                                     value="@{billingController.invoicePayment.bankName,load-after='addButton.onClick',save-when='addButton.onClick'}"/>
+                        </div>
+                        <div id="transactionNumbDiv" visible="false">
+                            <div width="120px" align="right">
+                                <label value="Transaction Number" mold="required" />
+                            </div>
+                            <textbox id="transactionNumbInp"
+                                     value="@{billingController.invoicePayment.transactionNumb,load-after='addButton.onClick',save-when='addButton.onClick'}"/>
+                        </div>
+                        <div id="chequeOrDDNumbDiv" visible="false">
+                            <div width="120px" align="right">
+                                <label value="Cheque Number" mold="required" />
+                            </div>
+                            <textbox id="chequeOrDDNumbBox"
+                                     value="@{billingController.invoicePayment.chequeOrDdNo,load-after='addButton.onClick',save-when='addButton.onClick'}"/>
+
+                        </div>
+                        <div id="chequeOrDDDateDiv" visible="false">
+                            <div width="120px" align="right">
+                                <label value="Cheque Date" mold="required"/>
+                            </div>
+                            <datebox id="chequeOrDDDateBox"
+                                     value="@{billingController.invoicePayment.chequeOrDdDate,load-after='addButton.onClick',save-when='addButton.onClick'}"/>
+                        </div>
+                        <div id="policyNoDiv" visible="false">
+                            <div width="120px" align="right">
+                                <label value="Policy No" mold="required"/>
+                            </div>
+                            <textbox id="policyNoBox"
+                                     value="@{billingController.invoicePayment.policyNo,load-after='addButton.onClick',save-when='addButton.onClick'}"/>
+                        </div>
+                        <div id="advanceNameDiv" visible="false">
+                            <div width="120px" align="right">
+                                <label value="Advance Amount" />
+                            </div>
+                            <label value="@{billingController.advanceAmount}"/> <label value="KD"/>
+                        </div>
+
+
+                    </div>
+
+
+                    <div style="margin:auto;width:100%" align="center">
+                        <hlayout style="clear:both;width:100%" spacing="20px">
+                            <div style="margin-top:15px;">
+                                <label value="Remaining Amount" style="font-weight:bold;"/>
+                                <label id="remaingValueLabel"
+                                       value="@{billingController.remainingAmount,load-after='self.onReload'}"
+                                       style="font-weight:bold;color:red">
+                                    <attribute name="onCreate">
+                                        if(invoice.isAmountRefundedToPatient()){
+                                        self.setValue("0.000");
+                                        }
+                                    </attribute>
+                                </label>
+                                <!--<label value="@{billingController.invoice.totalAmount.currency.code}"/>-->
+                                <label value="KD"/>
+                            </div>
+                            <div style="margin-top:15px;" if="${billingController.isWriteOff()}">
+                                (<label value="Discounted Amount" style="font-weight:bold;"/>
+                                <label value="@{billingController.writeOffAmount}"
+                                       style="font-weight:bold;color:red"/>
+                                <!--<label value="@{billingController.invoice.totalAmount.currency.code}"/>-->
+                                <label value="KD"/>)
+                            </div>
+                            <div>
+                                <button id="addButton" label="Add"
+                                        visible="${!billingController.paymentReceived}"
+                                        onClick=' validateAddPayment();'/>
+                            </div>
+                        </hlayout>
+                        <div align="right">
+                            <button label="Print Receipt" visible="false">
+                                <attribute name="onClick">
+                                    Map map = new HashMap();
+                                    session.setAttribute("map",map);
+                                    Executions.getCurrent().sendRedirect("/billing/billingPatientReceipt.zul?invoiceId=" +
+                                    billingController.getInvoice().getId(),"_blank");
+
+                                </attribute>
+                            </button>
+                        </div>
+                    </div>
+                    <listbox id="paymentListbox" height="120px"
+                             model="@{billingController.invoice.invoicePayments,load-after='self.onReload'}">
+                        <listhead>
+                            <listheader label="Payment Date"/>
+                            <listheader label="Payment Mode"/>
+                            <listheader label="Amount"/>
+                            <listheader label="Bank/Insurance Name"/>
+                            <listheader label="Transaction #"/>
+                            <listheader label="Cheque/Policy #"/>
+                            <listheader label="Cheque Date"/>
+                            <listheader label="Action"/>
+                        </listhead>
+                        <listitem self="@{each='invPayment'}" value="@{invPayment}">
+                            <listcell label="@{invPayment.paymentDate,converter='com.nzion.view.component.DateConverter'}"/>
+                            <listcell label="@{invPayment.paymentMethod.description}"/>
+                            <listcell label="@{invPayment.amount.amount}"/>
+                            <listcell>
+                                <label>
+                                    <attribute name="onCreate">
+                                        com.nzion.domain.billing.InvoicePayment invoicePayment=self.getParent().getParent().getValue();
+                                        if(com.nzion.util.UtilValidator.isNotEmpty(invoicePayment.getBankName()))
+                                        self.setValue(invoicePayment.getBankName());
+                                        if(com.nzion.util.UtilValidator.isNotEmpty(invoicePayment.getInsuranceName()))
+                                        self.setValue(invoicePayment.getInsuranceName());
+                                    </attribute>
+                                </label>
+                            </listcell>
+                            <listcell label="@{invPayment.transactionNumb}"/>
+                            <listcell>
+                                <label>
+                                    <attribute name="onCreate">
+                                        com.nzion.domain.billing.InvoicePayment invoicePayment=self.getParent().getParent().getValue();
+                                        if(com.nzion.util.UtilValidator.isNotEmpty(invoicePayment.getChequeOrDdNo()))
+                                        self.setValue(invoicePayment.getChequeOrDdNo());
+                                        if(com.nzion.util.UtilValidator.isNotEmpty(invoicePayment.getPolicyNo()))
+                                        self.setValue(invoicePayment.getPolicyNo());
+                                    </attribute>
+                                </label>
+                            </listcell>
+                            <listcell label="@{invPayment.chequeOrDdDate,converter='com.nzion.view.component.DateConverter'}"/>
+                            <listcell>
+                                <button label="Remove" visible="${billingController.allowEdit}"
+                                        onClick='billingController.removeTxnPaymentItem(self.getParent().getParent().getValue(),self,remaingValueLabel);'/>
+                            </listcell>
+                        </listitem>
+                    </listbox>
+                    <div align="center">
+                        <label style="color: #000;font-family: Calibri;font-size: 14px;font-weight: bold;">
+                            <attribute name="onCreate">
+                                self.setValue(billingController.getTotalCancelationCharges());
+                            </attribute>
+                        </label>
+                    </div>
+                    <div sclass="panelFoot" visible="${billingController.displayWriteOff()}">
+                        <button label="Write-Off" >
+                            <attribute name="onClick">
+                                Executions.createComponents("/billing/writeOff.zul",null,com.nzion.util.UtilMisc.toMap("billingController",billingController));
+                            </attribute>
+                        </button>
+                    </div>
+                    <div sclass="panelFoot" visible="${!billingController.paymentReceived}">
+                        <button label="Complete Payment" onClick="billingController.receivePayment()" visible="false"/>
+                    </div>
+
+                </div>
+            </div>
+            <zscript><![CDATA[
+                void validateAddPayment(){
+                if(paymentModeBox.getSelectedItem() == null){
+	                com.nzion.util.UtilMessagesAndPopups.displayError("Please select the payment mode");
+	                return;
+                }
+
+                if(amountInpBox.getValue() == null){
+	                com.nzion.util.UtilMessagesAndPopups.displayError("Please provide the amount");
+	                return;
+                }
+                java.math.BigDecimal decimalValue = new java.math.BigDecimal(coPaymentLabel.getValue());
+                if((decimalValue.compareTo(java.math.BigDecimal.ZERO) > 0) && (amountInpBox.getValue().compareTo(java.math.BigDecimal.ZERO) <= 0)){
+                    com.nzion.util.UtilMessagesAndPopups.displayError("Please provide valid amount");
+	                return;
+                }
+
+                com.nzion.domain.Enumeration tmpPayMode = paymentModeBox.getSelectedItem().getValue();
+                if(tmpPayMode.getEnumCode().equals("DEBIT_CARD") || tmpPayMode.getEnumCode().equals("CREDIT_CARD")){
+	                if(com.nzion.util.UtilValidator.isEmpty(transactionNumbInp.getValue()) ||
+	                com.nzion.util.UtilValidator.isEmpty(bankNameBox.getValue())){
+	                com.nzion.util.UtilMessagesAndPopups.displayError("Please provide the Bank name and Transaction number");
+	                return;
+                }
+                }
+                if(tmpPayMode.getEnumCode().equals("PERSONAL_CHEQUE")){
+	                if((chequeOrDDDateBox.getValue() == null) || com.nzion.util.UtilValidator.isEmpty(bankNameBox.getValue()) ||
+	                com.nzion.util.UtilValidator.isEmpty(chequeOrDDNumbBox.getValue())){
+	                com.nzion.util.UtilMessagesAndPopups.displayError("Please provide the Bank name, Cheque number and Cheque date");
+	                return;
+                }
+                }
+                if(tmpPayMode.getEnumCode().equals("INSURANCE_CARD")){
+	                if((com.nzion.util.UtilValidator.isEmpty(insuranceNameBox.getValue()) || com.nzion.util.UtilValidator.isEmpty(policyNoBox.getValue()))){
+	                	com.nzion.util.UtilMessagesAndPopups.displayError("Please provide the Insurance Name and Policy No");
+	                	return;
+	                }
+                }
+                billingController.getInvoicePayment().setAmount(new com.nzion.domain.product.common.Money(amountInpBox.getValue()));
+                billingController.addTxnPaymentItem();
+                Events.postEvent("onReload",remaingValueLabel,null);
+                Events.postEvent("onReload",paymentListbox,null);
+                }
+
+
+                ]]> </zscript>
+        </div>
+    </window>
+</zk>

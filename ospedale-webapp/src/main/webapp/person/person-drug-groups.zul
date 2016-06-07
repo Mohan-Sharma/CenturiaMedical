@@ -1,0 +1,41 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./personDrugGroupWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?component name="toolbar" macro-uri="/toolbar.zul"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native">
+    <window  id="personDrugGroupWin">
+        <zscript>
+            com.nzion.zkoss.composer.PersonProfileController profileController = desktop.getAttribute("profileController");
+            List personDrugGroup = profileController.getPersonFavourites(com.nzion.domain.person.DrugGroup.class);
+        </zscript>
+        <panel title="Person Favourite Drug Group" id="drugGroupPanel"
+               onAddClick='profileController.favouriteAddClicked(personDrugGroupWin,personFavouriteDrugGroupDisplayGrid,personDrugGroup,"/person/person-add-drug-group.zul")'
+               onDeleteClick="profileController.deleteFavourites(personFavouriteDrugGroupDisplayGrid,personDrugGroup);">
+            <attribute name="onSearchClick">
+                personDrugGroup=personService.searchPersonFavouriteDrugGroup((String)event.getData(),profileController.getPerson());
+            </attribute>
+            <panelchildren>
+                <toolbar listenercomponent="${drugGroupPanel}" hidecancel="true"/>
+                <listbox multiple="true" id="personFavouriteDrugGroupDisplayGrid" checkmark="true" mold="paging" pageSize="10" pagingPosition="top"
+                         model="@{personDrugGroup,load-after='drugGroupPanel.onSearchClick, self.onReloadRequest'}">
+                    <attribute name="onReloadRequest">
+                        personDrugGroup = profileController.getPersonFavourites(com.nzion.domain.person.DrugGroup.class);
+                    </attribute>
+                    <listhead>
+                        <listheader label="Drug Group Name"/>
+                        <listheader label="Age Group"/>
+                    </listhead>
+                    <listitem self="@{each='personDrugGroup'}" value="@{personDrugGroup}" >
+                        <listcell>
+                            <label value="@{personDrugGroup.drugGroup}" />
+                        </listcell>
+                        <listcell>
+                            <label value="@{personDrugGroup.ageGroup.ageGroup}"/>
+                        </listcell>
+                    </listitem>
+                </listbox>
+            </panelchildren>
+        </panel>
+    </window>
+</zk>

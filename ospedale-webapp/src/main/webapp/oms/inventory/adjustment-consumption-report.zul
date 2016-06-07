@@ -1,0 +1,105 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./adjConWin"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript> <![CDATA[
+		com.nzion.oms.zkoss.AdjConsumptionReportController adjConsumptionReportController = new com.nzion.oms.zkoss.AdjConsumptionReportController();
+		com.nzion.zkoss.ext.DataExporter exporter = new com.nzion.zkoss.ext.CsvDataExporter();
+	]]></zscript>
+	<window id="adjConWin" apply="${adjConsumptionReportController}">
+	<panel style="padding:5px" title="Adjustment/Consumption Report">
+	 <panelchildren>
+		<vlayout spacing="20px" sclass="form">
+			<hlayout spacing="6px">
+				<hlayout spacing="3px">
+					<label value="Type" sclass="name"/>
+					<combobox selectedItem="@{adjConsumptionReportController.type}">
+					  <comboitem label="Consumption" value="Consumption"/>
+					  <comboitem label="Adjustment" value="Adjustment"/>
+					</combobox>
+				</hlayout>
+				<hlayout spacing="3px">
+					<label value="Product Name" sclass="name"/>
+					<textbox value="@{adjConsumptionReportController.productName}" />
+				</hlayout>
+				
+				<hlayout spacing="3px" width="310px" >
+					<label value="From Date" sclass="name"/>
+					<datebox value="@{adjConsumptionReportController.fromDate}"/>
+				</hlayout>
+				
+				<hlayout spacing="3px" width="300px" >
+					<label value="Thru Date" sclass="name"/>
+					<datebox value="@{adjConsumptionReportController.thruDate}"/>
+				</hlayout>
+				
+			</hlayout>
+			
+			
+			
+		</vlayout>
+		<separator/>
+		<div sclass="panelFoot" align="center">
+			<button label="Search" id="btnSearch" zclass="btn btn-primary">
+				<attribute name="onClick">
+					adjConsumptionReportController.searchByCriteria();
+					searchResultGrid.setVisible(true);
+					noRecordFoundLabel.setVisible(com.nzion.util.UtilValidator.isEmpty(adjConsumptionReportController.getInventoryConsumptionAdjustments()));
+				</attribute>
+			</button>
+		</div>
+		<separator />
+		</panelchildren>
+		</panel>
+		<panel title="Results" id="resultPanel">
+			<caption>
+				 <div style="float:right">
+					<span sclass="linkBtn linkBtnOn" style="margin:-3px 13px;">
+					<a  tooltiptext="Export" label="Export" sclass="reminderBtn">
+					<attribute name="onClick">	
+					exportData();					
+					</attribute>
+					</a>
+					</span>
+				</div>	
+			</caption>
+			<panelchildren>
+			<div id="noRecordFoundLabel" align="center"><label value="No Record Found" visible="false"  style="font-weight:bold"/></div>
+			
+			<div style="overflow: auto;">
+			  <grid id="searchResultGrid" fixedLayout="true" model="@{adjConsumptionReportController.inventoryConsumptionAdjustments,load-after='btnSearch.onClick'}"
+				visible="false">
+						<columns>
+						    <column label="Date" />
+							<column label="Product" />
+							<column label="Quantity" />	
+							<column label="User" />	
+							<column label="Patient" />
+							<column label="File No." />
+							<column label="Comments" />
+						</columns>
+					    <rows>
+							<row self="@{each='adjCon'}" value="@{adjCon}">
+								<label value="@{adjCon.createdTxTimestamp,converter='com.nzion.view.component.DateConverter'}"></label>
+								<label value="@{adjCon.product.tradeName}"></label>
+								<label value="@{adjCon.quantity}"/>	
+								<label value="@{adjCon.createdBy}"/>
+								<label value="@{adjCon.patient}"/>
+								<label value="@{adjCon.patient.fileNo}"/>
+								<label value="@{adjCon.note}"/>							
+							</row>
+				       </rows>
+				</grid>
+			</div>
+			
+			</panelchildren>
+		</panel>
+	</window>
+	<zscript>
+		void exportData(){
+		  	 List items = new ArrayList();
+		  		items = adjConsumptionReportController.getInventoryConsumptionAdjustments();
+			 if(com.nzion.util.UtilValidator.isNotEmpty(items))							
+		    	 exporter.export(items, new String[]{"createdTxTimestamp","product.tradeName","quantity","createdBy","patient","patient.fileNo","note"}, new String[]{"Date","Product","Quantity","User","Patient","File No.","Comments"}, "inventoryitems.csv");
+		 }	
+	</zscript>
+</zk>

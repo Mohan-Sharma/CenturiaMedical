@@ -1,0 +1,50 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./patientPortalAppointments"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client"
+    xmlns:schemaLocation="http://www.zkoss.org/2005/zul http://www.zkoss.org/2005/zul/zul.xsd">
+    <zscript>
+        import com.nzion.domain.Patient;
+        Patient patient = arg.get("patient");
+    </zscript>
+    <window id="patientPortalAppointments"
+            apply="org.zkoss.bind.BindComposer" viewModel="@id('vm') @init('com.nzion.zkoss.composer.PatientPortalAppointmentVM', patient = patient)">
+        <radiogroup>
+            <radio label="Past" onCreate="@command('onRadioGroupCreate')" onCheck="@command('getPastPatientAppointments')" checked="@bind(vm.checkPast)"/>
+            <radio label="Upcoming" onCheck="@command('getCurrentPatientAppointments')"/>
+        </radiogroup>
+        <listbox id="scheduleListbox" model="@bind(vm.schedules)" emptyMessage="No Results Found">
+            <listhead>
+                <listheader label="Scheduled Date" />
+                <listheader label="Scheduled With" />
+                <listheader label="Schedule Status" />
+                <listheader label="Location" />
+            </listhead>
+            <template name="model" var="schedule">
+                <listitem  onDoubleClick="@command('something')">
+                <listcell label="@bind(schedule) @converter('com.nzion.view.component.DateTimeBindConverter')" />
+                <listcell>
+                    <name object="@bind(schedule.person)" />
+                </listcell>
+                <listcell label="@bind(schedule.status.description)" />
+                <listcell label="@bind(schedule.location.name)" />
+                <!--<attribute name="onDoubleClick">
+                    <![CDATA[
+											if (showEdit) {
+												String scheduleId = self.getValue().getId().toString();
+												Schedule schedule = commonCrudService.getById(Schedule.class, new Long(
+														scheduleId));
+												if (Schedule.STATUS.EXAMINING.equals(schedule.getStatus())
+														|| Schedule.STATUS.SOAPSIGNEDOUT.equals(schedule.getStatus())
+														|| Schedule.STATUS.CHECKEDOUT.equals(schedule.getStatus()))
+													Executions.getCurrent().sendRedirect(
+															"/soap/soapnote.zul?scheduleId=" + scheduleId, "_soapNote");
+											}
+										]]>
+                </attribute>-->
+                </listitem>
+            </template>
+    </listbox>
+</window>
+        </zk>

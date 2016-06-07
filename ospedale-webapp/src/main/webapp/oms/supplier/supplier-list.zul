@@ -1,0 +1,84 @@
+<!-- <?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./searchSupplier"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native">
+	<zscript>
+	<![CDATA[
+		  com.nzion.oms.zkoss.SupplierSearchController supplierSearchController = new com.nzion.oms.zkoss.SupplierSearchController();
+	]]>
+	</zscript>
+	<window id="searchSupplier" self="@{define(content)}" apply="${supplierSearchController}">
+	<panel title="Search">
+		<panelchildren>
+		<vlayout spacing="10px" sclass="form">
+			<hlayout spacing="6px">
+				<hlayout spacing="3px">
+					<label value="Supplier Name" sclass="name"/>
+					<textbox value="@{supplierSearchController.supplier.name}"/>
+				</hlayout>
+				<hlayout spacing="3px">
+					<label value="City" sclass="name"/>
+					<textbox value="@{supplierSearchController.supplier.contactFields.postalAddress.city}"/>
+				</hlayout>
+			</hlayout>
+		</vlayout>
+			<separator/>
+				<div sclass="panelFoot" align="center">
+				<button label="Search" id="search" sclass="btn submit" onClick="supplierSearchController.seachSupplier(noRecordFoundLabel);" />
+				<button label="New">
+					<attribute name="onClick">
+						com.nzion.zkoss.ext.Navigation.navigate("supplier",null,"contentArea");
+					</attribute>
+				</button>
+				</div>
+			<separator/>
+		</panelchildren>
+	 </panel>
+	<panel title="Results">
+		<panelchildren>
+		<label value="No Record Found" visible="false" id="noRecordFoundLabel" style="font-weight:bold"/>
+		<listbox id="groupByResultGrid" model="@{supplierSearchController.suppliers,load-after='search.onClick'}" mold="paging" pageSize="6">
+			<listhead>
+				<listheader label="Supplier Name"/>
+				<listheader label="Address" />
+				<listheader label="City" />
+				<listheader label="Mobile Number" />
+				<listheader label="Office Phone" />
+				<listheader label="Action"/>
+			</listhead>
+			<listitem self="@{each='supplier'}" value="@{supplier}">
+				<listcell label="@{supplier.name}" />
+				<listcell>
+ 				<label value="@{supplier.contactFields.postalAddress.address1}"/>
+				<label value="@{supplier.contactFields.postalAddress.address2}"/>
+ 				</listcell>
+				<listcell label="@{supplier.contactFields.postalAddress.city}" />
+				<listcell label="@{supplier.contactFields.mobileNumber}" />
+				<listcell label="@{supplier.contactFields.officePhone}" />
+				<listcell>
+					<button label="Edit">
+					<attribute name="onClick">
+						com.nzion.zkoss.ext.Navigation.navigate("supplier",com.nzion.util.UtilMisc.toMap("entity",self.getParent().getParent().getValue()),"contentArea");
+					</attribute>
+					</button>
+				</listcell>
+			</listitem>
+		</listbox>
+		</panelchildren>
+		</panel>
+	</window>
+</zk> -->
+
+
+
+ <?page title="Supplier Lists" contentType="text/html;charset=UTF-8"?>
+<zk>
+<zscript>
+setPageTitle("Supplier Lists", "");
+</zscript>
+	<window self="@{define(content)}">
+		<screen width="100%" pagetitle="Supplier list" listtitle="List of Suppliers" addpage="supplier" editpage="supplier" addmodepopup="true"
+			fields="name,contactFields.postalAddress.address1,contactFields.postalAddress.city,contactFields.mobileNumber,contactFields.officePhone"
+			entityclass="com.nzion.domain.product.actor.Supplier" hidedeletebtn="true" labels="Supplier Name,Address,City,Mobile No,Office Phone" />
+	</window>
+</zk>  
+ 

@@ -1,0 +1,62 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./patientActivePrescription"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client"
+    xmlns:schemaLocation="http://www.zkoss.org/2005/zul http://www.zkoss.org/2005/zul/zul.xsd">
+    <zscript>
+        import com.nzion.domain.Patient;
+        Patient patient = arg.get("patient");
+    </zscript>
+
+    <window id="patientActivePrescription"
+            apply="org.zkoss.bind.BindComposer" viewModel="@id('vm') @init('com.nzion.zkoss.composer.PatientActivePrescriptionVM', patient = patient)">
+            
+       <div align="right" style="margin:6px;">
+	  	 <button label="Create Order" onClick="@command('openPayment')"/>
+	  </div>
+	  
+        <listbox model="@{vm.medications}" mold="paging" pageSize="10" multiple="true" checkmark="true" id="activePrescriptionListBox" emptyMessage="No Results Found">
+            <listhead>
+                <listheader label="Drug Name" />
+                <listheader label="Doctor" sort="auto"/>
+                <listheader label="Frequency" />
+                <listheader label="Freq Qualifier" />
+                <listheader label="No Of Days" />
+                <listheader label="Pharmacy"/>
+                <listheader label="Total Count" />
+                <listheader label="Start Date" />
+            </listhead>
+
+            <listitem self="@{each='medication'}" value="@{medication}">
+                <listcell>
+                    <label value="@{medication.drug.tradeName} " />
+                    <label value="@{medication.drug.genericName}" />
+                </listcell>
+                <listcell>
+                    <label value="@{medication.provider.firstName} "/>
+                    <label value="@{medication.provider.LastName} "/>
+                </listcell>
+                <listcell>
+                    <label value="@{medication.frequency} " />
+                </listcell>
+                <listcell>
+                    <label value="@{medication.frequencyQualifier} " />
+                </listcell>
+                <listcell>
+                    <label value="@{medication.numberOfDays} " />
+                </listcell>
+                <listcell>
+                	<label value="@{medication.rxSection.pharmacyTenantId}"></label>
+                </listcell>
+                <listcell>
+                    <label value="@{medication.totalCount} " />
+                </listcell>
+                <listcell>
+                    <label value="@{medication.startDate,converter='com.nzion.view.component.DateConverter'} " />
+                </listcell>
+            </listitem>
+        </listbox>
+
+    </window>
+</zk>

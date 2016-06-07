@@ -1,0 +1,45 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./personProcedureWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?component name="toolbar" macro-uri="/toolbar.zul"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native">
+	<window  id="personProcedureWin">
+	<zscript>
+	com.nzion.zkoss.composer.PersonProfileController profileController = desktop.getAttribute("profileController");
+	List personProcedures = profileController.getPersonFavourites(com.nzion.domain.person.PersonProcedure.class);
+	</zscript>
+	<panel title="Person Favourite Procedure" id="procedurePanel"
+	onAddClick='profileController.favouriteAddClicked(personProcedureWin,personFavouriteProcedureDisplayGrid,personProcedures,"/person/add-person-procedure.zul")'
+	onDeleteClick="profileController.deleteFavourites(personFavouriteProcedureDisplayGrid,personProcedures);">
+		<attribute name="onSearchClick">
+            personProcedures = personService.searchPersonFavouriteProcedures((String)event.getData(),profileController.getPerson());
+		</attribute>
+		<panelchildren>
+		<toolbar listenercomponent="${procedurePanel}" hidecancel="true"/>
+				<listbox multiple="true" id="personFavouriteProcedureDisplayGrid" checkmark="true" mold="paging" pageSize="10" pagingPosition="top"
+ 					model="@{personProcedures,load-after='procedurePanel.onSearchClick, self.onReloadRequest'}">
+                    <attribute name="onReloadRequest">
+                        personProcedures = profileController.getPersonFavourites(com.nzion.domain.person.PersonProcedure.class);
+                    </attribute>
+				<listhead>
+					<listheader label="Procedure Group Name"/>
+					<listheader label="Procedure"/>
+					<listheader label="Unit"/>
+				</listhead>
+					<listitem self="@{each='personProcedure'}" value="@{personProcedure}" >
+					<listcell>
+						<label value="@{personProcedure.procedureGroup.procedureGroupName}" />
+					</listcell>
+					<listcell>
+						<label value="@{personProcedure.procedure}" width="100px"/>
+					</listcell>
+					<listcell>
+						<label value="@{personProcedure.unit}" width="100px"/>
+					</listcell>
+					</listitem>
+				</listbox>
+			</panelchildren>
+		</panel>
+</window>
+</zk>

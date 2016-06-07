@@ -1,0 +1,55 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./addChiefComplaintWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native">
+	<window id="addChiefComplaintWin" mode="modal" position="center,top" width="60%" height="80%"
+			title="Add Chief Complaints" closable="true">
+		<div width="97%" style="padding:5px">
+			<zscript><![CDATA[
+	com.nzion.zkoss.composer.PersonProfileController profileController = desktop.getAttribute("profileController");
+	List list=arg.get("list");
+	List chiefComplaints;
+]]></zscript>
+			<panel title="Chief Complaints" id="chiefComplaintPanel">
+				<attribute name="onSearchClick">
+					chiefComplaints = personService.searchUnaddedChiefComplaints(event.getData(),profileController.getPerson());
+				</attribute>
+				<panelchildren>
+					<toolbar listenercomponent="${chiefComplaintPanel}" hidedelete="true" hidecancel="true" hideadd="true" style="float: right"/>
+					<listbox multiple="true" checkmark="true" width="100%" id="personChiefComplaintDisplayGrid"  mold="paging"
+							 model="@{chiefComplaints,load-after='chiefComplaintPanel.onSearchClick'}" pageSize="10" pagingPosition="top">
+						<listhead>
+							<listheader label="Chief Complaint"/>
+						</listhead>
+						<listitem self="@{each='chiefComplaint'}" value="@{chiefComplaint}">
+							<listcell>
+								<label value="@{chiefComplaint.complainName}" />
+							</listcell>
+						</listitem>
+					</listbox>
+				</panelchildren>
+			</panel>
+		</div>
+		<div sclass="panelFoot">
+			<button label="Save">
+				<attribute name="onClick">
+					<![CDATA[
+					/*if(com.nzion.util.UtilValidator.isEmpty(list)){
+						com.nzion.util.UtilMessagesAndPopups.showError("Please select items to add");
+						return;
+					}*/
+					profileController.addPersonFavourites(personChiefComplaintDisplayGrid,addChiefComplaintWin,list,com.nzion.domain.person.PersonChiefComplaint.class,com.nzion.domain.emr.ChiefComplaint.class);
+					profileController.saveFavourites(list);
+					addChiefComplaintWin.detach();
+					]]>
+				</attribute>
+			</button>
+			<button id="closeBtn" label="Close" sclass="btn btn-danger" style="margin-left: 20px;">
+				<attribute name="onClick">
+					addChiefComplaintWin.detach();
+				</attribute>
+			</button>
+		</div>
+	</window>
+</zk>

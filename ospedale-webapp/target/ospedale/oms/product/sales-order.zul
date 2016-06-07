@@ -1,0 +1,12 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./salesOrderWindow"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	
+	<window  id="salesOrderWindow">
+		<panel title="Sales Order">
+			<panelchildren>
+				
+			</panelchildren>
+		</panel>
+	</window>
+</zk>

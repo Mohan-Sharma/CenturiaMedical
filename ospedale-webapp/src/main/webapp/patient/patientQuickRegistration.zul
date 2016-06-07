@@ -1,0 +1,84 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./NewPatient"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?xel-method prefix="enum" name="getEnum"
+        class="com.nzion.util.EnumerationUtil"
+        signature="BindingListModel getEnum(java.lang.String)"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+    xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript>
+        <![CDATA[
+			import com.nzion.service.common.*;
+			import com.nzion.domain.Enumeration;
+			import com.nzion.util.UtilValidator;
+			com.nzion.zkoss.composer.PatientNewComposer patientComposer = new com.nzion.zkoss.composer.PatientNewComposer();
+			patientComposer.setPatientVO(com.nzion.factory.PatientFactory.createPatientViewObject());
+			com.nzion.zkoss.ext.EntityDropdownRenderer entityDropdownRenderer = new com.nzion.zkoss.ext.EntityDropdownRenderer("classDescription");
+			com.nzion.zkoss.composer.emr.StateRenderer stateRenderer = new com.nzion.zkoss.composer.emr.StateRenderer();
+			com.nzion.enums.CommunicationPreference[]  commPrefList = com.nzion.enums.CommunicationPreference.values();
+			Component patientinfo = arg.get("patientinfo");
+			Component patientAccountNumber = arg.get("patientAccountNumber");
+			com.nzion.domain.Schedule currentSchedule = arg.get("currentSchedule");
+		]]>
+    </zscript>
+    <window id="NewPatient" apply="${patientComposer}" closable="true" mode="modal" width="85%" sclass="modalStyle" title="Quick Register Patient">
+        <div>
+            <div zclass="row-fluid" hflex="1" style="margin-left: 10px;">
+                <div zclass="span2">
+                    <label value="First Name" style="text-align:right;" id="lblfirstName" mold="required" width="100%" class="z-label-bold" />
+                    <textbox value="@{vo.patient.firstName,save-when='save.onClick'}" id="firstName" maxlength="50" sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"
+                             constraint="no empty" onChange="com.nzion.util.UtilDisplay.validateNonDigits(self)"/>
+                </div>
+                <div zclass="span2">
+                    <label value="Last Name" style="text-align:right;" id="lblThirdName" mold="required" class="z-label-bold"/>
+
+                    <textbox value="@{vo.patient.lastName,save-when='save.onClick'}" id="thirdName" maxlength="50" sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"
+                             onChange="com.nzion.util.UtilDisplay.validateOnlyAlphabetsAndWhiteSpaces(self)" constraint="no empty"/>
+                </div>
+                <div zclass="span2">
+                    <label value="Gender" id="lblgender" mold="required" class="z-label-bold" />
+                    <enumeration id="gender" enumType="GENDER" sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"
+                                 selectedItem="@{vo.patient.gender,save-when='save.onClick'}" constraint="no empty" />
+                </div>
+                <div zclass="span2">
+                    <label value="Date of Birth" style="text-align:right;" id="lbldob" class="z-label-bold"/>
+                    <datebox value="@{vo.patient.dateOfBirth,save-when='save.onClick'}" id="dob"
+                             constraint="no future" sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}"
+                             w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+                    </datebox>
+                </div>
+                <div zclass="span2" >
+                    <label value="Email" class="z-label-bold"/>
+                    <email id="emailBox" value="@{vo.patient.contacts.email,save-when='save.onClick'}" sclass="span12"
+                           w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" style="margin-left: 0px">
+                    </email>
+                </div>
+                <div zclass="span2" style="margin-left: 10px;">
+                    <label value="Mobile Phone" mold="required" class="z-label-bold"/>
+                    <hbox>
+                        <textbox value="@{vo.patient.contacts.isdCode,save-when='save.onClick'}"
+                                 constraint="no empty" style="height: 23px;width: 40px;"/>
+                        <textbox  maxlength="8"
+                                  constraint="no empty" id="mobPhone" value="@{vo.patient.contacts.mobileNumber,save-when='save.onClick'}"
+                                  style="margin-left:10px;height: 23px;width: 100px;"/>
+                    </hbox>
+                </div>
+            </div>
+        </div>
+        <div sclass="panelFoot">
+            <button id="save" label="Save" zclass="btn-success btn">
+                <attribute name="onClick">
+                    <![CDATA[
+                    com.nzion.domain.Patient patient = patientComposer.quickRegisterPatient();
+                    if(currentSchedule != null && patientAccountNumber != null){
+                        Events.postEvent("onCustomTrigger", patientAccountNumber, patient);
+                    }
+                    NewPatient.detach();
+                    ]]>
+                </attribute>
+            </button>
+            <button label="Cancel" sclass="btn" onClick='NewPatient.detach()'/>
+        </div>
+        <separator height="10px"></separator>
+    </window>
+</zk>

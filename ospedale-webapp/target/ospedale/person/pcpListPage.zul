@@ -1,0 +1,13 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<zk>
+	<zscript>
+		setPageTitle("PCP", "");
+	</zscript>
+	<window self="@{define(content)}">
+		<screen width="100%" listtitle="List of PCP" addpage="pcpPage"
+			entityclass="com.nzion.domain.Pcp" addmodepopup="true" 
+			fields="accountNumber,firstName,lastName,contacts.email,contacts.officePhone,contacts.postalAddress.stateProvinceGeo,active"
+			labels="Pcp Code,First Name,Last Name,Email,Office phone,Governorate,Active"
+			hidedeletebtn="true" />
+	</window>
+</zk>

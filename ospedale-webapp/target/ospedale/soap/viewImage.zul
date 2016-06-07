@@ -1,0 +1,35 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<zk>
+    <zscript>
+        <![CDATA[
+        import org.zkoss.util.media.AMedia;
+	        com.nzion.domain.File file = arg.get("file");
+	        java.io.FileInputStream fileInputStream = new java.io.FileInputStream(file.getFilePath());
+	    ]]>
+    </zscript>
+    <window mode="modal" title="File ${arg.file.fileName}" closable="true" height="70%" width="70%">
+        <image id="image"  visible="false">
+            <attribute name="onCreate">
+                <![CDATA[
+                if(!file.getFileName().toLowerCase().endsWith(".pdf")){
+                org.zkoss.image.AImage aImage = new org.zkoss.image.AImage(file.getFileName(),fileInputStream);
+	            self.setContent(aImage);
+	            self.setVisible(true);
+	            }
+                ]]>
+            </attribute>
+        </image>
+        <iframe id="report"  autohide="true" visible="false">
+            <attribute name="onCreate">
+                <![CDATA[
+				       if(file.getFileName().toLowerCase().endsWith(".pdf")){
+					       byte[] bytes = org.apache.commons.io.IOUtils.toByteArray(fileInputStream);
+					       org.zkoss.util.media.AMedia amedia = new org.zkoss.util.media.AMedia(file.getFileName() ,"pdf",  "application/pdf", bytes);
+					       self.setContent(amedia);
+					       self.setVisible(true);
+				       }
+                ]]>
+            </attribute>
+        </iframe>
+    </window>
+</zk>

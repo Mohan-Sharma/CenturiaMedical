@@ -1,0 +1,37 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./invBedLookup"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<zk xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+<zscript>	<![CDATA[
+	 	com.nzion.domain.product.Product productObj = arg.get("product");
+	 	com.nzion.domain.pfm.Bed bed = arg.get("bed");
+	 	Include inventoryDetailsInc = arg.get("inventoryDetailsInc");
+	 	com.nzion.services.product.ProductService productService = com.nzion.util.Infrastructure.getSpringBean("productService");
+	 	List inventoryItems = productService.getInventoryItemsNotUsedInBed(productObj);
+	  ]]>   	
+</zscript>
+<window id="invBedLookup" border="normal" mode="modal" closable="true" title="Inventory List" width="600px" >
+<div style="overflow: auto;">
+	<listbox checkmark="true" multiple="false" height="220px" 
+		model="@{inventoryItems}" selectedItem="@{bed.inventoryItem}">
+		<attribute name="onSelect">
+			inventoryDetailsInc.setDynamicProperty("inventoryItem",self.getSelectedItem().getValue());
+			inventoryDetailsInc.setSrc("/ward/bed-inventory-details.zul");
+			inventoryDetailsInc.invalidate();
+			invBedLookup.detach();
+		</attribute>
+     <listhead>
+     	<listheader label="Inventory Id"/>
+     	<listheader label="Batch Number"/>
+     	<listheader label="Supplier Name"/>
+     	<listheader label="Supplier Office Phone"/>
+     </listhead>
+  	<listitem self="@{each='invItem'}" value="@{invItem}">   	
+  	 <listcell label="@{invItem.id}"/>
+	 <listcell label="@{invItem.batchNumber}"/>
+	 <listcell label="@{invItem.supplier.name}"/>
+	 <listcell label="@{invItem.supplier.contactFields.officePhone}"/>
+    </listitem>
+   </listbox>
+</div>
+</window>
+</zk>

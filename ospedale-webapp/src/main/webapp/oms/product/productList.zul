@@ -1,0 +1,122 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./searchProduct"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+	xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native"
+	xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript>
+	<![CDATA[
+		  com.nzion.inpatient.zkoss.ProductSearchController pSearchController = new com.nzion.inpatient.zkoss.ProductSearchController();
+	]]>
+	</zscript>
+	<window id="searchProduct" self="@{define(content)}" apply="${pSearchController}">
+	<div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small> List of Products</h:small>
+                  <button type="button" zclass="close" onClick="searchProduct.detach();">×</button>
+            </h:h1>
+         </div>
+			<div class="container-fluid">
+		       <div zclass="row-fluid">
+		        <div zclass="span2">
+					<label value="Product Code" />
+					<textbox  value="@{pSearchController.productCode}" sclass="span12" />
+					</div>
+					 <div zclass="span2">
+					<label value="Product Name" />
+					<textbox value="@{pSearchController.productName}" sclass="span12" />
+					</div>
+					</div>
+				<div zclass="row-fluid">
+		        <div zclass="span2">
+					<label value="Product Category" />
+					<combobox model="@{pSearchController.productCategories}" sclass="span12"  selectedItem="@{pSearchController.productCategory}">
+						<comboitem self="@{each='productCategoryObj'}" label="@{productCategoryObj.description}" value="@{productCategoryObj}"/>
+					</combobox>
+					</div>
+					
+					<div zclass="span2">
+					<label value="${c:l('productType')}" />
+					<combobox id="List" model="@{pSearchController.productTypes}" sclass="span12"  selectedItem="@{pSearchController.productType}">
+						<comboitem self="@{each='ptype'}" label="@{ptype}" value="@{ptype}"/>
+					</combobox>
+					</div>
+					</div>
+					
+					<div zclass="row-fluid">
+					 <div zclass="span2">
+					<label value="Supplier" />
+					<combobox model="@{pSearchController.suppliers}" sclass="span12"  selectedItem="@{pSearchController.supplier}">
+						<comboitem self="@{each='supplier'}" label="@{supplier.name}" value="@{supplier}"/>
+					</combobox>
+			    </div>
+			    </div>
+			    </div>
+				<div sclass="panelFoot" align="center">
+				<button label="Search" id="search" sclass="btn btn-primary" onClick="pSearchController.searchProduct(noRecordFoundLabel);" />
+				<button label="New">
+					<attribute name="onClick">
+						com.nzion.zkoss.ext.Navigation.navigate("createProduct",null,"contentArea");
+					</attribute>
+				</button>
+				</div>
+	<panel title="Results">
+		<panelchildren>
+		<label value="No Record Found" visible="false" id="noRecordFoundLabel" style="font-weight:bold"/>
+			<grid id="groupByResultGrid" model="@{pSearchController.products,load-after='search.onClick'}" mold="paging" pageSize="6">
+				<columns>
+					<column width="40px"/>
+					<column label="Product Code" />
+					<column label="Product Name" />
+					<column label="Product Type" />
+					<column label="Product Category" />
+					<column label="Perishable" />
+					<column label="Action" />
+				</columns>
+				<rows>
+					<row self="@{each='product'}" value="@{product}">
+						<label value="@{product.productDetails.productCode}"/>
+						<label value="@{product.productDetails.productName}"/>
+						<label value="@{product.productDetails.productType}"/>
+						<label value="@{product.productCategory.name}"/>
+						<label value="@{product.productDetails.perishable}">
+							<attribute name="onCreate">
+								if("true".equalsIgnoreCase(self.getValue()))
+									self.setValue("Yes");
+								else
+									self.setValue("No");
+							</attribute>
+						</label>
+						<button label="Edit">
+							<attribute name="onClick">
+								com.nzion.zkoss.ext.Navigation.navigate("createProduct",com.nzion.util.UtilMisc.toMap("entity",self.getParent().getValue()),"contentArea");
+							</attribute>
+						</button>
+						<detail open="false" style="@{product, converter='com.nzion.inpatient.zkoss.ProductSearchController'}">
+								<listbox>
+									<listhead>
+										<listheader label="Supplier Name"/>
+										<listheader label="Address" />
+										<listheader label="City" />
+										<listheader label="Mobile Number" />
+										<listheader label="Office Phone" />
+									</listhead>
+									<listitem self="@{each='supplier'}" value="@{supplier}">
+										<listcell label="@{supplier.name}" />
+										<listcell label="@{supplier.contactFields.postalAddress.address1}" />
+										<listcell label="@{supplier.contactFields.postalAddress.city}" />
+										<listcell label="@{supplier.contactFields.mobileNumber}" />
+										<listcell label="@{supplier.contactFields.officePhone}" />
+									</listitem>
+								</listbox>
+								<attribute name="onOpen">
+										List mapValue = pSearchController.getSupplier(((Row) self.getParent()).getValue());
+										((Listbox) self.getFirstChild()).setModel(new BindingListModelList(mapValue, false));
+								</attribute>
+						</detail>
+					</row>
+				</rows>
+			</grid>		
+		</panelchildren>
+		</panel>
+	</window>
+</zk>

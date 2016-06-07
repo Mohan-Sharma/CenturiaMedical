@@ -1,0 +1,63 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./addLabGroupWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <window id="addLabGroupWin" mode="modal" position="center,top" width="30%" height="30%"
+            title="Add Lab Group" closable="true">
+        <div width="97%" style="padding:5px">
+            <zscript><![CDATA[
+            import com.nzion.domain.person.*;
+	com.nzion.zkoss.composer.PersonProfileController profileController = desktop.getAttribute("profileController");
+	List list=arg.get("list");
+	boolean saveFlag = true;
+	LabGroup labGroup = new LabGroup();
+]]></zscript>
+            <div zclass="container-fluid">
+                <div zclass="row-fluid">
+                    <div>
+                        <label value="Lab Group Name" mold="required" /><label id="errorLabel" visible="false" value="Lab Group Name Exists" style="color:red; font-size: x-small;"/>
+                        <textbox value="@{labGroup.labGroupName, load-after='Save.onClick', save-when='Save.onClick'}" constraint="no empty:Required" sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+                            <attribute name="onBlur">
+                                <![CDATA[
+                                    errorLabel.setVisible(false);
+                                    Save.setDisabled(false);
+                                ]]>
+                            </attribute>
+                        </textbox>
+                    </div>
+                </div>
+            </div>
+            <div sclass="panelFoot">
+                <button label="Save" id="Save" zclass="btn-success btn">
+                    <attribute name="onClick">
+                        <![CDATA[
+                                for(LabGroup labGrp : list){
+                                if(labGrp.getLabGroupName().equals(labGroup.getLabGroupName())){
+                                    errorLabel.setVisible(true);
+                                    Save.setDisabled(true);
+                                    return;
+                                }
+                                if(!labGrp.getLabGroupName().equals(labGroup.getLabGroupName())) {
+                                    errorLabel.setVisible(false);
+                                    Save.setDisabled(false);
+                                }
+                                }
+                        String success = profileController.saveLabGroup(labGroup, addLabGroupWin);
+                        if(success.equals("success")){
+                        successLabel.setVisible(true);
+                        labGroup = new LabGroup();
+                        }
+                        ]]>
+                    </attribute>
+                </button>
+                <button label="Close" sclass="btn">
+                    <attribute name="onClick"><![CDATA[
+                        addLabGroupWin.detach();
+                    ]]></attribute>
+                </button>
+                <label value="Successfully Saved.." style="color: green; font-size: small" id="successLabel" visible="false"></label>
+            </div>
+        </div>
+    </window>
+</zk>

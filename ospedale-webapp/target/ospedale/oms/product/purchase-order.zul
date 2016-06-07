@@ -1,0 +1,39 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./purchaseOrderWin"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript><![CDATA[
+	import com.nzion.oms.zkoss.PurchaseOrderController;
+	PurchaseOrderController poController = new PurchaseOrderController();
+	com.nzion.service.common.CommonCrudService commonCrudService = com.nzion.util.Infrastructure.getSpringBean("commonCrudService");
+    ]]></zscript>
+<window apply="${poController}" id="purchaseOrderWin" >
+<panel title="Purchase Order" >
+ <panelchildren>
+	<vlayout spacing="10px" sclass="form">
+	<hlayout spacing="6px">
+		<hlayout spacing="3px">
+			<label value="Purchase Order Number" sclass="name" mold="required"/>
+			<textbox id="poNumberTextBox" value="@{poController.purchaseOrder.poNumber}" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" constraint="no empty"/>
+		</hlayout>
+		<hlayout spacing="3px">
+			<label value="Supplier" sclass="name" mold="required"/>
+			<combobox id="supplierCombobox" model="@{poController.suppliers}" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" selectedItem="@{poController.inventoryItem.supplier}" 
+			onChange="divCancel.setVisible(false);poController.getProductsAssociateSupplier(productDetailsInc);"
+				constraint="no empty" readonly="true">
+				<comboitem self="@{each='supplierObj'}" label="@{supplierObj.name}" value="@{supplierObj}"/>
+			</combobox>
+		</hlayout>
+	</hlayout>
+	</vlayout>
+	<include id="productDetailsInc"/>
+	<div sclass="panelFoot" align="center" id="divCancel">
+		<button label="Cancel">
+			<attribute name="onClick">
+			com.nzion.zkoss.ext.Navigation.navigate("purchaseOrderList",null,"contentArea");
+			</attribute>
+		</button>
+	</div>
+</panelchildren>
+</panel>
+</window>
+</zk>

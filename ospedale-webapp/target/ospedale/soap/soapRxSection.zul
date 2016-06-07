@@ -1,0 +1,371 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./rxSectionWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript>
+        <![CDATA[
+			import com.nzion.zkoss.composer.SoapRxComposer;
+			import com.nzion.domain.emr.soap.PatientRx;
+			import com.nzion.zkoss.composer.PatientSoapNoteController;
+			import com.nzion.domain.emr.soap.*;
+			import com.nzion.domain.*;
+			import com.nzion.zkoss.composer.*;
+			PatientRx patientRx = new PatientRx();
+			Component comp = arg.get("soapModule");
+			com.nzion.domain.screen.BillingDisplayConfig billingDisplayConfig = commonCrudService.getByPractice(com.nzion.domain.screen.BillingDisplayConfig.class);
+			
+			PatientSoapNoteController patientSoapNoteController = (PatientSoapNoteController) desktop.getAttribute("controller");
+			PatientSoapNote lastEncounter = patientSoapNoteController.getLastEncounter();
+			List patientRxs = new ArrayList();
+			List patientRxsList;
+			if(lastEncounter != null){
+			    List soapSections = commonCrudService.findByEquality(SoapSection.class, new String[]{"soapNote.id"}, new Object[]{lastEncounter.getId()});
+			    for(Object obj : soapSections){
+			        if(obj instanceof RxSection){
+                        patientRxsList = commonCrudService.findByEquality(PatientRx.class, new String[]{"rxSection.id"}, new Object[]{((RxSection)obj).getId()});
+			            for(PatientRx prx : patientRxsList){
+			                PatientRx px  = org.apache.commons.lang.SerializationUtils.clone(prx);
+			                px.setId(null);
+			                patientRxs.add(px);
+			            }
+			        }
+			    }
+			}
+			RxSection rxSection = (RxSection) patientSoapNoteController.getSoapSection(RxSection.class);
+			
+			SoapRxComposer rxComposer = new SoapRxComposer();
+			
+			com.nzion.util.RestServiceConsumer restConsumer = new com.nzion.util.RestServiceConsumer();
+			com.nzion.domain.Patient patient = patientSoapNoteController.getPatient();
+			//java.util.List pharmacies = com.nzion.util.RestServiceConsumer.getPharmacies();
+			List pharmacies = restConsumer.getPharmacies();
+			patientSoapNoteController.setProviderFavoriteDrugDtos(patientSoapNoteController.getAllProviderFavoriteDrugDtos());
+			List allMedications = soapNoteService.getAllPatientClinicalRecords(patient, com.nzion.domain.emr.soap.PatientRx.class);
+			List medications = new ArrayList();
+			if(allMedications != null && allMedications.size() > 1)
+			  medications.add(allMedications.get(allMedications.size()-1));
+		]]>
+    </zscript>
+    <style>
+        .z-panel-icon {
+            float: right;
+        }
+        .form {
+            border: 1px solid #E1E1E1;
+            background-color:#fff;
+            padding: 20px 20px;
+            -webkit-border-radius:4px;
+            -moz-border-radius:4px;
+            border-radius:4px;
+        }
+        .form .name {
+            display: block;
+            width: 100px;
+            text-align: center;
+        }
+        .group {
+            background-color:#DCF7F6 !important;
+        }
+        .line {
+            background-color:#FFF !important;
+        }
+        tr.z-listbox-odd {
+        }
+    </style>
+    <window id="rxSectionWin" width="100%">
+        <div sclass="chiefComp soapNoteCont curSOAP ui-resizable" style="position:relative;">
+            <h:table width="100%">
+                <h:tr>
+                    <h:td class="soapNoteContL" >
+                        <div visible="${!isOrdered}">
+						<span sclass="linkBtn linkBtnOn">
+							<a disabled="${controller.readonly}" label="New" id="newBtn" sclass="addBtn" >
+                                <attribute name="onClick">
+                                    patientRx = new com.nzion.domain.emr.soap.PatientRx();
+                                    Window w =com.nzion.zkoss.ext.Navigation.navigateToModalWindow("/soap/soapAddEditRx",com.nzion.util.UtilMisc.toMap("patientRx",patientRx,"rxSection",rxSection,"patientSoapNoteController",patientSoapNoteController, "saveRx", saveRx, "comp", comp));
+                                    w.addForward("onDetach", rxSectionDisplayGrid, "onReloadRequest");
+                                    //Events.postEvent("onClick", comp, null);
+                                </attribute>
+                                <n:i class="icon-plus-sign"></n:i>
+                            </a>
+							<span />
+						</span>
+                        </div>
+                        <div>
+							<span sclass="linkBtn linkBtnOn">
+									<a id="printBtn" label="Print">
+                                        <attribute name="onClick">
+                                            <![CDATA[
+												//Executions.getCurrent().sendRedirect("/soap/printPatientRxs.zul?scheduleId=" + patientSoapNoteController.getSchedule().getId(), "_blank");
+												Executions.getCurrent().sendRedirect("/soap/printPreviewPatientRxs.zul?scheduleId=" + patientSoapNoteController.getSchedule().getId(), "_blank");
+											]]></attribute>
+                                    </a>
+									<span />
+								</span>
+                        </div>
+                        <div>
+                            <combobox id="selectPharmacy"
+                                      mold="rounded" vflex="true" width="200px"
+                                      w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" placeholder="Select Pharmacy"
+                                      selectedItem="@{rxSection.pharmacyTenantId, save-when='saveRx.onClick'}">
+                                <attribute name="onCreate">
+                                    int i = 0;
+                                    <!--if(pharmacies.size() >0 ){
+                                        self.setSelectedIndex(i);
+                                    }-->
+                                    if(rxSection.getPharmacyTenantId() == null){
+                                        for(com.nzion.dto.PharmacyDto pharmacyDto : pharmacies){
+                                            if(pharmacyDto.getPharmacyId().equals(billingDisplayConfig.getPharmacyId()) )
+                                                self.setSelectedIndex(i);
+                                            i++;
+                                        }
+                                    }
+                                </attribute>
+                                <comboitem forEach="${pharmacies}" label="${each.pharmacyName}" value="${each.pharmacyTenantId}">
+                                </comboitem>
+                            </combobox>
+                            <checkbox id="homeDeliveryCheckbox">
+                                <attribute name="onCreate">
+                                    <![CDATA[
+                        Set patientRxs = rxSection.getPatientRxs();
+                        if(patientRxs.size() > 0){
+                        PatientRx patientRx = patientRxs.iterator().next();
+                        homeDeliveryCheckbox.setChecked(patientRx.isHomeDelivery());
+                        }
+                        ]]>
+                                </attribute>
+                            </checkbox>
+                            <label sclass="homeDelivery" class="z-label-bold">Home Delivery</label>
+                        </div>
+                    </h:td>
+                </h:tr>
+                <h:tr>
+                    <h:td class="soapNoteContL" >
+
+                        <panel title="Past Rx" collapsible="true">
+                            <panelchildren>
+                                <div>
+                                    <n:table id="medicationListbox" cellpadding="0" cellspacing="0" border="0" class="display">
+                                        <n:thead>
+                                            <n:tr>
+                                                <n:th style="text-align:left">Drug Name</n:th>
+                                                <n:th style="text-align:left">Frequency</n:th>
+                                                <n:th style="text-align:left">Freq Qualifier</n:th>
+                                                <n:th style="text-align:left">No Of Days</n:th>
+                                                <n:th style="text-align:left">Total Count</n:th>
+                                                <n:th style="text-align:left">Valid Days</n:th>
+                                                <n:th style="text-align:left">Start Date</n:th>
+                                                <n:th style="text-align:left">End Date</n:th>
+                                                <n:th style="text-align:left">Home Delivery</n:th>
+                                                <n:th style="text-align:left">Action</n:th>
+                                            </n:tr>
+                                        </n:thead>
+                                        <n:tbody>
+                                            <n:tr forEach="${patientRxs}">
+                                                <n:td style="text-align:left">${each.drug.tradeName}</n:td>
+                                                <n:td style="text-align:left">${each.frequency}</n:td>
+                                                <n:td style="text-align:left">${each.frequencyQualifier}</n:td>
+                                                <n:td style="text-align:left">${each.numberOfDays}</n:td>
+                                                <n:td style="text-align:left">${each.totalCount}</n:td>
+                                                <n:td style="text-align:left">${each.validDays}</n:td>
+                                                <n:td style="text-align:left">${display:fd(each.startDate)}</n:td>
+                                                <n:td style="text-align:left">${display:fd(each.endDate)}</n:td>
+                                                <n:td style="text-align:left"><checkbox checked="${each.homeDelivery}" w:onCheck="this.setChecked(!this.isChecked())" /></n:td>
+                                                <n:td style="text-align:left">
+                                                    <image src="/images/Continue.png"  width="25px" height="25px" tooltiptext="Continue">
+                                                        <custom-attributes patientrx="${each}"/>
+                                                        <attribute name="onClick">
+                                                            rxSection.addPatientRx(patientrx);
+                                                            patientRx = new com.nzion.domain.emr.soap.PatientRx();
+                                                            Events.postEvent("onReloadRequest", rxSectionDisplayGrid, null);
+                                                            if(saveRx != null){
+                                                            Events.postEvent("onClick",saveRx,null);
+                                                            }
+                                                        </attribute>
+                                                    </image>
+                                                    <image src="/images/Discontinue.png" width="25px" height="25px" tooltiptext="Discontinue">
+                                                        <custom-attributes patientrx="${each}"/>
+                                                        <attribute name="onCreate">
+                                                            boolean showDiscontinue;
+                                                            if(patientrx.getEndDate() != null)
+                                                                showDiscontinue = com.nzion.util.UtilDateTime.isFirstDateAfterSecondDate(new Date(), patientrx.getEndDate());
+                                                            if(showDiscontinue)
+
+                                                                self.setVisible(false);
+                                                        </attribute>
+                                                        <attribute name="onClick">
+                                                            discontinuePastRx(patientrx);
+                                                            Events.postEvent("onClick",comp,null);
+                                                        </attribute>
+                                                    </image>
+                                                </n:td>
+                                            </n:tr>
+                                            <zscript>
+                                                <![CDATA[
+                                                void discontinuePastRx(PatientRx discontinuePatientRx){
+                                                    for(PatientRx prx : patientRxsList){
+                                                        if(prx.getDrug().equals(discontinuePatientRx.getDrug()) && prx.getFrequency().equals(discontinuePatientRx.getFrequency())
+                                                        && prx.getFrequencyQualifier().equals(discontinuePatientRx.getFrequencyQualifier()) && prx.getStartDate().equals(discontinuePatientRx.getStartDate())
+                                                        && prx.getNumberOfDays().equals(discontinuePatientRx.getNumberOfDays()))
+                                                        prx.setEndDate(new Date());
+                                                        commonCrudService.merge(prx);
+                                                    }
+                                                }
+                                                ]]>
+                                            </zscript>
+                                            <n:tr>
+                                                <n:td>
+                                                    <a id="more" label="More" zclass="greyButton" onClick="" w:onClick="jq(this.$f('patDetailsDiv')).slideToggle(200);" visible="false" style="margin-left: 0px;">
+                                                        <attribute name="onClick">
+                                                            Map m = new HashMap();
+                                                            m.put("patient", patient);
+                                                            Executions.createComponents("/soap/pastRxMore.zul", null, m);
+                                                        </attribute>
+                                                        <attribute name="onCreate">
+                                                            if(patientRxs.size() > 0){
+                                                            more.setVisible(true);
+                                                            }
+                                                        </attribute>
+                                                    </a>
+                                                </n:td>
+                                            </n:tr>
+                                        </n:tbody>
+                                    </n:table>
+                                </div>
+                            </panelchildren>
+                        </panel>
+                        <separator/>
+                        <panel title="Prescription">
+                            <panelchildren>
+                                <hbox widths="85%,15%">
+                                    <listbox sclass="dataTable_scroll" height="250px"
+                                             model="@{rxSection.patientRxs,load-after='self.onReloadRequest'}" id="rxSectionDisplayGrid" rows="4">
+                                        <listhead>
+                                            <listheader label="Drug Name" align="left"/>
+                                            <listheader label="Frequency" width="8%" align="left"/>
+                                            <listheader label="Freq Qualifier" width="12%" align="left"/>
+                                            <listheader label="No Of Days" width="10%" align="left"/>
+                                            <listheader label="Total Count" width="10%" align="left"/>
+                                            <listheader label="Valid Days" width="10%" align="left"/>
+                                            <listheader label="Start Date" width="10%" align="left"/>
+                                            <!--<listheader label="Home Delivery" align="left"/>-->
+                                            <listheader label="Action" width="10%" align="left"/>
+                                        </listhead>
+                                        <listitem self="@{each='patientRx'}" value="@{patientRx}">
+                                            <listcell>
+                                                <label value="@{patientRx.drug.tradeName}"/>
+                                            </listcell>
+                                            <listcell>
+                                                <label value="@{patientRx.frequency}"/>
+                                            </listcell>
+                                            <listcell>
+                                                <label value="@{patientRx.frequencyQualifier}"/>
+                                            </listcell>
+                                            <listcell>
+                                                <label value="@{patientRx.numberOfDays}"/>
+                                            </listcell>
+                                            <listcell>
+                                                <label value="@{patientRx.totalCount}"/>
+                                            </listcell>
+                                            <listcell>
+                                                <intbox value="@{patientRx.validDays}" readonly="true"/>
+                                            </listcell>
+                                            <listcell label="@{patientRx.startDate,converter='com.nzion.view.component.DateConverter'}"/>
+                                            <!--<listcell>
+                                                <checkbox checked="@{patientRx.homeDelivery,access='load'}" w:onCheck="this.setChecked(!this.isChecked())" />
+                                            </listcell>-->
+                                            <listcell>
+                                                <a label="Edit | " disabled="${patientSoapNoteController.readonly}">
+                                                    <attribute name="onClick">
+                                                        patientRx = (PatientRx) self.getParent().getParent().getValue();
+                                                        Window w =com.nzion.zkoss.ext.Navigation.navigateToModalWindow("/soap/soapAddEditRx",com.nzion.util.UtilMisc.toMap("patientRx",patientRx,"rxSection",rxSection,"patientSoapNoteController",patientSoapNoteController,"saveRx", saveRx));
+                                                        w.addForward("onDetach", rxSectionDisplayGrid, "onReloadRequest");
+                                                    </attribute>
+                                                </a>
+                                                <a label="Remove" disabled="${patientSoapNoteController.readonly}">
+                                                    <attribute name="onClick">
+                                                        if(homeDeliveryCheckbox.isChecked()){
+                                                        selectPharmacy.setConstraint("no empty");
+                                                        selectPharmacy.getValue();
+                                                        }
+                                                        rxSection.getPatientRxs().remove(self.getParent().getParent().getValue());
+                                                        Events.postEvent("onReloadRequest",rxSectionDisplayGrid,null);
+                                                        Events.postEvent("onClick",saveRx,null);
+                                                    </attribute>
+                                                </a>
+                                            </listcell>
+                                        </listitem>
+                                    </listbox>
+
+                                    <listbox height="250px" model="@{patientSoapNoteController.providerFavoriteDrugDtos,load-after='self.onReloadRequest'}"
+                                             id="providerFavoriteDrugListbox">
+                                        <listhead >
+                                            <listheader >
+                                                <textbox value="Search Favorites      *" style="height: 14px !important;" >
+                                                    <attribute name="onClick">
+                                                        self.setValue("");
+                                                    </attribute>
+                                                    <attribute name="onBlur">
+                                                        if(UtilValidator.isEmpty(self.getValue())){
+                                                        self.setValue("Search Favorites      *");
+                                                        patientSoapNoteController.getAllProviderFavoriteDrugDtos();
+                                                        Events.postEvent("onReloadRequest",providerFavoriteDrugListbox,null);
+                                                        }else{
+                                                        patientSoapNoteController.searchProviderFavoriteDrugDtosByName(self.getValue());
+                                                        Events.postEvent("onReloadRequest",providerFavoriteDrugListbox,null);
+                                                        }
+                                                    </attribute>
+                                                </textbox>
+                                            </listheader>
+                                        </listhead>
+                                        <listitem self="@{each='providerFavoriteDrugDto'}" value="@{providerFavoriteDrugDto}"
+                                                  zclass="@{providerFavoriteDrugDto.css}" tooltiptext="double click to select from the list">
+                                            <attribute name="onDoubleClick">
+                                                if(!controller.readonly){
+                                                rxSection = patientSoapNoteController.addPatientRx(self.getValue());
+                                                Events.postEvent("onReloadRequest",rxSectionDisplayGrid,null);
+                                                Events.postEvent("onClick",saveRx,null);
+                                                }
+                                            </attribute>
+                                            <listcell >
+                                                <label value="@{providerFavoriteDrugDto.name}"/>
+                                            </listcell>
+                                        </listitem>
+                                    </listbox>
+                                </hbox>
+                            </panelchildren>
+                        </panel>
+                    </h:td>
+                </h:tr>
+            </h:table>
+            <div style="float:right">
+                <hbox>
+                    <textbox style="background-color: #DCF7F6 !important; font-weight:bold !important;" value="Group" width="80px" readonly="true"/>
+                    <textbox style="background-color: #FFF !important; font-weight:bold !important;" value="Drug" width="76px" readonly="true"/>
+                </hbox>
+            </div>
+            <div sclass="buttonPanel">
+                <button disabled="${controller.readonly}" label="Save" zclass="btn btn-success"
+                         id="saveRx">
+                <attribute name="onClick">
+                    <![CDATA[
+
+                    if(homeDeliveryCheckbox.isChecked()){
+                        selectPharmacy.setConstraint("no empty");
+                        selectPharmacy.getValue();
+                    }
+                        Set patientRxs = rxSection.getPatientRxs();
+                        for(PatientRx patientRx : patientRxs){
+                            patientRx.setHomeDelivery(homeDeliveryCheckbox.isChecked());
+                        }
+                        patientSoapNoteController.saveSoapSection();
+
+                        ]]>
+                </attribute>
+                </button>
+                <space width="15px" />
+            </div>
+        </div>
+    </window>
+</zk>

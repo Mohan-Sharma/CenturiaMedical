@@ -1,0 +1,16 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<zk>
+	<zscript>
+		import com.nzion.zkoss.composer.ReferralController;
+	
+		setPageTitle("Referral", "");
+		//ReferralController referralController = new ReferralController();
+	</zscript>
+	<window self="@{define(content)}">
+		<screen width="100%" listtitle="List of Referrals" addpage="referral"
+			entityclass="com.nzion.domain.Referral" addmodepopup="true" 
+			fields="accountNumber,clinicName,contacts.email,contacts.officePhone,contacts.postalAddress.stateProvinceGeo,afyaRegisteredYesNo, active"
+			labels="Code,Care Provider Name,Email,Office phone,Governorate,Afya Registered,Active"
+			hidedeletebtn="true" containername="contentArea" defaultSortDesc="false" defaultsort="clinicName"/>
+	</window>
+</zk>

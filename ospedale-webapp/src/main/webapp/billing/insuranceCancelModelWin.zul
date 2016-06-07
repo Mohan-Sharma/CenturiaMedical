@@ -1,0 +1,61 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./cancelWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+    xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native"
+    xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript>
+    import com.nzion.domain.emr.CancelReasons;
+        Object invoiceItem =  arg.get("invoiceItem");
+        com.nzion.zkoss.composer.BillingController blcController = arg.get("blcController");
+        com.nzion.service.common.CommonCrudService commonCrudService = com.nzion.util.Infrastructure.getSpringBean("commonCrudService");
+        List invoiceCancelReasons = commonCrudService.findByEquality(CancelReasons.class,new String[]{"cancelReasonsType"},new Object[]{com.nzion.domain.emr.CancelReasons.CancelReasonsType.INVOICE_CANCEL.toString()});
+    </zscript>
+    <window id="cancelWin" style="margin-top:0px;" mode="modal" sclass="modalStyle">
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Cancel Details</h:small>
+                <button type="button" zclass="close" onClick="cancelWin.detach();">×</button>
+            </h:h1>
+        </div>
+        <div class="container-fluid">
+            <div zclass="row-fluid">
+
+                <div zclass="span4">
+                    <label value="Cancel Authorizer" />
+                    <textbox value="@{invoiceItem.cancelAuthoriser}" 
+                              sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}"
+                             w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"/>
+                </div>
+                <div zclass="span4">
+                    <label value="Reason" />
+                    <div width="200px">
+                    <combobox model="@{invoiceCancelReasons}" value="@{invoiceItem.cancelReason}" readonly="true" >
+                    	<comboitem self="@{each='cancelReason'}" value="@{cancelReason.reason}" label="@{cancelReason.reason}"></comboitem>
+                    </combobox>
+                    </div>
+                    <!-- <textbox
+                            value="@{invoiceItem.cancelReason}"
+                             sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}"
+                            w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"  /> -->
+                </div>
+            </div>
+
+        </div>
+
+        <div sclass="panelFoot">
+            <button label="Save" zclass="btn-success btn">
+                <attribute name="onClick">
+                    blcController.cancelInvoice(invoiceItem);
+                    if(invoiceItem instanceof com.nzion.domain.billing.InvoiceItem)
+                    	Executions.getCurrent().sendRedirect("/billing/billingTxnItem.zul?invoiceId=" + invoiceItem.getInvoice().getId() + "&amp;isSave=true");
+                    if(invoiceItem instanceof com.nzion.domain.billing.Invoice)
+                    	Executions.getCurrent().sendRedirect("/billing/billingTxnItem.zul?invoiceId=" + invoiceItem.getId() + "&amp;isSave=true");
+                    cancelWin.detach();
+                </attribute>
+            </button>
+        </div>
+
+    </window>
+</zk>

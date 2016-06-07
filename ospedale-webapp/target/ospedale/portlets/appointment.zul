@@ -1,0 +1,1107 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./appointment"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native">
+    <zscript><![CDATA[
+    import com.nzion.domain.*;
+        import com.nzion.service.common.CommonCrudService;
+        import com.nzion.domain.Provider;
+        import com.nzion.service.ScheduleService;
+        import com.nzion.domain.Schedule;
+        import com.nzion.domain.CalendarSlot;
+        import com.nzion.domain.util.SlotAvailability;
+        import com.nzion.service.ProviderService;
+        import com.nzion.util.Infrastructure;
+        import com.nzion.domain.screen.ScheduleConfig;
+        import com.nzion.domain.screen.NamingDisplayConfig;
+        import com.nzion.domain.Referral;
+        import com.nzion.domain.emr.VisitTypeSoapModule;
+        import com.nzion.domain.emr.CancelReasons;
+
+        com.nzion.service.common.CommonCrudService commonCrudService = Infrastructure.getSpringBean("commonCrudService");
+        com.nzion.service.utility.UtilityFinder utilityFinder = Infrastructure.getSpringBean("utilityFinder");
+        NamingDisplayConfig displayConfig = commonCrudService.getAll(NamingDisplayConfig.class).get(0);
+        String position = displayConfig.getPosition3();
+        List referrals = new java.util.LinkedList();
+        referrals = commonCrudService.getAll(com.nzion.domain.Referral.class,"clinicName");
+
+        /*Collections.sort(referrals, new Comparator(){
+            public int compare(Referral r1, Referral r2) {
+                if(position!=null && position.equals("firstName"))
+                    return r1.getFirstName().compareToIgnoreCase(r2.getFirstName());
+                else
+                    return r1.getLastName().compareToIgnoreCase(r2.getLastName());
+                }
+            });*/
+
+        if(com.nzion.util.UtilValidator.isNotEmpty(referrals)){
+        referrals = utilityFinder.getUpdatedReferral(referrals,Infrastructure.getPractice().getTenantId());
+        }
+
+        if(com.nzion.util.UtilValidator.isNotEmpty(referrals))
+        referrals.add(0,null);
+
+        List specialities = commonCrudService.getAll(com.nzion.domain.Speciality.class);
+        Collections.sort(specialities);
+
+        com.nzion.zkoss.ext.EntityDropdownRenderer dropdownRenderer = new com.nzion.zkoss.ext.EntityDropdownRenderer(new
+        com.nzion.zkoss.ext.EntityDropDownPersonNameAdapter());
+        ProviderService providerService = Infrastructure.getSpringBean("providerService");
+
+        Schedule.STATUS[] scheduleStatusArr = Schedule.STATUS.values();
+
+        com.nzion.zkoss.composer.appointment.ScheduleController scheduleController = new com.nzion.zkoss.composer.appointment.ScheduleController();
+        com.nzion.domain.Location location = (com.nzion.domain.Location)
+        Sessions.getCurrent().getAttribute("_location");
+        ScheduleService scheduleService = com.nzion.util.Infrastructure.getSpringBean("scheduleService");
+        ScheduleConfig screenConfig = scheduleService.getAppointmentDisplayScreen();
+        com.nzion.domain.base.Weekdays weekdays = com.nzion.domain.base.Weekdays.allSelectedWeekdays();
+        com.nzion.view.ScheduleSearchValueObject searchObject = new com.nzion.view.ScheduleSearchValueObject(false);
+        searchObject.setLocation(location);
+        Schedule currentSchedule = null;
+        currentSchedule = new Schedule();
+        currentSchedule.setLocation(location);
+        if(currentSchedule.getPriority() == null)
+        currentSchedule.setPriority("Normal");
+        Set searchResult = new HashSet();
+        com.nzion.domain.screen.BillingDisplayConfig billingDisplayConfig = commonCrudService.getByPractice(com.nzion.domain.screen.BillingDisplayConfig.class);
+        desktop.setAttribute("currentSchedule", currentSchedule);
+        Object object = null;
+        List reasons = commonCrudService.getAll(com.nzion.domain.emr.ScheduleCancelReasons.class);
+        //boolean internalReferralTest = false;
+        String availabilityStatus=null;
+        
+        VisitTypeSoapModule visitTypeSoapModule = null;
+        
+        List invoiceCancelReasons = commonCrudService.findByEquality(CancelReasons.class,new String[]{"cancelReasonsType"},new Object[]{com.nzion.domain.emr.CancelReasons.CancelReasonsType.APPOINTMENT_CANCEL.toString()});
+        List referralClinicDoctorList = new ArrayList();
+        String referralDocMobile = "";
+        ]]>
+    </zscript>
+    <window apply="${scheduleController}" id="appointment" width="100%">
+        <div zclass="container-fluid">
+            <div zclass="row-fluid">
+                <div zclass="span7">
+                    <div zclass="row-fluid">
+                        <div zclass="span5" style="margin-left: 15px;">
+                            <label class="z-label-bold" value="Speciality"></label>
+                            <listbox model="@{specialities}" zclass="span11" mold="select" sizedByContent="true"
+                                     id="specialityListbox">
+                                <attribute name="onSelect">
+                                    if(self.getSelectedItem() != null){
+                                    com.nzion.domain.Speciality speciality = self.getSelectedItem().getValue();
+                                    List providers = providerService.getProvidersForSpeciality(speciality);
+                                    providerList.setModel(new BindingListModelList(providers,false));
+                                    }
+                                </attribute>
+                                <listitem self="@{each='zk'}" label="@{zk}" value="@{zk}"></listitem>
+                            </listbox>
+                        </div>
+                        <div zclass="span6">
+                            <label class="z-label-bold" value="Doctor" mold="required" style="margin-right: 50px;"/>
+                            <listbox mold="select" sizedByContent="true" zclass="span10"
+                                     model="@{scheduleController.schedulableResourcesByLocation}" id="providerList"
+                                     itemRenderer="${dropdownRenderer}">
+                                <attribute name="onSelect">
+                                    <![CDATA[
+                                    displayVisitType();
+                                    scheduleController.setPerson((com.nzion.domain.Person)providerList.getSelectedItem().getValue());
+                                    searchObject.setPerson((com.nzion.domain.Person)providerList.getSelectedItem().getValue());
+                                    Events.postEvent("onClick", freeSlot, null);
+                                    if((com.nzion.domain.Person)providerList.getSelectedItem().getValue() != null){
+                                        availabilityCombo.setVisible(true);
+                                        Events.postEvent("onCreate", availabilityCombo, null);
+                                    } else{
+                                        availabilityCombo.setVisible(false);
+                                    }
+                                    ]]>
+                                </attribute>
+                                <attribute name="onEditProviderList">
+                                    if(Infrastructure.getUserLogin().hasRole(Roles.PROVIDER)){
+                                    scheduleController.setPerson(Infrastructure.getLoggedInPerson());
+                                    if(self.getSelectedItem() == null){
+                                    for(Listitem li : self.getItems()){
+                                    if( Infrastructure.getLoggedInPerson().equals(((Person)li.getValue())) ){
+                                    self.setSelectedItem(li);
+                                    }
+                                    }
+                                    }
+                                    }
+                                </attribute>
+                                <listitem self="@{each='zk'}" value="@{zk}" label="@{zk.firstName}">
+
+                                </listitem>
+                            </listbox>
+                            <combobox width="50px" id="availabilityCombo" visible="false">
+                                <attribute name="onCreate">
+                                    <![CDATA[
+                                    Person person = searchObject.getPerson();
+                                    Provider provider = null;
+                                    if(person != null){
+                                        provider = commonCrudService.findUniqueByEquality(Provider.class, new String[]{"id"}, new Object[]{person.getId()});
+                                        if(provider.getId() != null && scheduleController.selectedDate != null){
+                                            List providerAvailabilityList = commonCrudService.findByEquality(ProviderAvailability.class, new String[]{"provider.id", "appointmentDate"}, new Object[]{provider.getId(), scheduleController.selectedDate});
+                                            if(providerAvailabilityList.size() > 0){
+                                                sortAndProvideTheLatest(providerAvailabilityList);
+                                                ProviderAvailability providerAvailability = providerAvailabilityList.get(0);
+                                                availabilityStatus = providerAvailability.getStatus().toString();
+                                                if(availabilityStatus != null){
+                                                    self.setValue(availabilityStatus);
+                                                }
+                                            } else{
+                                                self.setValue("IN");
+                                                persistAvailability(self.getValue(), provider);
+                                            }
+                                        }
+                                    }
+                                    ]]>
+                                </attribute>
+                                <attribute name="onBlur">
+                                    if(!availabilityStatus.equals(self.getValue())){
+                                    persistAvailability(self.getValue(), provider);
+                                    }
+                                </attribute>
+                                <comboitem label="IN" value="IN"/>
+                                <comboitem label="OUT" value="OUT"/>
+                            </combobox>
+                        </div>
+                        <zscript>
+                            void sortAndProvideTheLatest(List list){
+                            Collections.sort(list, new Comparator(){
+                            public int compare(com.nzion.domain.ProviderAvailability m1, com.nzion.domain.ProviderAvailability m2) {
+                            return m2.statusChangeTime.compareTo(m1.statusChangeTime);
+                            }
+                            });
+                            }
+
+                            void persistAvailability(String status, Provider provider){
+                            ProviderAvailability providerAvailability = new ProviderAvailability();
+                            providerAvailability.setStatus(status.equals("IN") ? ProviderAvailability.STATUS.IN : ProviderAvailability.STATUS.OUT);
+                            providerAvailability.setProvider(provider);
+                            providerAvailability.setStatusChangeTime(new Date());
+                            providerAvailability.setAppointmentDate(scheduleController.selectedDate);
+                            commonCrudService.save(providerAvailability);
+                            }
+                        </zscript>
+                    </div>
+
+                    <div zclass="row-fluid">
+                        <div zclass="span5" style="margin-left: 10px;">
+                            <label value="Appointment Date" style="margin-left: 8px;" class="z-label-bold"/>
+                            <datebox id="appointmentDate" value="@{scheduleController.selectedDate}" sclass="span11">
+                                <attribute name="onChange">
+                                    <![CDATA[
+                                        Events.postEvent("onClick", freeSlot, null);
+                                    ]]>
+                                </attribute>
+                            </datebox>
+                        </div>
+                        <div zclass="span5" style="margin-left: 20px;">
+                            <label value="Time Slot" mold="required" class="z-label-bold"></label>
+                            <listbox mold="select" model="@{searchResult,load-after='freeSlot.onClick'}"
+                                     id="slotListbox" zclass="span10">
+                                <listitem self="@{each='zk'}"
+                                          label="@{zk.slot,converter='com.nzion.zkoss.composer.appointment.SlotConverter'}"
+                                          value="@{zk.slot}"></listitem>
+                            </listbox>
+                            <a id="freeSlot" zclass="btn btn-primary" visible="false">
+                                <n:i class="whiteIcon-search"></n:i>
+                                <attribute name="onClick">
+                                    searchObject.setFromDate(scheduleController.getSelectedDate());
+                                    searchObject.setThruDate(scheduleController.getSelectedDate());
+                                    searchResult = scheduleController.searchSchedule(searchObject, weekdays);
+                                </attribute>
+                            </a>
+                        </div>
+
+                    </div>
+
+                    <div zclass="row-fluid">
+                        <div zclass="span5" style="margin-left: 12px;">
+                            <label value="Visit Type" mold="required" style="margin-left: 8px;" class="z-label-bold"/>
+                            <combobox id="visitTypebox" sclass="span11"
+                                      selectedItem="@{currentSchedule.visitType,load-after='resetBtn.onClick, actionBtn.onClick, actionBtn.onClick'}"
+                                      model="@{scheduleService.allSoapNoteTypes}">
+                                <!--<attribute name="onChange">
+                                    <![CDATA[
+                                        String value = self.getValue();
+                                        if(!currentSchedule.isConfirmed()){
+                                        if(value.trim().toUpperCase().startsWith("TELE CONSULTATION")){
+                                            org.zkoss.zul.Messagebox.show("Appointment Confirmed?", "Confirmation", org.zkoss.zul.Messagebox.YES | org.zkoss.zul.Messagebox.NO, org.zkoss.zul.Messagebox.QUESTION, new EventListener() {
+                                                public void onEvent(Event event) throws Exception {
+                                                    if (event.getData().equals(org.zkoss.zul.Messagebox.YES)) {
+                                                        currentSchedule.setConfirmed(true);
+                                                    }
+                                                }
+                                            });
+                                            }
+                                        }
+                                    ]]>
+                                </attribute>-->
+                                <!--<comboitem self="@{each='slotType'}" value="@{slotType}" label="@{slotType.name}"/>-->
+                                <smartservicecomboitem self="@{each='slotType'}" value="@{slotType}" label="@{slotType.name}"/>
+                            </combobox>
+                        </div>
+                        <div zclass="span4" id="referralHlayout" style="margin-left: 15px;">
+                            <label value="Referral Clinic" id="refLbl" class="z-label-bold"/>
+                            <listbox id="referral" model="@{referrals}"
+                                     sizedByContent="true"
+                                     mold="select" zclass="span11"
+                                     selectedItem="@{currentSchedule.referral,load-after='internalReferralCheckBoxId.onCheck,resetBtn.onClick,self.onReload, actionBtn.onClick'}">
+                                <attribute name="onSelect">
+                                    refClinicDoctorDiv.setVisible(true);
+                                    refDocNameHbox.setVisible(false);
+                                    getReferralClinicDoctor();
+                                    currentSchedule.setReferral(self.getSelectedItem().getValue());
+                                </attribute>
+                                <listitem self="@{each='referral'}" label="@{referral.displayName}" value="@{referral}"/>
+                            </listbox>
+                        </div>
+                        <div zclass="span4" id="internalReferralHlayout" style="margin-left: 15px;" visible="false">
+                            <label value="Internal Referral" class="z-label-bold"/>
+                            <listbox id="internalReferral" model="@{scheduleController.internalReferrals}"
+                                     sizedByContent="true"
+                                     mold="select" zclass="span11"
+                                     selectedItem="@{currentSchedule.internalReferral,load-after='internalReferralCheckBoxId.onCheck,resetBtn.onClick,self.onReload, actionBtn.onClick'}"
+                                     itemRenderer="${dropdownRenderer}"/>
+                        </div>
+                        <div zclass="span3" style="padding-top: 23px;margin-left: 0px;">
+                            <checkbox id="internalReferralCheckBoxId"
+                                      onCheck="referralHlayout.setVisible(!self.isChecked());internalReferralHlayout.setVisible(self.isChecked());
+                                      refClinicDoctorDiv.setVisible(!self.isChecked());"/>
+                            <label value="Internal Referral?" id="intRefLbl" class="z-label-bold"/>
+                        </div>
+                    </div>
+
+                    <zscript><![CDATA[
+	                       void getReferralClinicDoctor(){
+	                       	  Referral selectedRefrral = referral.getSelectedItem().getValue();
+	                       	  com.nzion.hibernate.ext.multitenant.TenantIdHolder.setTenantId(selectedRefrral.getTenantId());
+	                       	  referralClinicDoctorList = commonCrudService.getAll(Provider.class);
+	                       	  com.nzion.hibernate.ext.multitenant.TenantIdHolder.setTenantId(Infrastructure.getPractice().getTenantId());
+	                       	  Events.postEvent("onReload",refClinicDoctorListbox,null);
+	                       }
+	                       void getReferralDoctorDet(){
+	                       	  Referral selectedRefrral = referral.getSelectedItem().getValue();
+	                       	  com.nzion.hibernate.ext.multitenant.TenantIdHolder.setTenantId(selectedRefrral.getTenantId());
+	                       	  referralDocMobile = commonCrudService.getById(com.nzion.domain.Provider.class,((com.nzion.domain.Provider)(refClinicDoctorListbox.getSelectedItem().getValue())).getId()).getContacts().getMobileNumber();
+	                       	  com.nzion.hibernate.ext.multitenant.TenantIdHolder.setTenantId(com.nzion.util.Infrastructure.getPractice().getTenantId());
+	                       	  currentSchedule.setReferralDocMobileNo(referralDocMobile);
+	                       }
+                    ]]>
+                    </zscript>
+
+                    <div zclass="row-fluid"  style="margin-left: 12px;" >
+                        <hbox id="refDocNameHbox" visible="false">
+                            <label value="Referral Doctor Name : " style="margin-left: 8px;font-family: Calibri !important;font-size: 14px;
+                         font-weight: bold;" class="z-label-bold"/>
+                            <label value="@{currentSchedule.referralDoctorFirstName,load-after='internalReferralCheckBoxId.onCheck,resetBtn.onClick,referral.onReload, actionBtn.onClick'} " style="margin-left: 8px;font-family: Calibri !important;font-size: 14px;"/>
+                            <label value="@{currentSchedule.referralDoctorLastName,load-after='internalReferralCheckBoxId.onCheck,resetBtn.onClick,referral.onReload, actionBtn.onClick'}" style="margin-left: 8px;font-family: Calibri !important;font-size: 14px;"/>
+                        </hbox>
+                        <div zclass="span4" id="refClinicDoctorDiv" visible="false">
+                            <label value="Referral Clinic Doctor" style="margin-left: 8px;" class="z-label-bold"/>
+                            <listbox mold="select" sizedByContent="true" id="refClinicDoctorListbox" style="margin-left: 8px;"
+                                     model="@{referralClinicDoctorList,load-after='internalReferralCheckBoxId.onCheck,resetBtn.onClick,self.onReload, actionBtn.onClick'}" zclass="span12"
+                                     selectedItem="@{currentSchedule.referralClinicDoctorTransient}">
+                                <attribute name="onSelect">
+                                    <![CDATA[
+									getReferralDoctorDet();
+                                ]]>
+                                </attribute>
+                                <listitem self="@{each='refDoc'}" value="@{refDoc}" label="@{refDoc}"/>
+                            </listbox>
+                        </div>
+                    </div>
+
+
+                    <!--   <div zclass="row-fluid">
+                          <div zclass="span5" >
+                              <label value="Visit Type" mold="required" style="margin-left: 10px;"/>
+                              <listbox mold="select" sizedByContent="true" id="visitTypebox"
+                                       model="@{scheduleService.allSoapNoteTypes}" zclass="span12"
+                                       selectedItem="@{currentSchedule.visitType,load-after='resetBtn.onClick'}">
+                                  <listitem self="@{each='slotType'}" value="@{slotType}" label="@{slotType.name}"/>
+                              </listbox>
+                          </div>
+                      </div> -->
+
+                    <div zclass="row-fluid">
+                        <div zclass="span5"  style="margin-left: 10px;">
+                            <label value="Priority" style="margin-left: 8px;" class="z-label-bold"/>
+                            <combobox sclass="span11" selectedItem="@{currentSchedule.priority,load-after='internalReferralCheckBoxId.onCheck,resetBtn.onClick,self.onReload, actionBtn.onClick', save-when='actionBtn.onClick, chkBtn.onClick, scheduleStatuses.onSelect'}" id="priority">
+                                <comboitem label="Normal" value="Normal"/>
+                                <!--<comboitem label="Medium" style="margin-left: 20px;" value="Medium"/>-->
+                                <comboitem label="High" style="margin-left: 20px;" value="High"/>
+                            </combobox>
+                        </div>
+                        <div zclass="span4" >
+                            <label value="Notes" class="z-label-bold"/><separator style="height: 0px;"/>
+                            <textbox rows="1" cols="45" id="notes" sclass="span11" value="@{currentSchedule.comments}"/>
+                        </div>
+                        <!--Tentative and confirm appointment on 19th Aug 2015 by Mohan Sharma-->
+                        <!-- <div zclass="span2" >
+                            <checkbox id="confirmedCheckBoxId" checked="@{currentSchedule.confirmed,load-after='internalReferralCheckBoxId.onCheck,resetBtn.onClick,self.onReload, actionBtn.onClick', save-when='actionBtn.onClick'}">
+                            </checkbox>
+                            <label value="Confirmed?" id="confirmedLbl" class="z-label-bold"/>
+                            <label value="Status " class="z-label-bold"/>
+                            <combobox readonly="true" id="tentativeStatusDropdown" >
+	                            <attribute name="onCreate">
+	                            	if("Paid".equals(currentSchedule.getTentativeStatus())){
+	                            		self.setDisabled(true);
+	                            	}
+	                            	self.setValue(currentSchedule.getTentativeStatus());
+	                            </attribute>
+	                            <attribute name="onSelect">
+	                            	currentSchedule.setTentativeStatus(self.getValue());
+	                            </attribute>
+                            	<comboitem value="Tentative" label="Tentative"/>
+                            	<comboitem value="Confirmed" label="Confirmed"/>
+                            </combobox>
+                        </div> -->
+                    </div>
+
+                    <div zclass="row-fluid">
+                        <div zclass="span5" visible="false" id="scheduleStatusDiv" style="margin-left:10px;">
+                            <label value="Appointment Status" mold="required" style="margin-left: 8px;" class="z-label-bold"/>
+                            <combobox readonly="true" id="scheduleStatuses" sclass="span11"
+                                      selectedItem="@{scheduleController.selectedStatus,load-after='resetBtn.onClick,self.onReload, actionBtn.onClick'}">
+                                <attribute name="onChange">
+                                    <![CDATA[
+
+                                        if(validateIfPatientChanged(currentSchedule)){
+                                            com.nzion.util.UtilMessagesAndPopups.showError("You cannot change patient while updating appointment");
+                                            return;
+                                        }
+                                        //actionBtn.setDisabled(com.nzion.domain.Schedule.STATUS.CHECKEDIN.equals(scheduleController.getSelectedStatus()));
+                                        //actionBtn.setDisabled(com.nzion.domain.Schedule.STATUS.EXAMINING.equals(scheduleController.getSelectedStatus()));
+
+                                        //scheduleController.openSigninWindow(currentSchedule,scheduleStatuses);
+                                        showReasonsIfStatusCancelled();
+                                    ]]>
+                                </attribute>
+                                <comboitem self="@{each='status'}" value="@{status}" label="@{status.description}"/>
+                            </combobox>
+                        </div>
+                        <div zclass="span5" visible="false" id="reasonDiv" style="margin-left:10px;">
+                            <label value="Reasons" class="z-label-bold" style="margin-left: 8px;"/>
+                            <!-- <suggest id="reasonsSuggest" entity="com.nzion.domain.emr.ScheduleCancelReasons"
+                                     searchcolumns="reason" displaycolumns="reason" value="@{currentSchedule.cancelReason,load-after='resetBtn.onClick,actionBtn.onClick', save-when='actionBtn.onClick'}" requiredcolumn="reason" width="100%" style="margin-left: 8px;"/> -->
+                            <combobox model="@{invoiceCancelReasons}" value="@{currentSchedule.cancelReason,load-after='resetBtn.onClick,actionBtn.onClick', save-when='actionBtn.onClick'}" readonly="true" >
+                                <comboitem self="@{each='cancelReason'}" value="@{cancelReason.reason}" label="@{cancelReason.reason}"></comboitem>
+                            </combobox>
+
+                        </div>
+                    </div>
+                    <div zclass="row-fluid" id="cancelDiv" visible="false">
+                        <div zclass="span5" style="margin-left:10px;">
+                            <label value="Cancellation By" mold="required"/>
+                            <combobox constraint="no empty" id="cancelCombobox">
+                                <attribute name="onSelect">
+                                    if("Patient".equals(self.getSelectedItem().getLabel()) ){
+                                    currentSchedule.setPatientCancel(true);
+                                    currentSchedule.setClinicCancel(false);
+                                    }else if("Clinic".equals(self.getSelectedItem().getLabel()) ){
+                                    currentSchedule.setPatientCancel(false);
+                                    currentSchedule.setClinicCancel(true);
+                                    }else{
+                                    currentSchedule.setPatientCancel(false);
+                                    currentSchedule.setClinicCancel(false);
+                                    }
+                                </attribute>
+                                <comboitem label="Patient" ></comboitem>
+                                <comboitem label="Clinic" ></comboitem>
+                            </combobox>
+                        </div>
+
+                        <!-- <div zclass="span5" style="margin-left:10px;" >
+                            <label value="Patient Cancellation" class="z-label-bold" style="margin-left: 8px;"/>
+                            <checkbox>
+                                <attribute name="onCheck">
+                                    currentSchedule.setPatientCancel(self.isChecked());
+                                </attribute>
+                            </checkbox>
+                        </div>
+                        <div zclass="span5" style="margin-left:10px;" >
+                            <label value="Clinic Cancellation" class="z-label-bold" style="margin-left: 8px;"/>
+                            <checkbox>
+                                <attribute name="onCheck">
+                                    currentSchedule.setClinicCancel(self.isChecked());
+                                </attribute>
+                            </checkbox>
+                        </div> -->
+                    </div>
+                    <div zclass="row-fluid" id="noShowDiv" visible="false">
+
+                        <div zclass="span5" style="margin-left:10px;">
+                            <label value="No Show By" mold="required"/>
+                            <combobox constraint="no empty" id="noShowCombobox">
+                                <attribute name="onSelect">
+                                    if("Patient".equals(self.getSelectedItem().getLabel()) ){
+                                    currentSchedule.setPatientRescheduling(true);
+                                    currentSchedule.setClinicRescheduling(false);
+                                    }else if("Clinic".equals(self.getSelectedItem().getLabel()) ){
+                                    currentSchedule.setPatientRescheduling(false);
+                                    currentSchedule.setClinicRescheduling(true);
+                                    }else{
+                                    currentSchedule.setPatientRescheduling(false);
+                                    currentSchedule.setClinicRescheduling(false);
+                                    }
+                                </attribute>
+                                <comboitem label="Patient" ></comboitem>
+                                <comboitem label="Clinic" ></comboitem>
+                            </combobox>
+                        </div>
+                        <!-- <div zclass="span5" style="margin-left:10px;" >
+                            <label value="Patient No Show" class="z-label-bold" style="margin-left: 8px;"/>
+                            <checkbox>
+                                <attribute name="onCheck">
+                                    currentSchedule.setPatientNoShow(self.isChecked());
+                                </attribute>
+                            </checkbox>
+                        </div>
+                        <div zclass="span5" style="margin-left:10px;" >
+                            <label value="Doctor No Show" class="z-label-bold" style="margin-left: 8px;"/>
+                            <checkbox>
+                                <attribute name="onCheck">
+                                    currentSchedule.setDoctorNoShow(self.isChecked());
+                                </attribute>
+                            </checkbox>
+                        </div> -->
+                    </div>
+                    <zscript>
+                        void displayVisitType(){
+                        Events.postEvent("onClick", freeSlot, null);
+                        com.nzion.domain.SoapNoteType visitType = null;
+                        Events.postEvent("onEditProviderList",providerList,null);
+                        if(providerList.getSelectedItem()!=null){
+                        Provider doctor = providerList.getSelectedItem().getValue();
+                        if(doctor.getSoapNoteType()!=null){
+                        visitType = doctor.getSoapNoteType();
+                        visitTypebox.setValue(visitType.toString());
+                        currentSchedule.setVisitType(visitType);
+                        }
+                        }
+                        }
+
+                        void showReasonsIfStatusCancelled(){
+                        if(scheduleStatuses.getValue().equals("CANCELLED")){
+                        reasonDiv.setVisible(true);
+                        cancelDiv.setVisible(false);
+                        currentSchedule.setPatientCancel(false);
+                        currentSchedule.setClinicCancel(true);
+                        } else {
+                        reasonDiv.setVisible(false);
+                        cancelDiv.setVisible(false);
+                        currentSchedule.setPatientCancel(false);
+                        currentSchedule.setClinicCancel(false);
+                        }
+
+                        if(scheduleStatuses.getValue().equals("NOSHOW")){
+                        noShowDiv.setVisible(true);
+                        } else {
+                        noShowDiv.setVisible(false);
+                        }
+                        }
+                    </zscript>
+                    <div>
+                        <button label="View Insurances"  id="insuranceBtn" sclass="btn btn-success">
+                            <attribute name="onClick">
+                                Executions.createComponents("/appointment/frontDeskDashBoardInsuranceView.zul",null,com.nzion.util.UtilMisc.toMap("commonCrudService", commonCrudService));
+                            </attribute>
+                        </button>
+                        <div class="btn-group">
+                            <button label="Day" onClick='scheduleController.changeToDayView();' id="dayBtn" sclass="btn btn-primary"/>
+                            <button label="Week" onClick='scheduleController.changeToWeekView();' id="weekBtn" sclass="btn btn-primary"/>
+                            <button label="Month" onClick='scheduleController.changeToMonthView();'
+                                    id="monthBtn" sclass="btn btn-primary"/>
+                        </div>
+                        <button label="Reset" style="margin-left:5%" id="resetBtn" sclass="btn btn-primary">
+                            <attribute name="onClick">
+                                Executions.sendRedirect(null);
+                            </attribute>
+                        </button>
+                        <button label="Reschedule" id="rescheduleBtn" visible="false">
+                            <attribute name="onClick">
+                                if (scheduleController.getSelectedComponent() == null) {
+                                com.nzion.util.UtilMessagesAndPopups.showError("Select a slot from the calendar to proceed.");
+                                return;
+                                }
+                                Window w = (Window) Executions.createComponents("/portlets/appointment-reschedule-alert.zul",null,
+                                com.nzion.util.UtilMisc.toMap("scheduleController",scheduleController,"currentSchedule",currentSchedule, "providerList", providerList));
+                                self.setVisible(false);
+                                //Executions.sendRedirect("/");
+                            </attribute>
+                        </button>
+                        <button label="Book Appointment" id="actionBtn" sclass="btn btn-success">
+                            <attribute name="onClick">
+                                <![CDATA[
+                                boolean openScheduleAlreadyExist(List schedules){
+                                for(Schedule schedule : schedules){
+                                    if(schedule.visitType.description.equals("Consult Visit")){
+                                        if(!schedule.getStatus().equals(com.nzion.domain.Schedule.STATUS.SOAPSIGNEDOUT) &&
+                                    		!schedule.getStatus().equals(com.nzion.domain.Schedule.STATUS.CANCELLED) &&
+                                    		!schedule.getStatus().equals(com.nzion.domain.Schedule.STATUS.CHECKEDOUT) &&
+                                    		!schedule.getStatus().equals(com.nzion.domain.Schedule.STATUS.NOSHOW) ){
+                                            return Boolean.TRUE;
+                                        }
+                                    }
+                                    }
+                                return Boolean.FALSE;
+                                }
+                                Patient currentPatient = null;
+                                if(object != null){
+                                if(object instanceof Patient)
+                                currentSchedule.setPatient((Patient)object);
+                                currentPatient = (Patient)object;
+                                }
+
+                                editPatientBtn.setVisible(false);
+                                Events.postEvent("onEditProviderList",providerList,null);
+                                if(self.getLabel().startsWith("Book")){
+                                    if(com.nzion.util.UtilDateTime.isFirstDateAfterSecondDate(new Date(),appointmentDate.getValue())){
+                                    com.nzion.util.UtilMessagesAndPopups.showError("Can't Book Appointment on Past Date");
+                                    return;
+                                    }
+
+                                    if(currentSchedule.getPatient()==null){
+                                    com.nzion.util.UtilMessagesAndPopups.showError("Select a Patient to proceed");
+                                    return;
+                                    }
+                                    if(providerList.getSelectedItem() == null){
+                                    com.nzion.util.UtilMessagesAndPopups.showError("Select a Provider to proceed");
+                                    return;
+                                    }
+                                    
+                                    Events.postEvent("onEditProviderList",providerList,null);
+                                    if(providerList.getSelectedItem()!=null){
+                                    Provider provider = (Provider)providerList.getSelectedItem().getValue();
+	                                    if(slotListbox.getSelectedItem() == null){
+	                                    com.nzion.util.UtilMessagesAndPopups.showError("Select a time slot to proceed");
+	                                    return;
+	                                    }
+                                    if(visitTypebox.getSelectedItem() == null){
+                                    com.nzion.util.UtilMessagesAndPopups.showError("Select a visit type to proceed");
+                                    return;
+                                    }
+                                    List existingScheduleList = commonCrudService.findByEquality(Schedule.class, new String[]{"person.id","patient.id", "startDate"}, new Object[]{provider.getId(), currentSchedule.getPatient().getId(), com.nzion.util.UtilDateTime.getDayStart(appointmentDate.getValue())});
+                                    if(com.nzion.util.UtilValidator.isNotEmpty(existingScheduleList) && openScheduleAlreadyExist(existingScheduleList)){
+                                       com.nzion.util.UtilMessagesAndPopups.showError("Appointment already open for given date doctor and patient.");
+                                       return;
+                                    }
+                                    if(currentPatient == null)
+                                    	currentPatient = currentSchedule.getPatient();
+                                    boolean corporatePatientContinue = true;
+                                    if("CORPORATE".equals(currentPatient.getPatientType()) ){
+                                    	if(currentPatient.getPatientCorporate() == null){
+                                    		com.nzion.util.UtilMessagesAndPopups.showError("Please add Tariff Category");
+                                    		return;
+                                    	}
+                                    	if("OneTime".equals(currentPatient.getPatientCorporate().getModeOfClaim())){
+                                    		Set corporateDocuments = currentPatient.getPatientCorporate().getPatientCorporateDocuments();
+                                    		if(com.nzion.util.UtilValidator.isEmpty(corporateDocuments)){
+                                    			com.nzion.util.UtilMessagesAndPopups.confirm("No valid document attached. Do you want to add document?", "Confirmation", Messagebox.YES
+                    									| Messagebox.NO, Messagebox.QUESTION, new org.zkoss.zk.ui.event.EventListener() {
+                    					        public void onEvent(Event event) {
+    	                						    if ("onYes".equals(event.getName())) {
+    		                                	    	Window w = (Window) Executions.createComponents("/patient/patientCorporateDocumentList.zul",null,
+    		                                	    			com.nzion.util.UtilMisc.toMap("patient",currentPatient));
+    		                                	    	w.setMode("modal");
+    		                                	    	w.setWidth("80%");
+    		                                	    	w.setClosable(true);
+    	                						    }else{
+    	                						    	corporatePatientContinue = true;
+    	                						    }
+        										}
+        										}
+        									   );
+                                    		}
+                                    		corporatePatientContinue = true;
+                                    	}else {
+                                    		Set corporateDocuments = currentPatient.getPatientCorporate().getPatientCorporateDocuments();
+                                    		Iterator itr = corporateDocuments.iterator();
+                                    		PatientCorporateDocument lastElement = null;
+                                    		corporatePatientContinue = false;
+                                    	    while(itr.hasNext()) {
+                                    	        lastElement= (PatientCorporateDocument) itr.next();
+                                    	        if(lastElement.getValidUpTo().compareTo(new Date()) >= 0)
+                                    	        	corporatePatientContinue = true;
+                                    	    }
+                                    	    if(!corporatePatientContinue){
+                                    	    	corporatePatientContinue = true;
+                                    	    	com.nzion.util.UtilMessagesAndPopups.confirm("No valid document attached. Do you want to add document?", "Confirmation", Messagebox.YES
+                    									| Messagebox.NO, Messagebox.QUESTION, new org.zkoss.zk.ui.event.EventListener() {
+                    					        public void onEvent(Event event) {
+    	                						    if ("onYes".equals(event.getName())) {
+    		                                	    	Window w = (Window) Executions.createComponents("/patient/patientCorporateDocumentList.zul",null,
+    		                                	    			com.nzion.util.UtilMisc.toMap("patient",currentPatient));
+    		                                	    	w.setMode("modal");
+    		                                	    	w.setWidth("80%");
+    		                                	    	w.setClosable(true);
+    	                						    }else{
+    	                						    	corporatePatientContinue = true;
+    	                						    }
+        										}
+        										}
+        									);
+
+                                    	    }
+                                    	}
+                                    }
+                                    CalendarSlot slot = ((CalendarSlot)slotListbox.getSelectedItem().getValue());
+                                    currentSchedule.setPerson(provider);
+                                    currentSchedule.setStartTime(slot.getStartTime());
+                                    currentSchedule.setEndTime(slot.getEndTime());
+                                    currentSchedule.setStartDate(com.nzion.util.UtilDateTime.getDayStart(appointmentDate.getValue()));
+                                    currentSchedule.setSequenceNum(slot.getSequenceNum());
+                                    currentSchedule.setPriorityMailSent(false);
+                                    if("Tentative".equals(currentSchedule.getTentativeStatus()) && !currentSchedule.isRequestForAppointment()){
+									    currentSchedule.setRequestForAppointment(true);
+									}
+                                    visitTypeSoapModule = commonCrudService.findUniqueByEquality(VisitTypeSoapModule.class,new String[]{"provider","slotType"},
+                                    		new Object[]{provider, currentSchedule.getVisitType() });
+                                    if(visitTypeSoapModule.isSmartService()){
+                                    	com.nzion.util.UtilMessagesAndPopups.showError("Smart services appointment cannot be booked from clinic. Please suggest patient to use Afya mobile application");
+                                        return;
+                                    }else{
+                                    	scheduleController.createSchedule(currentSchedule);
+                                    }
+                                    }
+                                }else if(self.getLabel().startsWith("Update")){
+
+                                //new code for update
+                                if(validateIfPatientChanged(currentSchedule)){
+                                    com.nzion.util.UtilMessagesAndPopups.showError("You cannot change patient while updating appointment");
+                                    return;
+                                }
+                                if((com.nzion.domain.Schedule.STATUS.CHECKEDIN.equals(scheduleController.getSelectedStatus())) || (com.nzion.domain.Schedule.STATUS.EXAMINING.equals(scheduleController.getSelectedStatus()))){
+                                scheduleController.openSigninWindow(currentSchedule,scheduleStatuses);
+                                return;
+                                }
+
+                                scheduleController.openSigninWindow(currentSchedule,scheduleStatuses);
+
+                                CalendarSlot slot = ((CalendarSlot)slotListbox.getSelectedItem().getValue());
+                                if(scheduleStatuses.getValue().equals("NOSHOW")){
+                                    //if(noShowCombobox.getValue().equals("Clinic")){
+
+                                        Date scheduleDateTime = com.nzion.util.UtilDateTime.toDate(currentSchedule.getStartDate().getMonth(), currentSchedule.getStartDate().getDate(), currentSchedule.getStartDate().getYear(),
+                                        currentSchedule.getStartTime().getHours(),currentSchedule.getStartTime().getMinutes(), currentSchedule.getStartTime().getSeconds());
+                                        if(scheduleDateTime.after(new Date())){
+                                            com.nzion.util.UtilMessagesAndPopups.showError("Future Appointment cannot be marked as No Show");
+                                            return Boolean.FALSE;
+                                    //    }
+                                    }
+                                }
+                                //new code end
+
+                                    if(scheduleStatuses.getSelectedItem() == null){
+                                    com.nzion.util.UtilMessagesAndPopups.showError("Select status to proceed");
+                                    return;
+                                    }
+                                    Events.postEvent("onEditProviderList",providerList,null);
+                                    Provider provider = (Provider)providerList.getSelectedItem().getValue();
+                                    CalendarSlot slot = ((CalendarSlot)slotListbox.getSelectedItem().getValue());
+                                    currentSchedule.setPerson(provider);
+                                    currentSchedule.setStartTime(slot.getStartTime());
+                                    currentSchedule.setEndTime(slot.getEndTime());
+                                    currentSchedule.setStartDate(com.nzion.util.UtilDateTime.getDayStart(appointmentDate.getValue()));
+                                    currentSchedule.setSequenceNum(slot.getSequenceNum());
+                                    currentSchedule.setStatus((Schedule.STATUS)scheduleStatuses.getSelectedItem().getValue());
+                                    if(!currentSchedule.getPriority().equals("High"))
+                                    currentSchedule.setPriorityMailSent(false);
+                                    if("Tentative".equals(currentSchedule.getTentativeStatus()) && !currentSchedule.isRequestForAppointment()){
+                                        currentSchedule.setRequestForAppointment(true);
+                                    }
+                                    visitTypeSoapModule = commonCrudService.findUniqueByEquality(VisitTypeSoapModule.class,new String[]{"provider","slotType"},
+                                    		new Object[]{provider, currentSchedule.getVisitType() });
+                                    
+                                    scheduleController.updateSchedule(currentSchedule);
+                                    
+                                    //if(visitTypeSoapModule.isSmartService()){
+                                    	//com.nzion.util.UtilMessagesAndPopups.showError("Smart service appointment cannot be booked from Clinic");
+                                        //return;
+                                    //}else{
+                                    	//scheduleController.updateSchedule(currentSchedule);
+                                    //}
+                                    
+                                    cancelDiv.setVisible(false);
+                                    noShowDiv.setVisible(false);
+                                }
+                                slotListbox.setSelectedItem(null);
+                                Events.postEvent("onClick", freeSlot, null);
+                                currentSchedule = new Schedule();
+                                currentSchedule.setLocation(location);
+                                if(currentSchedule.getPriority() == null){
+                                currentSchedule.setPriority("Normal");
+                                }
+                                //providerList.setSelectedItem(null);
+                                patientAccountNumber.recreate();
+                                appointmentDate.setValue(new Date());
+                                if(patientinfo.getChildren() != null)
+                                patientinfo.getChildren().clear();
+                                
+                                includePage.setSrc("/portlets/appointment.zul");
+    							includePage.invalidate();
+                                
+                                ]]>
+                            </attribute>
+                        </button>
+                        <zscript>
+                            <![CDATA[
+                                boolean validateIfPatientChanged(Schedule bookedSchedule){
+                                    Map existingSchedule = utilityFinder.getScheduleDetailsById(bookedSchedule.getId());
+                                    if(com.nzion.util.UtilValidator.isEmpty(existingSchedule)){
+                                        return Boolean.FALSE;
+                                    }
+                                    if(existingSchedule.get("patientId").equals(bookedSchedule.getPatient().getId())){
+                                        return Boolean.FALSE;
+                                    }
+                                    return Boolean.TRUE;
+                                }
+
+                                void updateAppointment(){
+                                	Events.postEvent("onEditProviderList",providerList,null);
+                                    Provider provider = (Provider)providerList.getSelectedItem().getValue();
+                                    CalendarSlot slot = ((CalendarSlot)slotListbox.getSelectedItem().getValue());
+                                    currentSchedule.setPerson(provider);
+                                    currentSchedule.setStartTime(slot.getStartTime());
+                                    currentSchedule.setEndTime(slot.getEndTime());
+                                    currentSchedule.setStartDate(com.nzion.util.UtilDateTime.getDayStart(appointmentDate.getValue()));
+                                    currentSchedule.setSequenceNum(slot.getSequenceNum());
+                                    currentSchedule.setStatus((Schedule.STATUS)scheduleStatuses.getSelectedItem().getValue());
+                                    if(currentSchedule.getPriority()!= null && !currentSchedule.getPriority().equals("High"))
+                                    currentSchedule.setPriorityMailSent(false);
+                                    scheduleController.updateSchedule(currentSchedule);
+                                }
+                            ]]>
+                        </zscript>
+                        <button label="Assign Nurse/Doctor"  id="chkBtn" autodisable="self" sclass="btn btn-danger">
+                            <attribute name="onClick">
+                                <![CDATA[
+								Events.postEvent("onEditProviderList",providerList,null);
+                                if(providerList.getSelectedItem() == null){
+                                com.nzion.util.UtilMessagesAndPopups.showError("Select a doctor to proceed");
+                                return;
+                                }
+                                if(currentSchedule.getPatient() == null){
+                                com.nzion.util.UtilMessagesAndPopups.showError("Select a patient to proceed");
+                                return;
+                                }
+                                if(visitTypebox.getSelectedItem() == null){
+                                com.nzion.util.UtilMessagesAndPopups.showError("Select a visit type to proceed");
+                                return;
+                                }
+                                if(slotListbox.getSelectedItem() == null){
+                                com.nzion.util.UtilMessagesAndPopups.showError("Select a time slot to proceed");
+                                return;
+                                }
+                                editPatientBtn.setVisible(false);
+                                
+                                boolean corporatePatientContinue = true;
+                                    if("CORPORATE".equals(currentSchedule.getPatient().getPatientType()) ){
+                                    	if(currentSchedule.getPatient().getPatientCorporate() == null){
+                                    		com.nzion.util.UtilMessagesAndPopups.showError("Please add Tariff Category");
+                                    		return;
+                                    	}
+                                    	if("OneTime".equals(currentSchedule.getPatient().getPatientCorporate().getModeOfClaim())){
+                                    		
+                                    		Set corporateDocuments = currentSchedule.getPatient().getPatientCorporate().getPatientCorporateDocuments();
+                                    		if(com.nzion.util.UtilValidator.isEmpty(corporateDocuments)){
+                                    			com.nzion.util.UtilMessagesAndPopups.confirm("No valid document attached. Do you want to add document?", "Confirmation", Messagebox.YES
+                    									| Messagebox.NO, Messagebox.QUESTION, new org.zkoss.zk.ui.event.EventListener() {
+                    					        public void onEvent(Event event) {
+    	                						    if ("onYes".equals(event.getName())) {
+    		                                	    	Window w = (Window) Executions.createComponents("/patient/patientCorporateDocumentList.zul",null,
+    		                                	    			com.nzion.util.UtilMisc.toMap("patient",currentSchedule.getPatient(),"corporatePatientContinue",corporatePatientContinue));
+    		                                	    	w.setMode("modal");
+    		                                	    	w.setWidth("80%");
+    		                                	    	w.setClosable(true);
+    	                						    }else{
+    	                						    	corporatePatientContinue = true;
+    	                						    }
+        										}										
+        										}
+        									   );
+                                    		}
+                                    		
+                                    		corporatePatientContinue = true;
+                                    	}else {
+                                    		Set corporateDocuments = currentSchedule.getPatient().getPatientCorporate().getPatientCorporateDocuments();
+                                    		Iterator itr = corporateDocuments.iterator();
+                                    		PatientCorporateDocument lastElement = null;
+                                    		corporatePatientContinue = false;
+                                    	    while(itr.hasNext()) {
+                                    	        lastElement= (PatientCorporateDocument) itr.next();
+                                    	        if(lastElement.getValidUpTo().compareTo(new Date()) >= 0)
+                                    	        	corporatePatientContinue = true;
+                                    	    }
+                                    	    if(!corporatePatientContinue){
+                                    	    	corporatePatientContinue = true;
+                                    	    	com.nzion.util.UtilMessagesAndPopups.confirm("No valid document attached. Do you want to add document?", "Confirmation", Messagebox.YES
+                    									| Messagebox.NO, Messagebox.QUESTION, new org.zkoss.zk.ui.event.EventListener() {
+                    					        public void onEvent(Event event) {
+    	                						    if ("onYes".equals(event.getName())) {
+    		                                	    	Window w = (Window) Executions.createComponents("/patient/patientCorporateDocumentList.zul",null,
+    		                                	    			com.nzion.util.UtilMisc.toMap("patient",currentSchedule.getPatient(),"corporatePatientContinue",corporatePatientContinue));
+    		                                	    	w.setMode("modal");
+    		                                	    	w.setWidth("80%");
+    		                                	    	w.setClosable(true);
+    	                						    }else{
+    	                						    	corporatePatientContinue = true;
+    	                						    }
+        										}										
+        										}
+        									);
+                                    	    	
+                                    	    }
+                                    	}
+                                    }
+                               
+                               Events.postEvent("onEditProviderList",providerList,null);
+                               Provider provider = (Provider)providerList.getSelectedItem().getValue();    
+                               com.nzion.domain.emr.VisitTypeSoapModule visitTypeSoapModule = commonCrudService.findUniqueByEquality(VisitTypeSoapModule.class,new String[]{"provider","slotType"},
+                                    		new Object[]{provider, currentSchedule.getVisitType() });
+			                    if(visitTypeSoapModule.isSmartService()){
+			                   	    com.nzion.util.UtilMessagesAndPopups.showError("Smart services appointment cannot be booked from clinic. Please suggest patient to use Afya mobile application");
+			                        return;
+			                    }
+                                Executions.createComponents("/appointment/add-edit-patient-visit.zul",null,com.nzion.util.UtilMisc.toMap("schedule",currentSchedule,"controller",scheduleController,
+                                "slotListbox",slotListbox,"chkBtn",chkBtn,"appointmentDate",appointmentDate,"providerList",providerList));
+                                ]]>
+                            </attribute>
+
+                        </button>
+                    </div>
+                </div>
+                <div zclass="span5">
+                    <space/>
+                    <div zclass="row-fluid">
+                        <div zclass="span14">
+                            <label value="Patient" mold="required" class="z-label-bold"/>
+                            <patientlookup id="patientAccountNumber" value="${currentSchedule.patient}" currentSchedule="${currentSchedule}">
+                                <attribute name="onChange">
+                                    currentSchedule.setPatient(event.getOrigin().getData());
+                                    object = currentSchedule.getPatient();
+                                    patientinfo.setDynamicProperty("patient",currentSchedule.getPatient());
+                                    patientinfo.setSrc("/portlets/patientinfo.zul");
+                                    patientinfo.invalidate();
+                                    editPatientBtn.setVisible(true);
+                                </attribute>
+                                <attribute name="onCustomTrigger">
+                                    currentSchedule.setPatient(event.getData());
+                                    object = currentSchedule.getPatient();
+                                    patientinfo.setDynamicProperty("patient",currentSchedule.getPatient());
+                                    patientinfo.setSrc("/portlets/patientinfo.zul");
+                                    patientinfo.invalidate();
+                                    editPatientBtn.setVisible(true);
+                                </attribute>
+                            </patientlookup>
+
+                            <button zclass="btn-primary btn" label="New">
+                                <attribute name="onClick">
+                                    <![CDATA[
+                                        Executions.createComponents("/patient/newPatientModalWindow.zul",null,
+                                        		com.nzion.util.UtilMisc.toMap("isQuickBook", false,"currentSchedule",currentSchedule,"patientinfo",patientinfo));
+                                        editPatientBtn.setVisible(true);
+                                    ]]>
+                                </attribute>
+                            </button>
+                            <button zclass="btn-primary btn" label="Quick Register">
+                                <attribute name="onClick">
+                                    <![CDATA[
+                                        Executions.createComponents("/patient/patientQuickRegistration.zul",null,com.nzion.util.UtilMisc.toMap("isQuickBook", false,"currentSchedule",currentSchedule,"patientinfo",patientinfo,"patientAccountNumber", patientAccountNumber));
+                                        editPatientBtn.setVisible(true);
+                                    ]]>
+                                </attribute>
+                            </button>
+                        </div>
+                    </div>
+                    <div zclass="row-fluid">
+                        <div zclass="span12">
+                            <div align="right" id="editPatientBtn" visible="false">
+                                <a zclass="btn-primary btn" label="Edit" >
+                                    <attribute name="onClick">
+                                        <![CDATA[
+ 										Patient patientEditObject = (Patient) patientinfo.getDynamicProperty("patient");
+ 										if(patientEditObject == null){
+ 											com.nzion.util.UtilMessagesAndPopups.showError("Please select patient before edit");
+ 											return;
+ 										}
+                                        Executions.createComponents("/patient/newPatientModalWindow.zul",null,
+                                        		com.nzion.util.UtilMisc.toMap("isQuickBook", false,"currentSchedule",currentSchedule,"patientinfo",patientinfo
+                                        				,"patientEditObject",patientEditObject));
+                                    ]]>
+                                    </attribute>
+                                </a>
+                            </div>
+                            <include id="patientinfo" src="/portlets/patientinfo.zul"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+        <div>
+            <div style="width:100%;">
+                <div>
+                    <hbox style="height:25px; backgro6und: #DCEEF8; border: 1px solid #CCCCCC; border-top:0px;"
+                          width="100%" widths="23%,60%,27%">
+                        <div width="100%" align="left" style="vertical-align: middle;">
+                            <label id="leftDateLabel" style="font-weight: bold;font-size:12px;"/>
+                        </div>
+                        <div width="100%" align="center" style="vertical-align: middle;">
+                            <label id="centerDateLabel" style="font-weight: bold;font-size:12px;"/>
+                        </div>
+                        <div width="100%" align="right" style="vertical-align: middle;">
+                            <label id="rightDateLabel" style="font-weight: bold;font-size:12px;"/>
+                        </div>
+                    </hbox>
+                    <panel>
+                        <panelchildren>
+                            <!-- <div>
+                                <textbox forEach="${scheduleStatusArr}" width="12%" readonly="true" disabled="false"
+                                         value="${each}">
+                                    <custom-attributes stat="${each}"/>
+                                    <attribute name="onCreate">
+                                        self.setStyle("background:"+screenConfig.getColor(stat));
+                                        Schedule.STATUS statObj = (Schedule.STATUS) stat;
+                                        self.setValue(statObj.getDescription());
+                                    </attribute>
+                                </textbox>
+                            </div> -->
+                            <div id="schedulesVbox" width="100%" style="min-height:100%;">
+                                <attribute name="onSlotEdit">
+                                    <![CDATA[
+									Events.postEvent("onEditProviderList",providerList,null);
+									editPatientBtn.setVisible(true);
+									visitTypebox.setDisabled(true);
+									refDocNameHbox.setVisible(true);
+                                    chkBtn.setVisible(false);
+									currentSchedule = event.getData().get("schedule");
+									
+									scheduleController.setClipboard((com.nzion.zkoss.composer.appointment.AppointmentListcell)event.getData().get("cell"));
+									rescheduleBtn.setVisible(true);
+									//referral.setSelectedItem(null);
+								/*		if(currentSchedule.getReferral() != null){
+									    referral.setValue(currentSchedule.getReferral().getReferralName());
+									} else{
+									    internalReferral.setValue(currentSchedule.getPerson().getProviderName());
+									} */
+								    for(Listitem li : referral.getChildren()){
+										if(li.getValue() != null && li.getValue().equals(currentSchedule.getReferral()))
+											referral.setSelectedItem(li);
+									}
+									referralHlayout.setVisible(currentSchedule.getInternalReferral()==null);
+									internalReferralHlayout.setVisible(currentSchedule.getInternalReferral()!=null);
+									Events.postEvent("onReload",internalReferral,null);
+									Events.postEvent("onReload",referral,null);
+									internalReferralCheckBoxId.setChecked(currentSchedule.getInternalReferral()!=null);
+									
+									for(Comboitem visitTypeItem : visitTypebox.getItems()){
+										if(visitTypeItem.getValue().equals(currentSchedule.getVisitType()))
+											visitTypebox.setSelectedItem(visitTypeItem);
+									}
+									for(Comboitem item : priority.getItems()){
+									if(item.getLabel().equals(currentSchedule.priority)){
+									    priority.setSelectedItem(item);
+									    }
+									if(currentSchedule.priority == null && item.getLabel().equals("Normal")){
+									    priority.setSelectedItem(item);
+									    }
+									}
+									notes.setValue(currentSchedule.getComments());
+									Listitem slotLi = new Listitem();
+									CalendarSlot slot = new CalendarSlot();
+									slot.setStartTime(currentSchedule.getStartTime());
+									slot.setEndTime(currentSchedule.getEndTime());
+									slot.setSequenceNum(currentSchedule.getSequenceNum());
+									SlotAvailability availability = new SlotAvailability(currentSchedule.getStartDate(),slot);
+									slotListbox.setModel(new BindingListModelArray(new SlotAvailability[]{availability},false));
+									slotListbox.setSelectedIndex(0);
+									patientinfo.setDynamicProperty("patient",event.getData().get("schedule").getPatient());
+									patientinfo.setSrc("/portlets/patientinfo.zul");patientinfo.invalidate();
+									freeSlot.setDisabled(true);
+									freeSlot.setTooltiptext("Click on Reset Button to enable.");
+									if(currentSchedule.getStatus()!=null)
+									scheduleStatuses.setModel(new BindingListModelArray(currentSchedule.getStatus().getAllowedModifications(),false));
+									//scheduleStatuses.setSelectedIndex(0);
+									scheduleStatusDiv.setVisible(true);
+									scheduleController.setSelectedStatus(currentSchedule.getStatus());
+									actionBtn.setLabel("Update Appointment");
+									//Events.postEvent("onReload",internalReferral, currentSchedule);
+									//internalReferral.setAttribute("currentSchedule", currentSchedule);
+									]]>
+                                </attribute>
+                                <attribute name="onSlotSelect">
+                                    com.nzion.zkoss.composer.appointment.AppointmentListcell selectedAppointment = (com.nzion.zkoss.composer.appointment.AppointmentListcell)event.getData().get("selectedCell");
+                                    if(selectedAppointment.getSchedule().getId() != null){
+                                    //com.nzion.util.UtilMessagesAndPopups.showError("Schedule already exists, Please select any other free slot");
+
+                                    Schedule currentSchedule = event.getData().get("schedule");
+                                    Window window = (Window)Executions.createComponents("/portlets/patientinfo.zul",null,
+                                    com.nzion.util.UtilMisc.toMap("patient",currentSchedule.getPatient(),
+                                    "slotSchedule",currentSchedule,"scheduleController",scheduleController,"sourceComponent",event.getData().get("sourceComponent")));
+                                    window.setClosable(true);
+                                    window.setWidth("40%");
+                                    window.doModal();
+
+                                    return;
+                                    }
+                                    scheduleController.setSelectedComponent(selectedAppointment);
+                                    if(event.getData().get("schedule")!=null){
+                                    com.nzion.domain.Patient selectedPatient = currentSchedule.getPatient();
+                                    com.nzion.domain.SlotType selectedSlotType =  currentSchedule.getVisitType();
+                                    String selectedPriority = currentSchedule.getPriority();
+                                    currentSchedule = event.getData().get("schedule");
+                                    if(selectedPatient != null)
+                                    currentSchedule.setPatient(selectedPatient);
+                                    if(selectedSlotType != null)
+                                    currentSchedule.setVisitType(selectedSlotType);
+                                    currentSchedule.setPriority(selectedPriority);
+                                    //referral.setSelectedItem(null);
+                                    internalReferral.setSelectedItem(null);
+                                    internalReferralCheckBoxId.setChecked(false);
+                                    notes.setValue("");
+
+                                    patientinfo.setDynamicProperty("patient",event.getData().get("schedule").getPatient());
+                                    patientinfo.setSrc("/portlets/patientinfo.zul");
+                                    patientinfo.invalidate();
+
+
+                                    Listitem slotLi = new Listitem();
+                                    CalendarSlot slot = new CalendarSlot();
+                                    slot.setStartTime(currentSchedule.getStartTime());
+                                    slot.setEndTime(currentSchedule.getEndTime());
+                                    slot.setSequenceNum(currentSchedule.getSequenceNum());
+                                    SlotAvailability availability = new SlotAvailability(currentSchedule.getStartDate(),slot);
+                                    slotListbox.setModel(new BindingListModelArray(new SlotAvailability[]{availability},false));
+                                    slotListbox.setSelectedIndex(0);
+                                    freeSlot.setDisabled(true);
+                                    freeSlot.setTooltiptext("Click on Reset Button to enable.");
+                                    actionBtn.setLabel("Book Appointment");
+                                    appointmentDate.setValue(availability.getOn());
+                                    appointmentDate.setDisabled(true);
+                                    visitTypebox.setDisabled(true);
+                                    specialityListbox.setDisabled(true);
+                                    providerList.setDisabled(true);
+                                    slotListbox.setDisabled(true);
+                                    scheduleStatuses.setModel(new BindingListModelList(Collections.emptyList(),false));
+                                    patientAccountNumber.setFocus(true);
+                                    if(referral.getSelectedItem() != null){
+                                    currentSchedule.setReferral(referral.getSelectedItem().getValue());
+                                    if(refClinicDoctorListbox.getSelectedItem() != null){
+                                    currentSchedule.setReferralClinicDoctorTransient(refClinicDoctorListbox.getSelectedItem().getValue());
+                                    }
+                                    }
+                                    }
+                                </attribute>
+                            </div>
+                        </panelchildren>
+                    </panel>
+                </div>
+            </div>
+        </div>
+        <popup id="patientDetail" zclass="none"></popup>
+    </window>
+</zk>

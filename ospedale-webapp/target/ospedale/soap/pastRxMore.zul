@@ -1,0 +1,55 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./pastRxWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript><![CDATA[
+		import com.nzion.util.UtilValidator;
+		import com.nzion.domain.Patient;
+		import com.nzion.zkoss.ext.Navigation;
+		import com.nzion.enums.CommunicationPreference;
+
+		Patient patient = (Patient) arg.get("patient");
+
+		List allMedications = soapNoteService.getAllPatientClinicalRecords(patient, com.nzion.domain.emr.soap.PatientRx.class);
+		Collections.sort(allMedications, new Comparator(){
+		public int compare(com.nzion.domain.emr.soap.PatientRx m1, com.nzion.domain.emr.soap.PatientRx m2) {
+            return m1.getStartDate().compareTo(m2.getStartDate());
+            }
+		});
+	]]>
+    </zscript>
+    <window id="pastRxWin" style="margin-top:0px;" mode="modal" sclass="modalStyle" width="70%">
+        <grid height="300px">
+            <columns>
+                <column width="35%">Drug Name</column>
+                <column>Frequency</column>
+                <column>Freq Qualifier</column>
+                <column>No Of Days</column>
+                <column>Total Count</column>
+                <column>Start Date</column>
+                <column>End Date</column>
+                <column>Home Delivery</column>
+            </columns>
+            <rows>
+                <row forEach="${allMedications}">
+                    <cell><label value="${each.drug.tradeName} ${each.drug.genericName}"/></cell>
+                    <cell><label value="${each.frequency}"/></cell>
+                    <cell><label value="${each.frequencyQualifier}"/></cell>
+                    <cell><label value="${each.numberOfDays}"/></cell>
+                    <cell><label value="${each.totalCount}"/></cell>
+                    <cell><label value="${display:fd(each.startDate)}"/></cell>
+                    <cell><label value="${display:fd(each.endDate)}"/></cell>
+                    <cell><label value="${each.homeDelivery}"/></cell>
+                </row>
+            </rows>
+        </grid>
+        <div sclass="panelFoot">
+            <button label="Close" zclass="btn-danger btn">
+                <attribute name="onClick">
+                    pastRxWin.detach();
+                </attribute>
+            </button>
+        </div>
+    </window>
+</zk>

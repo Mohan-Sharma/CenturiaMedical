@@ -1,0 +1,1114 @@
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<zk xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+<zscript>
+    import org.zkoss.zkplus.spring.*;
+    import com.nzion.domain.*;
+    import com.nzion.util.*;
+    com.nzion.domain.UserLogin userLogin = com.nzion.util.Infrastructure.getUserLogin();
+    String passwordExpirationWarningMessage =
+    Executions.getCurrent().getSession().getAttribute("passwordExpirationWarningMessage");
+    com.nzion.service.UserLoginService userLoginService = com.nzion.util.Infrastructure.getSpringBean("userLoginService");
+    com.nzion.service.common.CommonCrudService commonCrudService = com.nzion.util.Infrastructure.getSpringBean("commonCrudService");
+    com.nzion.view.RolesValueObject rvo = new com.nzion.view.RolesValueObject(com.nzion.util.Infrastructure.getUserLogin().getAuthorization());
+    List reportsConfigurationList = commonCrudService.getAll(ReportsConfiguration.class,"id");
+
+    Map m = new java.util.HashMap();
+
+    for(com.nzion.domain.ReportsConfiguration repConfig : reportsConfigurationList){
+    if(rvo.isAdmin()){if(repConfig.isAdmin()){m.put(repConfig.getId(),new java.lang.Boolean(true)); continue;}
+    }
+    if(rvo.isProvider()){if(repConfig.isProvider()){m.put(repConfig.getId(),new java.lang.Boolean(true)); continue;}
+    }
+    if(rvo.isNurse()){if(repConfig.isNurse()){m.put(repConfig.getId(),new java.lang.Boolean(true)); continue;}
+    }
+    if(rvo.isReception()){if(repConfig.isReception()){m.put(repConfig.getId(),new java.lang.Boolean(true)); continue;}
+    }
+    if(rvo.isBilling()){if(repConfig.isBilling()){m.put(repConfig.getId(),new java.lang.Boolean(true));}
+    }
+    }
+
+    String roleName = com.nzion.domain.Roles.getRoleName((Long)Sessions.getCurrent().getAttribute("_default_role"));
+    if(com.nzion.util.UtilValidator.isEmpty(roleName)){
+        roleName = com.nzion.domain.Roles.getRoleName((Long)Sessions.getCurrent().getAttribute("_role"));
+    }
+    if (userLogin.isLocked()) Executions.createComponents("/lock.zul", null, null);
+
+    com.nzion.domain.Location userLocation;
+    String locationName;
+
+    if(!"SUPER_ADMIN".equals(roleName)){
+    Person person = userLogin.getPerson();
+    Person personProfile = commonCrudService.getById(Person.class,person.getId());
+
+    if (userLogin.isImpersonated()) person = userLogin.getOriginalPerson();
+    userLocation = (com.nzion.domain.Location)Sessions.getCurrent().getAttribute("_location");
+    String selectedLocationName = com.nzion.util.Infrastructure.getSelectedLocation() == null ? "" :
+    com.nzion.util.Infrastructure.getSelectedLocation().getName();
+    locationName = userLocation == null ? selectedLocationName : userLocation.getName();
+    Sessions.getCurrent().setAttribute("selectedMainMenu",null);
+    }
+    String practiceName = com.nzion.util.Infrastructure.getPractice().getPracticeName();
+    Component contentArea = arg.get("contentArea");
+    Component successMsg = arg.get("successMsg");
+    Practice practice = commonCrudService.getAll(Practice.class) != null ? commonCrudService.getAll(Practice.class).get(0) : null;
+    //boolean isJoinINPack = PortalRestServiceConsumer.checkIfTenantIsSubscribedToJoinInPackage(practice.getTenantId());
+
+    Properties properties = new Properties();
+    String profileName = System.getProperty("profile.name") != null ? System.getProperty("profile.name") : "dev";
+    properties.load(RestServiceConsumer.class.getClassLoader().getResourceAsStream("application-"+profileName+".properties"));
+    String PORTAL_URL = (String)properties.get("PORTAL_SERVER_URL");
+    String memberSupport = PORTAL_URL+"/#!/AfyaServices/membersupport";
+</zscript>
+    <script type="text/javascript" src="../images/jquery.maskedinput-1.2.2.js" />
+    <script type="text/javascript" src="../images/jquery.lavalamp.min.js"></script>
+    <script type="text/javascript" src="../images/bootstrap.js"/>
+    <script>
+        zk.afterMount(function() {
+        jq("#menu").lavaLamp();}
+        );
+    </script>
+    <popup id="roleSelectionPopup" width="10%">
+        <listbox>
+            <attribute name="onSelect">
+                Sessions.getCurrent().setAttribute("_role", self.getSelectedItem().getValue());
+                Sessions.getCurrent().setAttribute("_default_role", self.getSelectedItem().getValue());
+                Events.postEvent("onClick", homeMainMenu, null);
+            </attribute>
+            <listhead>
+                <listheader label="Choose Role"/>
+            </listhead>
+            <!--<listitem label="ADMIN" if="${rvo.admin}" value="${36028797018963968}"/>-->
+            <listitem label="ADMIN" if="${rvo.admin}" value="${2251799813685248}"/>
+            <listitem label="DOCTOR" if="${rvo.provider}" value="${36028797018963968}"/>
+            <listitem label="NURSE" if="${rvo.nurse}" value="${8796093022208}"/>
+            <listitem label="TECHNICIAN" if="${rvo.technician}" value="${549755813888}"/>
+            <listitem label="RECEPTION" if="${rvo.reception}" value="${34359738368}"/>
+            <!--<listitem label="RECEPTION" if="${rvo.reception}" value="${2147483648}"/>-->
+            <listitem label="HOUSEKEEPING" if="${rvo.houseKeeping}" value="${2048}"/>
+            <listitem label="OMS" if="${rvo.orderManagement}" value="${128}"/>
+            <listitem label="BILLING" if="${rvo.billing}" value="${2147483648}"/>
+        </listbox>
+    </popup>
+
+
+
+
+
+
+    <n:div >
+        <n:div class="content">
+            <n:table width="100%" style="cellspacing:0px;cellpadding:0px;">
+                <n:tr>
+                    <n:td width="49%" style="cellspacing:0px;cellpadding:0px;">
+                        <image id="logoImage" src="/images/afya/latestlogo.png" width="240px" height="75px"/>
+                    </n:td>
+
+                    <n:td width="50%" style="cellspacing:0px;cellpadding:0px;">
+                        <n:table width="100%" >
+                         <n:tr>
+                            <n:div style="text-align:center;height:5px;color:#40B1E4;">  <n:span >${passwordExpirationWarningMessage}</n:span></n:div>
+                            <n:td valign="top" width="100%" style="text-align:right;height:5px;color:#fff;">
+                                <a href="${memberSupport}" target="_blank" style='color:#B42D00;background:none;font-weight:bold;font-family: Calibri;font-size: 14px;' label="Member Support |" />
+                                <label style="color:#B42D00;font-family: Calibri;font-size: 14px;font-weight:bold" > Clinic : ${practiceName}</label>
+                                <n:span style='color:#B42D00;'>|</n:span>
+                                <!--<a style="color:#40B1E4;font-weight:bold;font-family: Calibri;font-size: 14px;" label="Location : ${locationName} | " onClick='Executions.createComponents("/person/changeLocation.zul", null,com.nzion.util.UtilMisc.toMap("userLocation",userLocation));' if="${roleName !=
+                                    'SUPER_ADMIN'}">
+                                    <attribute name="onClick">
+                                        Window w = Executions.createComponents("/person/changeLocation.zul", null,com.nzion.util.UtilMisc.toMap("userLocation",userLocation));
+                                    </attribute>
+                                </a>-->
+                                <a style="color:#B42D00;font-weight:bold;font-family: Calibri;font-size: 14px;" class="user" label="${userLogin.username} (${roleName}) |"
+                                   tooltiptext="Left Click to go to profile and right click to change role." context="roleSelectionPopup" disabled="${rvo.superAdmin}">
+                                    <attribute name="onClick">
+                                        appendContent("/practice/person-profile");
+                                    </attribute>
+                                </a>
+                                <a onClick='userLoginService.lockUserLogin();Executions.createComponents("/lock.zul",null,null);'
+                                   style='color:#B42D00;background:none;font-weight:bold;font-family: Calibri;font-size: 14px;' label="Lock" />
+                                <n:span style='color:#B42D00;'>|</n:span>
+                                <a style="color:#B42D00;font-weight:bold;font-family: Calibri;font-size: 14px;"
+                                 class="signout" label="Log Off">
+                                <attribute name="onClick"><![CDATA[
+                                	javax.servlet.http.HttpServletRequest req = Executions.getCurrent().getNativeRequest();
+                                	javax.servlet.http.Cookie[] cookies = req.getCookies();
+							    	if(cookies!=null)
+							    	for (int i = 0; i < cookies.length; i++) {
+							    	    cookies[i].setValue("");
+							            cookies[i].setPath("/");
+							            cookies[i].setMaxAge(0);
+							    	}
+    	
+                                	Executions.sendRedirect("/ospedale/logout");
+							    	]]></attribute>
+                                </a>
+                            </n:td>
+                         </n:tr>
+                         <n:tr>
+                                <n:td width="100%" >
+                                    <n:table width="100%" >
+                                        <n:tr>
+                                            <n:td style="float: right !important;">
+                                                <div  sclass="nav" style="float: right !important;">
+                                                    <n:ul id="menu" class="menu">
+                                                        <n:li class="top-li">
+                                                            <a zclass="top-a" id="homeMainMenu" label="Home" >
+                                                                <attribute name="onClick">
+                                                                    Executions.sendRedirect(com.nzion.view.HomePageHelper.getHomePageForLoggedInUser(false));
+                                                                </attribute>
+                                                            </a>
+                                                        </n:li>
+                                                        <n:li class="top-li has-sub" if="${rvo.admin || rvo.reception || rvo.provider || rvo.nurse}">
+                                                            <a zclass="top-a" id="people">People
+                                                                <attribute name="onClick">
+                                                                    setTitleAndActivateMenu("People","Patients List", people);
+                                                                    appendContent("/patient/patientList");
+                                                                </attribute>
+                                                            </a>
+                                                            <n:ul class="sub sub2">
+                                                                <n:li class="sub">
+                                                                    <n:h5 id="provider">Doctor</n:h5>
+                                                                    <n:ul  >
+                                                                        <n:li>
+                                                                            <a  label="List Of Doctors"  disabled="${!rvo.admin}">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("People","List of Doctors", people);
+                                                                                    appendContent("providerList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul>
+                                                                    <n:h5 id="patient">Patient</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li  >
+                                                                            <a  label="New Patient"  id="addpatient" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("People","New Patient", people);
+                                                                                    appendContent("patientAdd");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="List Of Patients" id="allpatient" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("People","Patients List", people);
+                                                                                    appendContent("/patient/patientList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul>
+                                                                </n:li>
+                                                                <n:li class="sub">
+                                                                    <n:h5>Employee</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li>
+                                                                            <a   label="List Of Employees"  disabled="${!rvo.admin}">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("People","Search", people);
+                                                                                    appendContent("createUser");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul>
+                                                                    <n:h5 >Referral/Consultant</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li >
+                                                                            <a label="List Of Referrals"  disabled="${!rvo.admin}">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("People","Search", people);
+                                                                                    appendContent("referralList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <!--<n:li>
+                                                                            <a label="List Of Referral Contract"  disabled="${!rvo.admin}"  visible="${!isJoinINPack}">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Referral Contract List","Search", people);
+                                                                                    appendContent("referralContactList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>-->
+                                                                    </n:ul>
+                                                                </n:li>
+                                                                <n:li class="bottomLine">
+                                                                    <n:p>
+                                                                        Manage People
+                                                                    </n:p>
+                                                                </n:li>
+                                                            </n:ul>
+                                                        </n:li>
+                                                        <n:li class="top-li has-sub" if="${rvo.admin}">
+                                                            <a zclass="top-a" id="masterList">Master Lists
+                                                                <attribute name="onClick">
+
+                                                                    setTitleAndActivateMenu("MasterList","Location", masterList);
+                                                                    appendContent("locationTab");
+                                                                </attribute>
+
+                                                            </a>
+                                                            <n:ul class="sub sub3">
+                                                                <n:li class="sub">
+                                                                    <!--<n:h5>System Admin</n:h5>-->
+                                                                    <n:ul>
+                                                                        <n:li >
+                                                                            <a  label="Location" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Location", masterList);
+                                                                                    appendContent("locationTab");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li >
+                                                                            <a label="Emergency Access" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Emergency Access", masterList);
+                                                                                    appendContent("emergencyAccessList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li >
+                                                                            <a label="Encryption" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Encryption", masterList);
+                                                                                    appendContent("encryption");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li >
+                                                                            <a label="PQRI Config" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","PQRI Config", masterList);
+                                                                                    appendContent("pqriConfig");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li >
+                                                                            <a label="Patient Logins" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Patient Logins", masterList);
+                                                                                    appendContent("patientLoginList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul>
+                                                                    <n:h5 >EMR</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li>
+                                                                            <a  label="Procedures" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Procedures", masterList);
+                                                                                    appendContent("cptList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Chief Complaints" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Chief Complaints", masterList);
+                                                                                    appendContent("chiefComplaints");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Consultation Room" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","List of Consultation Room", masterList);
+                                                                                    appendContent("fixedAssetList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Chronic Diseases" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","List of chronic Diseases", masterList);
+                                                                                    appendContent("chronicDisease");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Diagnosis">
+                                                                                <attribute name="onClick" >
+                                                                                    setTitleAndActivateMenu("Master List","Diagnosis", masterList);
+                                                                                    appendContent("icdList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Diagnosis Group">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Diagnosis Group", masterList);
+                                                                                    appendContent("icdGroup");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Insurance" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Insurance Provider", masterList);
+                                                                                    appendContent("insuranceProviderList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <!-- <n:li>
+                                                                            <a  label="Organ Systems" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Organ Systems", masterList);
+                                                                                    appendContent("organSystem");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li> -->
+                                                                        <n:li>
+                                                                            <a  label="Speciality" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Speciality", masterList);
+                                                                                    appendContent("speciality");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Cancellation Reason" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Cancellation Reason", masterList);
+                                                                                    appendContent("cancellationReason");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Corporate" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Corporate", masterList);
+                                                                                    appendContent("corporateList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Product" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Product", masterList);
+                                                                                    appendContent("productList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Supplier" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Supplier", masterList);
+                                                                                    appendContent("supplierList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <!-- <n:li>
+                                                                            <a  label="Unit of Measurement" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Unit of Measurement", masterList);
+                                                                                    appendContent("uom");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li> -->
+                                                                        <!--<n:li>
+                                                                            <a  label="Vaccine" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Vaccine", masterList);
+                                                                                    appendContent("immunization");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>-->
+                                                                        <n:li>
+                                                                            <a  label="Visit Type and Encounter Module Configuration" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Visit Type SOAP Module", masterList);
+                                                                                    appendContent("visitTypeSoapModules");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Tariff Category" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Tariff Category", masterList);
+                                                                                    appendContent("tariffCategory");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+
+                                                                    </n:ul>
+                                                                </n:li>
+                                                                
+                                                                <!-- 
+                                                                <n:li class="sub">
+                                                                    <n:h5></n:h5>
+                                                                    <n:ul>
+                                                                      <n:li>
+                                                                            <a  label="Vaccine Lot" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Vaccine Lot", masterList);
+                                                                                    appendContent("vaccineLotList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                       <n:li>
+                                                                            <a  label="Visit Type" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Visit Type", masterList);
+                                                                                    appendContent("visitType");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                       <n:li>
+                                                                            <a  label="Visit Type and Encounter Module Configuration" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Visit Type SOAP Module", masterList);
+                                                                                    appendContent("visitTypeSoapModules");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul>
+                                                                   <n:h5 >LAB</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li>
+                                                                            <a  label="LAB Test" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","LAB Test", masterList);
+                                                                                    appendContent("labTest");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="LAB Test Panel" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","LAB Test Panel", masterList);
+                                                                                    appendContent("labTestPanel");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="LAB Category" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","LAB Test Panel", masterList);
+                                                                                    appendContent("labCategory");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+
+                                                                    </n:ul> 
+                                                                </n:li>
+                                                                
+                                                                 -->
+
+                                                                 
+                                                                <n:li class="sub">
+                                                                    <n:ul>
+                                                                        <n:li>
+                                                                            <a  label="Vaccine" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Vaccine", masterList);
+                                                                                    appendContent("exportVaccine");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Electronic Copy Of Health Record Requests" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Electronic Copy Of Health Record Requests", masterList);
+                                                                                    appendContent("exportSoapNote");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Data Integrity" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Data Integrity", masterList);
+                                                                                    appendContent("dataIntegrity");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="PQRI" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","PQRI", masterList);
+                                                                                    appendContent("pqriExport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Public Health Surveillance" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Public Health Surveillance", masterList);
+                                                                                    appendContent("surveillance");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul>
+                                                                </n:li>
+                                                                <n:li class="sub">
+                                                                    <n:h5>Drug</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li>
+                                                                            <a  label="Drug Generic Name" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Drug", masterList);
+                                                                                    appendContent("drugGenericName");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Drug" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Drug", masterList);
+                                                                                    appendContent("drug");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Drug Direction" visible="false">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Drug Direction", masterList);
+                                                                                    appendContent("drugDirection");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Drug Form" visible="true">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Drug Form", masterList);
+                                                                                    appendContent("drugDosageForm");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Quantity Qualifier" visible="false">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Quantity Qualifier", masterList);
+                                                                                    appendContent("quantityQualifier");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Route of Administration" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Route of Administration", masterList);
+                                                                                    appendContent("route");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Site" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Site", masterList);
+                                                                                    appendContent("site");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul>
+                                                                    <!-- <n:h5>Invoice</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li>
+                                                                            <a  label="Consultation">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Consultation", masterList);
+                                                                                    appendContent("consultationList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Tax Item">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Tax Item", masterList);
+                                                                                    appendContent("taxItemList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Scheme">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Master List","Scheme", masterList);
+                                                                                    appendContent("/billing/schemeList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul> -->
+
+                                                                </n:li>
+                                                                
+                                                                <n:li class="sub">
+                                                                    <n:h5>Inventory</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li>
+			                                                                <a label="Purchase Order List" >
+			                                                                    <attribute name="onClick">
+			                                                                        setTitleAndActivateMenu("Master List","Purchase Order List",masterList);
+			                                                                        appendContent("purchaseOrderList");
+			                                                                    </attribute>
+			                                                                </a>
+			                                                            </n:li>
+			                                                            
+			                                                            <n:li>
+			                                                                <a label="Receive Inventory" >
+			                                                                    <attribute name="onClick">
+			                                                                        setTitleAndActivateMenu("Master List","Receive Inventory",masterList);
+			                                                                        appendContent("receiveInventory");
+			                                                                    </attribute>
+			                                                                </a>
+			                                                            </n:li>
+			                                                            
+			                                                            <n:li>
+			                                                                <a label="Inventory Items" >
+			                                                                    <attribute name="onClick">
+			                                                                        setTitleAndActivateMenu("Master List","Inventory Items",masterList);
+			                                                                        appendContent("inventoryItems");
+			                                                                    </attribute>
+			                                                                </a>
+			                                                            </n:li>
+			                                                            
+			                                                            <n:li>
+			                                                                <a label="Consumption / Adjustment" >
+			                                                                    <attribute name="onClick">
+			                                                                        setTitleAndActivateMenu("Master List"," Inventory Consumption/Adjustment",masterList);
+			                                                                        appendContent("invConsumptionAdjustment");
+			                                                                    </attribute>
+			                                                                </a>
+			                                                            </n:li>
+			                                                            
+			                                                            
+                                                                    </n:ul>
+
+                                                                </n:li>
+                                                                
+                                                                
+                                                                <n:li class="bottomLine">
+                                                                    <n:p>
+                                                                        Manage Master Data
+                                                                    </n:p>
+                                                                </n:li>
+                                                            </n:ul>
+                                                        </n:li>
+                                                        <n:li class="top-li has-sub" if="${rvo.admin || rvo.provider}"  >
+                                                            <a zclass="top-a" id="setup">Setup
+                                                                <attribute name="onClick">
+                                                                    setTitleAndActivateMenu("Setup","Personal Calendar", setup);
+                                                                    appendContent("individualScheduleConfig");
+                                                                </attribute>
+                                                            </a>
+                                                            <n:ul class="sub sub2">
+                                                                <n:li class="sub">
+                                                                    <n:h5>Scheduling</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li>
+                                                                            <a  label="Personal Calendar" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Setup","Personal Calendar", setup);
+                                                                                    appendContent("individualScheduleConfig");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Schedule Breaks" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Setup","Schedule Breaks", setup);
+                                                                                    appendContent("personScheduleBreaks");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li if="${rvo.admin}" >
+                                                                            <a  label="Doctor's Calendar" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Setup","Doctors Calendar", setup);
+                                                                                    appendContent("doctorCalendar");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <!-- <n:li>
+                                                                            <a  label="Schedule Statuses" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Setup","Schedule Statuses", setup);
+                                                                                    appendContent("genericScheduleConfig");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li> -->
+                                                                    </n:ul>
+                                                                </n:li>
+                                                                <!-- <n:li class="sub" >
+                                                                    <n:h5>Encounter Setup</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li>
+                                                                            <a  label="Encounter Modules" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Setup","Encounter Modules", setup);
+                                                                                    appendContent("soapModule");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Encounter Note Setup" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Setup","Encounter Note Setup", setup);
+                                                                                    appendContent("/utilities/soapNoteSetup");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a  label="Syndrome" visible="false" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Setup","Syndrome", setup);
+                                                                                    appendContent("syndromeList");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul>
+                                                                </n:li> -->
+                                                                <n:li class="bottomLine">
+                                                                    <n:p>
+                                                                        Setup
+                                                                    </n:p>
+                                                                </n:li>
+                                                            </n:ul>
+                                                        </n:li>
+                                                        <n:li class="top-li  has-sub" if="${rvo.admin}">
+                                                            <a zclass="top-a" id="securityMainMenu">Security
+                                                                <attribute name="onClick">
+                                                                    setTitleAndActivateMenu("Security","List User Logins", securityMainMenu);
+                                                                    appendContent("userLogin");
+
+                                                                </attribute>
+                                                            </a>
+                                                            <n:ul class="sub sub1" style="right: 0 !important;">
+                                                                <n:li class="sub" >
+                                                                    <n:h5>Login</n:h5>
+                                                                    <n:ul>
+                                                                        <n:li>
+                                                                            <a  label="User Login" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Security","List User Logins", securityMainMenu);
+                                                                                    appendContent("userLogin");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul>
+                                                                </n:li>
+                                                                <!--<n:li class="sub" >
+                                                                    <n:ul>
+                                                                        <n:h5>Agreement/Policy</n:h5>
+                                                                        <n:li>
+                                                                            <a  label="Password Policy" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Security","Password Policy", securityMainMenu);
+                                                                                    appendContent("passwordPolicy");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        &lt;!&ndash;<n:li>
+                                                                            <a  label="User Agreement" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Security","User Agreement", securityMainMenu);
+                                                                                    appendContent("userAgreement");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>&ndash;&gt;
+                                                                    </n:ul>
+                                                                </n:li>-->
+                                                                <n:li class="bottomLine">
+                                                                    <n:p>
+                                                                        Security
+                                                                    </n:p>
+                                                                </n:li>
+                                                            </n:ul>
+                                                        </n:li>
+                                                        <n:li class="top-li" if="${!rvo.patient}">
+                                                            <a zclass="top-a" id="reportsMenu">Reports
+                                                                <attribute name="onClick">
+                                                                    setTitleAndActivateMenu("Report","",reportsMenu);
+                                                                    appendContent("/report/report");
+                                                                </attribute>
+                                                            </a>
+                                                            <n:ul class="sub sub1">
+                                                                <n:li class="sub">
+                                                                    <n:ul>
+                                                                        <n:h5>Reports</n:h5>
+                                                                        <n:li if="${m.get(10001)}">
+                                                                            <a label="Patient" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Report","",reportsMenu);
+                                                                                    appendContent("/report/report");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li if="${m.get(10002)}">
+                                                                            <a label="Invoice Report" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Invoice","",reportsMenu);
+                                                                                    appendContent("billingReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li if="${m.get(10003)}">
+                                                                            <a label="Service Wise Revenue Report" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Service Wise Revenue","",reportsMenu);
+                                                                                    appendContent("serviceWiseRevenueReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li if="${m.get(10004)}">
+                                                                            <a label="Service Wise Analysis Report" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Service Wise Analysis","",reportsMenu);
+                                                                                    appendContent("serviceWiseAnalysisReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li if="${m.get(10015)}">
+                                                                            <a label="Area Wise Patient Report" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Area Wise Patient","",reportsMenu);
+                                                                                    appendContent("areaWisePatientReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li if="${m.get(10005)}">
+                                                                            <a label="Sales Summary Report" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Sales Summary","",reportsMenu);
+                                                                                    appendContent("salesSummaryReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                          <n:li if="${m.get(10006)}">
+                                                                                <a label="Pending Insurance" >
+                                                                                    <attribute name="onClick">
+                                                                                        setTitleAndActivateMenu("Pending Insurance","",reportsMenu);
+                                                                                        appendContent("invoicePendingInsuranace");
+                                                                                    </attribute>
+                                                                                </a>
+                                                                            </n:li>
+                                                                               <n:li if="${m.get(10007)}">
+                                                                                    <a label="Referral Report" >
+                                                                                        <attribute name="onClick">
+                                                                                            setTitleAndActivateMenu("Referral Report","",reportsMenu);
+                                                                                            appendContent("referralReport");
+                                                                                        </attribute>
+                                                                                    </a>
+                                                                               </n:li>
+                                                                            <n:li>
+                                                                            <a label="MLC" visible="false">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Invoice","",reportsMenu);
+                                                                                    appendContent("mlcReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li>
+                                                                            <a label="Collection" visible="false">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Invoice","",reportsMenu);
+                                                                                    appendContent("collectionReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+
+                                                                        <n:li>
+                                                                            <a label="Lab" visible="false">
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Invoice","",reportsMenu);
+                                                                                    appendContent("labCollectionReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li if="${m.get(10008)}">
+                                                                            <a label="Concession Report" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Invoice","",reportsMenu);
+                                                                                    appendContent("concessionAnalysisReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                         <n:li if="${m.get(10009)}">
+                                                                            <a label="Invoice Cancellation Report" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Invoice","",reportsMenu);
+                                                                                    appendContent("cancellationReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                         <n:li if="${m.get(10010)}">
+                                                                            <a label="Accounting Transaction" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Invoice","",reportsMenu);
+                                                                                    appendContent("accountingTransactionReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li if="${m.get(10011)}">
+                                                                            <a label="Collection Report" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Invoice","",reportsMenu);
+                                                                                    appendContent("/report/invoiceCollectionReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        <n:li if="${m.get(10012)}">
+                                                                            <a label="Doctor Wise Collection Report" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Invoice","",reportsMenu);
+                                                                                    appendContent("/report/incomeReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                        
+                                                                        <n:li if="${m.get(10013)}">
+			                                                                <a label="Inventory Stock Report" >
+			                                                                    <attribute name="onClick">
+			                                                                        setTitleAndActivateMenu("Invoice","",reportsMenu);
+			                                                                        appendContent("inventoryStockReport");
+			                                                                    </attribute>
+			                                                                </a>
+			                                                            </n:li>
+			                                                            
+			                                                            <n:li if="${m.get(10014)}">
+			                                                                <a label="Adjustment/Consumption Report" >
+			                                                                    <attribute name="onClick">
+			                                                                        setTitleAndActivateMenu("Invoice","",reportsMenu);
+			                                                                        appendContent("adjustmentConsumptionReport");
+			                                                                    </attribute>
+			                                                                </a>
+			                                                            </n:li>
+
+                                                                        <n:li if="${m.get(10016)}">
+                                                                            <a label="Cancellation Stats Report" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Invoice","",reportsMenu);
+                                                                                    appendContent("cancellationStatsReport");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+			                                                            
+                                                                    </n:ul>
+                                                                </n:li>
+                                                                <n:li class="bottomLine">
+                                                                    <n:p>
+                                                                        Service
+                                                                    </n:p>
+                                                                </n:li>
+                                                            </n:ul>
+                                                        </n:li>
+                                                        
+                                                        <n:li class="top-li" if="${rvo.provider || rvo.reception || rvo.nurse}">
+                                                            <a zclass="top-a" id="searchEncouter">Search
+                                                                <attribute name="onClick">
+                                                                    setTitleAndActivateMenu("Search Encouter","",searchEncouter);
+                                                                    appendContent("/appointment/encounter");
+                                                                </attribute>
+                                                            </a>
+                                                            <n:ul class="sub sub1">
+                                                                <n:li class="sub">
+                                                                    <n:ul>
+                                                                        <n:h5>Search</n:h5>
+                                                                        <n:li>
+                                                                            <a label="Encounter" >
+                                                                                <attribute name="onClick">
+                                                                                    setTitleAndActivateMenu("Search Encouter","",searchEncouter);
+                                                                                    appendContent("/appointment/encounter");
+                                                                                </attribute>
+                                                                            </a>
+                                                                        </n:li>
+                                                                    </n:ul>
+                                                                </n:li>
+                                                                <n:li class="bottomLine">
+                                                                    <n:p>
+                                                                        Service
+                                                                    </n:p>
+                                                                </n:li>
+                                                            </n:ul>
+                                                        </n:li>
+                                                        <n:li class="close">
+                                                            <n:a href="#url">CLOSE</n:a>
+                                                        </n:li>
+                                                    </n:ul>
+                                                </div>
+                                            </n:td>
+                                        </n:tr>
+                                    </n:table>
+                                </n:td>
+                         </n:tr>
+                        </n:table>
+                    </n:td>
+
+                </n:tr>
+            </n:table>
+        </n:div>
+    </n:div>
+    
+    <zscript>
+        <![CDATA[
+	   
+	import com.nzion.zkoss.ext.Navigation;
+	  void setPageTitle(String pageTitle, String mainMenuTitle) {	 		
+	  	if(com.nzion.util.UtilValidator.isEmpty(mainMenuTitle)){
+	  		//menuTitle.setLabel("");
+	  	    //arrowTitle.setValue("");
+	  	}else{
+	  	//	menuTitle.setLabel(mainMenuTitle);
+	  	    //arrowTitle.setValue(">>");
+	  	}
+	  		
+	 	// pagetitle.setLabel(pageTitle);
+	 	if(successMsg != null)
+	 		successMsg.setValue(null);
+	}
+	public void setTitleAndActivateMenu(String mainMenuTitle,String pageTitle,A menuLinkId){
+		setPageTitle(pageTitle,mainMenuTitle);		
+		if(selectedMainMenu != null)
+			selectedMainMenu.setZclass("top-a");	
+		menuLinkId.setZclass("mainMenuVisited");
+		selectedMainMenu = menuLinkId;
+	}
+	
+	void appendContent(String viewName) {
+	  if(contentArea.getFellowIfAny("encounterBlackHeader") != null)
+		  contentArea.getFellowIfAny("encounterBlackHeader").setVisible(false);
+	  if(contentArea.getFellowIfAny("soapNotePanel") != null)
+		  contentArea.getFellowIfAny("soapNotePanel").setVisible(false);
+	  	  
+	  contentArea.getChildren().clear();	
+	  Navigation.navigate(viewName, null,contentArea);
+	}
+	A selectedMainMenu = homeMainMenu;
+	setTitleAndActivateMenu("Home","",homeMainMenu);
+	]]>
+    </zscript>
+    
+    
+     <zscript>
+        String successMsgId = successMsg.getUuid();
+    </zscript>
+    <script type="text/javascript" >
+        function test(){
+        jq(document.getElementById('${successMsgId}')).hide().fadeIn(1);
+        jq(document.getElementById('${successMsgId}')).show().fadeOut(4000);
+        }
+    </script>
+    
+    
+    <script type="text/javascript"><![CDATA[
+			//Running at the browser
+        		function displayError(boxid, msg) {
+					//var html = ' <div class="popover bottom" style="display:inline"> '+
+                    //    ' <div class="arrow"></div> '+
+                    //    ' <div class="popover-content"> '+
+                    //    ' <p>'+msg+'</p>'+
+                    //' </div> '+
+                    //' </div> ';
+
+					var html = '<span class="help-inline" style="color: #B94A48;">'+msg+'</span>';
+					$(boxid).parent().append(html);
+				}
+
+				function clearErrorMessage(remainError,boxid){
+				    var obj = $(boxid);
+				    var p = obj.parent();
+				    var f = p.find('.help-inline');
+				    if('undefined'!=f)
+				        f.remove();
+				}
+			]]>
+    </script>
+    
+
+</zk>

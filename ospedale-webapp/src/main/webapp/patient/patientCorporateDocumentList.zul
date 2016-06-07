@@ -1,0 +1,93 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./patientCorporateDocWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript>
+        import com.nzion.domain.Patient;
+        Patient patient = arg.get("patient");
+    </zscript>
+
+    <window id="patientCorporateDocWin" apply="org.zkoss.bind.BindComposer" title="Add Corporate Document"
+    	 viewModel="@id('vm1') @init('com.nzion.zkoss.composer.PatientCorporateDocumentViewModel')" >
+    <custom-attributes patient="${patient}"/>
+    
+    <attribute name="onCreate">
+    	vm1.setPatient(patient);
+    </attribute>
+    
+        <div zclass="container-fluid">
+            
+            <div zclass="row-fluid">
+            	<div zclass="span2">
+                    <label value="Reference Number" style="font-weight:bold;font-size:14px;" mold="required"/>
+                    <textbox value="@bind(vm1.patientCorporateDocument.documentReferenceNumber)"/>
+                </div>
+                <div zclass="span2">
+                    <label value="Valid up to" style="font-weight:bold;font-size:14px;" mold="required"/>
+                    <div width="150px">
+                    	<datebox value="@bind(vm1.patientCorporateDocument.validUpTo)" constraint="no empty,no past"/>
+                    </div>
+                </div>
+            </div>
+            
+            <div zclass="row-fluid">
+            	<div zclass="span2">
+                   <label value="Notes" style="font-weight:bold;font-size:14px;"/>
+                   <textbox value="@bind(vm1.patientCorporateDocument.notes)" rows="3" cols="100"/>
+                </div>
+            </div>
+            
+            <div zclass="row-fluid">
+                <div zclass="span2">
+            		<label value="Upload File" style="font-weight:bold;font-size:14px;" mold="required"/>
+                    <fileupload label="Browse" id="uploadBtn" onUpload="@command('uploadFile')">
+					</fileupload>
+                </div>
+            </div>
+         
+            <div style="margin-top:5px" sclass="panelFoot">
+                <button label="Add" id="Save" visible="true" zclass="btn-success btn" onClick="@command('save')"/>
+                <!-- <button label="Close" id="Close" visible="true" zclass="btn-danger btn" onClick="patientCorporateDocWin.detach();"/> -->
+            </div>
+            
+        </div>
+        
+        <panel>
+        <caption label="Document List"/>
+        <panelchildren>
+        	<listbox id="documentListBox" model="@{vm1.patient.patientCorporate.patientCorporateDocuments, load-after='self.onReload'}">
+        	<listhead>
+        		<listheader label="Reference Number"></listheader>
+        		<listheader label="Upload Date"></listheader>
+        		<listheader label="Valid Up to"></listheader>
+        		<listheader label="Notes"></listheader>
+        		<listheader label="Download"></listheader>
+        		<listheader label="Action"></listheader>
+        	</listhead>
+        		<listitem self="@{each='patCorDocument'}" value="@{patCorDocument}">
+        			<listcell label="@{patCorDocument.documentReferenceNumber}"/>
+        			<listcell label="@{patCorDocument.date,converter='com.nzion.view.component.DateConverter'}"/>
+        			<listcell label="@{patCorDocument.validUpTo,converter='com.nzion.view.component.DateConverter'}"/>
+        			<listcell label="@{patCorDocument.notes}"/>
+        			<listcell>
+        				<a label="View Document">
+        				<attribute name="onClick">
+        					vm1.downloadFile(self.getParent().getParent().getValue());
+        				</attribute>
+        				</a>
+        			</listcell>
+        			<listcell>
+        				<image src="/images/BillingIcon/DeleteCancel.png" width="30px" height="30px">
+        					<attribute name="onClick">
+        						vm1.delete(self.getParent().getParent().getValue());
+        					</attribute>
+        				</image>
+        			</listcell>
+        		</listitem>
+        	</listbox>
+        </panelchildren>
+        </panel>
+        
+    </window>
+</zk>

@@ -1,0 +1,75 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./patientDepositViewWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client"
+    xmlns:schemaLocation="http://www.zkoss.org/2005/zul http://www.zkoss.org/2005/zul/zul.xsd">
+    <zscript>
+    import com.nzion.domain.PatientDeposit;
+        String depositReceiptNo = " ";
+    	PatientDeposit patientDeposit = arg.get("patientDeposit");
+    	String patientDepositId = null;
+    	if(patientDeposit == null){
+    		patientDepositId = Executions.getCurrent().getParameter("patientDepositId");
+    		patientDeposit = commonCrudService.getById(PatientDeposit.class,Long.valueOf(patientDepositId));
+    	}
+        if(patientDeposit != null){
+        Long l = patientDeposit.getId();
+        depositReceiptNo = ""+l;
+        }
+
+    </zscript>
+    
+    <window id="patientDepositViewWin" >
+    <attribute name="onCreate">
+    if(com.nzion.util.UtilValidator.isNotEmpty(patientDepositId))
+    	Clients.print();
+    </attribute>
+          <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Patient Deposit View</h:small>
+                <button type="button" zclass="close" onClick="patientDepositViewWin.detach();">×</button>
+            </h:h1>
+        </div>
+        
+        <div zclass="container-fluid">
+	            <div zclass="row-fluid">
+					<div zclass="span3">
+	                    <label value="Patient" class="z-label-bold"/>
+	                    <name object="${patientDeposit.patient}"/>
+	                </div>
+	                <div zclass="span3">
+	                    <label value="Deposit Date" class="z-label-bold"/>
+	                    <label value="${patientDeposit.depositDate}"/>
+	                </div>
+                    <div zclass="span3">
+                        <label value="Deposit ID" class="z-label-bold"/>
+                        <label value="${depositReceiptNo}"/>
+                    </div>
+	            </div>
+	            
+	            <div zclass="row-fluid">
+	                <div zclass="span3">
+	                    <label value="Deposit Amount" class="z-label-bold"/>
+	                    <label value="${patientDeposit.depositAmount}"/> <label value="KD"/>
+	                </div>
+	                <div zclass="span3">
+	                    <label value="Deposit Mode" class="z-label-bold"/>
+	                    <label value="${patientDeposit.depositMode}" />
+	                </div>
+	            </div>
+	            
+	            <div zclass="row-fluid">
+	                <div zclass="span3">
+	                    <label value="Notes" class="z-label-bold"/>
+	                    <label value="${patientDeposit.depositNotes}" />
+	                </div>
+	                <div zclass="span3">
+	                    <label value="Status" class="z-label-bold"/>
+	                    <label value="${patientDeposit.status}" />
+	                </div>
+	            </div>
+        </div>
+          
+    </window>
+</zk>

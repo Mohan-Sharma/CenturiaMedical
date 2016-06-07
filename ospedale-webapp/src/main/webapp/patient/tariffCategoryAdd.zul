@@ -1,0 +1,186 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./TariffCategory"?>
+<!--<?component name="enumeration" class="com.nzion.view.component.EnumerationDropdown"?>-->
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript>
+        <![CDATA[
+        import com.nzion.util.UtilValidator;
+        import com.nzion.util.RestServiceConsumer;
+        com.nzion.domain.billing.TariffCategory tariffCategory = arg.get("entity");
+        if(tariffCategory == null)
+           tariffCategory = new com.nzion.domain.billing.TariffCategory();
+        List allPayers = com.nzion.util.RestServiceConsumer.getAllPayers();
+        List allGroup = com.nzion.util.RestServiceConsumer.getAllGroups();
+        List allHealth = com.nzion.util.RestServiceConsumer.getAllHealthPolicy();
+      //  com.nzion.dto.HealthPolicyDto allHealth = com.nzion.util.RestServiceConsumer.getHealthPolicyById("2000");
+      //  alert(allHealth.getHealthPolicyName());
+
+      //  String h;
+      //  com.nzion.dto.HealthPolicyDto allHealth = com.nzion.util.RestServiceConsumer.getHealthPolicyById(h.getHealthPolicyById());
+      //  com.nzion.dto.InsuranceGroupDto selectedPolicy = new com.nzion.dto.InsuranceGroupDto();
+      //  com.nzion.dto.HealthPolicyDto allHealth = com.nzion.util.RestServiceConsumer.getHealthPolicyById(selectedPolicy.getHealthPolicyById());
+     //   com.nzion.dto.HealthPolicyDto allHealth = com.nzion.util.RestServiceConsumer.getPolicyForIndividuals(selectedPolicy.getHealthPolicyById());
+
+
+     //   com.nzion.dto.HealthPolicyDto allHealthPolicy=com.nzion.util.RestServiceConsumer.getHealthPolicyById("2000");
+       // alert(allHealthPolicy.getInsuranceId());
+       // com.nzion.dto.HealthPolicyDto h = com.nzion.util.RestServiceConsumer.getHealthPolicyById("2000");
+        List allCorporates = com.nzion.util.RestServiceConsumer.getAllCorporates();
+    // arr = ptntTariff.PatientCategory.values();
+   //  List ptntCategory = Arrays.asList(arr);
+   //  List arr=ptntTariff.PatientCategory.values();
+   //  Arrays.asList(arr);
+
+  //  com.nzion.domain.billing.TariffCategory.PatientCategory[]  arr = com.nzion.domain.billing.TariffCategory.PatientCategory.values();
+   // List ptnCategory=Arrays.asList(arr);
+
+          ]]>
+    </zscript>
+
+
+    <window id="TariffCategory" width="70%" closable="true" mode="modal" >
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>New Tariff Category</h:small>
+                <button type="button" zclass="close" onClick="TariffCategory.detach();">×</button>
+            </h:h1>
+        </div>
+        <div zclass="container-fluid">
+            <div zclass="row-fluid">
+              <div zclass="span2">
+                    <label value="Patient Type" mold="required" />
+                    <combobox sclass="span12" readonly="true" selectedItem="@{tariffCategory.patientCategory,save-when='Save.onClick'}" constraint="no empty" id="patientType"
+                              w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+                        <comboitem label="Cash Paying" value="CASH PAYING"/>
+                        <comboitem label="Insurance" value="INSURANCE"/>
+                        <comboitem label="Corporate" value="CORPORATE" />
+                        <attribute name="onSelect">
+                            if("CASH PAYING".equals(patientType.getSelectedItem().getValue())){
+                            tariffCodeDiv.setVisible(true);
+                            tariffNameDiv.setVisible(true);
+                            payerNameDiv.setVisible(false);
+                            groupNameDiv.setVisible(false);
+                            healthPolicyNameDiv.setVisible(false);
+                            corporateNameDiv.setVisible(false);
+                            corporatePrimaryPayerNameDiv.setVisible(false);
+                            copayNameDiv.setVisible(false);
+                            valueNameDiv.setVisible(false);
+                            corporateTariffNameDiv.setVisible(false);
+                            }
+                            if("INSURANCE".equals(patientType.getSelectedItem().getValue())) {
+                            tariffCodeDiv.setVisible(true);
+                            payerNameDiv.setVisible(true);
+                            tariffNameDiv.setVisible(false);
+                            groupNameDiv.setVisible(true);
+                            healthPolicyNameDiv.setVisible(true);
+                            corporateNameDiv.setVisible(false);
+                            corporatePrimaryPayerNameDiv.setVisible(false);
+                            copayNameDiv.setVisible(false);
+                            valueNameDiv.setVisible(false);
+                            corporateTariffNameDiv.setVisible(false);
+                            }
+                            if("CORPORATE".equals(patientType.getSelectedItem().getValue())) {
+                            tariffCodeDiv.setVisible(true);
+                           // tariffNameDiv.setVisible(true);
+                            corporateTariffNameDiv.setVisible(true);
+                            corporateNameDiv.setVisible(true);
+                            payerNameDiv.setVisible(false);
+                            groupNameDiv.setVisible(false);
+                            healthPolicyNameDiv.setVisible(false);
+                            corporatePrimaryPayerNameDiv.setVisible(true);
+                            copayNameDiv.setVisible(true);
+                            valueNameDiv.setVisible(true);
+
+                            }
+                        </attribute>
+
+                    </combobox>
+                  <!--<enumeration id="patientCategory" enumType="Patient Type" sclass="span12" selectedItem="@{tariffCategory.patientCategory,save-when='Save.onClick'}"/>-->
+                </div>
+                <div zclass="span2" style="margin-left: 20px;" id="tariffCodeDiv" visible="false">
+                    <label value="Tariff Code"  />
+                  <!-- <intbox  sclass="span12"   value="@{vo.tariffCategory.tariffCod,save-when='Save.onClick'}" />-->
+                   <intbox id="tariffCode" value="@{tariffCategory.tariffCode,save-when='Save.onClick'}" sclass="span12" maxlength="30" />
+
+                </div>
+                <div zclass="span2" style="margin-left: 20px;" id="tariffNameDiv" visible="false">
+                    <label value="Tariff Name"  />
+                    <textbox id="tariff" value="@{tariffCategory.tariff,save-when='Save.onClick'}" sclass="span12" maxlength="30" />
+                </div>
+                <div zclass="span2" style="margin-left: 20px;" id="payerNameDiv" visible="false">
+                    <label value="Payer Name"  />
+                    <combobox id="insurancePayer" value="@{tariffCategory.tariff,save-when='Save.onClick'}"  sclass="span12" autodrop="true">
+                        <comboitem forEach="${allPayers}" value="${each.insuranceName}" label="${each.insuranceName}"></comboitem>
+                    </combobox>
+                </div>
+                <div zclass="span2" style="margin-left:20px;" id="groupNameDiv" visible="false" >
+                    <label value="Group" />
+                    <combobox id="groupPayer" value="@{tariffCategory.groupId,save-when='Save.onClick'}"  sclass="span12" autodrop="true">
+                        <comboitem forEach="${allGroup}" value="${each.groupName}" label="${each.groupName}"></comboitem>
+                    </combobox>
+                </div>
+                <div zclass="span2" style="margin-left:20px;" id="healthPolicyNameDiv" visible="false" >
+                    <label value="Health Policy" />
+                     <combobox id="healthPolicyPayer" value="@{tariffCategory.healthPolicyId,save-when='Save.onClick'}"  sclass="span12" autodrop="true">
+                        <comboitem forEach="${allHealth}" value="${each.policyName}" label="${each.policyName}"></comboitem>
+                      </combobox>
+                </div>
+                <div zclass="span2" style="margin-left:20px;" id="corporateTariffNameDiv" visible="false" >
+                    <label value="Tariff Name " />
+                    <combobox id="corporateTariffId" value="@{tariffCategory.tariff,save-when='Save.onClick'}"  sclass="span12" autodrop="true">
+                        <comboitem forEach="${allCorporates}" value="${each.corporateName}" label="${each.corporateName}"></comboitem>
+                    </combobox>
+                </div>
+                <div zclass="span2" style="margin-left:20px;" id="corporateNameDiv" visible="false" >
+                    <label value="Corporate " />
+                    <combobox id="corporateId" value="@{tariffCategory.corporateId,save-when='Save.onClick'}"  sclass="span12" autodrop="true">
+                        <comboitem forEach="${allCorporates}" value="${each.corporateName}" label="${each.corporateName}"></comboitem>
+                    </combobox>
+                </div>
+
+            </div>
+            <div zclass="row-fluid">
+                <div zclass="span2" style="margin-left:-10px;" id="corporatePrimaryPayerNameDiv" visible="false" >
+                    <label value="Primary Payer " />
+                    <combobox id="primaryPayor" sclass="span12" selectedItem="@{tariffCategory.primaryPayor,save-when='Save.onClick'}" >
+                        <comboitem label="Corporate" value="Corporate" />
+                        <comboitem label="Patient" value="Patient" />
+                    </combobox>
+
+            </div>
+            <div zclass="span2" style="margin-left:20px;" id="copayNameDiv" visible="false" >
+                <label value="Copay " />
+                <combobox id="CopayType" sclass="span12" selectedItem="@{tariffCategory.corporateCopayType,save-when='Save.onClick'}" >
+                    <comboitem label="Percent" value="Percent" />
+                    <comboitem label="Amount" value="Amount" />
+                </combobox>
+
+            </div>
+                <div zclass="span2" style="margin-left:20px;" id="valueNameDiv" visible="false" >
+                    <label value="Value " />
+                    <decimalbox id="corporateCopay" value="@{tariffCategory.corporateCopay,save-when='Save.onClick'}" sclass="span12"  />
+                </div>
+            </div>
+        </div>
+        <div sclass="panelFoot">
+            <button label="Save" id="Save" zclass="btn-success btn">
+                <attribute name="onClick">
+                    try{
+                  // alert(tariffCategory.getTariffCode());
+                  //  alert(tariffCategory.getTariff());
+                  //  if((tariffCategory.getTariff() != null) &amp;&amp; (tariffCategory.getTariffCode() != null))
+                    commonCrudService.save(tariffCategory);
+                    TariffCategory.detach();
+                    com.nzion.util.UtilMessagesAndPopups.showSuccess();
+                    }
+                    catch(org.springframework.dao.DataIntegrityViolationException e) {
+                    throw new RuntimeException("Tariff ID " + tariffCategory.getTariffCode() + " already exists.");
+                    }
+                </attribute>
+            </button>
+            <button label="Close"  id="Close" onClick='TariffCategory.detach();' />
+        </div>
+    </window>
+</zk>
+

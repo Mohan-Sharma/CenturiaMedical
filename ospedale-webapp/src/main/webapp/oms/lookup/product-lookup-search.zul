@@ -1,0 +1,56 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./searchProduct"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation" xmlns:n="http://www.w3.org/1999/xhtml">
+<zscript>
+	com.nzion.services.product.ProductService productService = com.nzion.util.Infrastructure.getSpringBean("productService");
+	List productList = null;
+	Textbox productLookupTxt = arg.get("productLookupTxt");
+</zscript>
+<window id="searchProduct" title="Product Search ( Double Click to Select )" closable="true" mode="modal" width="75%" height="70%">
+<style>
+	td .z-label{
+		font-weight:normal;
+	}
+</style>
+<div sclass="patSearchRes" style="overflow:auto;height:300px;">
+		<h:table width="80%">
+			<h:tr>
+				<h:td width="15%" style="text-align:right">
+					<label value="Product Name:"></label>
+				</h:td>
+				<h:td width="35%">
+					<textbox cols="50" id="productName" />
+				</h:td>
+				<h:td width="15%" style="text-align:right">
+					<label value="Brand Name" />
+				</h:td>
+				<h:td width="20%">
+					<textbox cols="50" id="brandName" />
+				</h:td>
+				<h:td width="15%">
+					<button label="Search" id="searchBtn" style="margin-left:10px" 
+							onClick="productList = productService.searchProductDetails(productName.getValue(),brandName.getValue())"/>
+				</h:td>
+			</h:tr>
+		</h:table>
+		<div style="border:1px solid black">
+		<grid model="@{productList, load-after='searchBtn.onClick'}" width="100%">
+		<columns>
+			<column label="Product Name"/>
+		</columns>
+			<rows>
+				<row self="@{each='product'}" value="@{product}" height="60px">
+				<attribute name="onDoubleClick">
+					com.nzion.domain.product.Product p = self.getValue();
+					productLookupTxt.setValue(p.getProductDetails().getProductName());
+					Events.postEvent("onChange", productLookupTxt, p);
+					searchProduct.detach();
+				</attribute>
+				<label value="@{product.productDetails.productName}"/>
+				</row>
+			</rows>
+		</grid>
+		</div>
+	</div>
+</window>
+</zk>

@@ -1,0 +1,169 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./addEditLo"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+    xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native">
+
+    <zscript><![CDATA[
+
+com.nzion.service.common.CommonCrudService commonCrudService = com.nzion.util.Infrastructure.getSpringBean("commonCrudService");	
+com.nzion.domain.emr.soap.LabOrderSection section = arg.get("labSection");
+com.nzion.zkoss.composer.PatientSoapNoteController controller = arg.get("controller");
+com.nzion.domain.emr.soap.PatientLabOrder patientLabOrder=arg.get("patientLabOrder"); 
+com.nzion.domain.emr.lab.LabOrderRequest labOrderRequest=arg.get("labOrderRequest"); 
+patientLabOrder.setPatient(controller.getPatient());
+Component saveBtn = arg.get("saveBtn");
+]]>
+    </zscript>
+    <window title="Lab Order" closable="true" id="addEditLo" mode="modal" width="40%">
+        <div zclass="container-fluid">
+            <div>
+                <label value="Lab Test/Panel/Profile/Radiology" class="z-label-bold"/>
+            </div>
+            <div zclass="row-fluid">
+                <!--<radiogroup sclass="span12" width="300px">
+                    <radio label="LAB TEST" value="LAB TEST">
+                        <attribute name="onCheck">
+                            labTestDiv.setVisible(true);
+                            labProfileDiv.setVisible(false);
+                            labPanelDiv.setVisible(false);
+                            testNameId.setValue(null);
+                            testNameIdPanel.setValue(null);
+                            testNameIdProfile.setValue(null);
+                        </attribute>
+                    </radio>
+                    <radio label="LAB PROFILE" style="margin-left: 20px;" value="LAB PROFILE">
+                        <attribute name="onCheck">
+                            labTestDiv.setVisible(false);
+                            labProfileDiv.setVisible(true);
+                            labPanelDiv.setVisible(false);
+                            testNameId.setValue(null);
+                            testNameIdPanel.setValue(null);
+                            testNameIdProfile.setValue(null);
+                        </attribute>
+                    </radio>
+                    <radio label="LAB PANEL" style="margin-left: 20px;" value="PANEL">
+                        <attribute name="onCheck">
+                            labTestDiv.setVisible(false);
+                            labProfileDiv.setVisible(false);
+                            labPanelDiv.setVisible(true);
+                            testNameId.setValue(null);
+                            testNameIdPanel.setValue(null);
+                            testNameIdProfile.setValue(null);
+                        </attribute>
+                    </radio>
+                </radiogroup>-->
+                <labcomponentlookup patientLabOrder="${patientLabOrder}" entity="com.nzion.domain.emr.lab.LabTest" style="width:420px;"
+                                    displaycolumns="Service Group,Service" hideListHeader="false" id="labCompLookup">
+
+                </labcomponentlookup>
+            </div>
+            <!--<div zclass="row-fluid">
+                <div zclass="span12" id="labTestDiv" visible="false">
+                    <label value="Lab Test Name" mold="required"/>
+                    <div zclass="form-search">
+                        <div zclass="input-append">
+                            <textbox sclass="span10 search-query" style="height:24px;" focus="false" id="testNameId"
+                                     value="@{patientLabOrder.testName,load-after='onChange'}" readonly="true"
+                                     cols="24"/>
+                            <a disabled="${controller.readonly}" zclass="lookupbtn">
+                                <attribute name="onClick">
+                                    Map m = com.nzion.util.UtilMisc.toMap("testName",
+                                    testNameId,"patientLabOrder",patientLabOrder);
+                                    Executions.createComponents("/soap/lab-test-lookup.zul", null, m);
+                                </attribute>
+                                Lookup
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div zclass="span12" id="labProfileDiv" visible="false">
+                    <label value="Lab Profile Name" mold="required"/>
+                    <div zclass="form-search">
+                        <div zclass="input-append">
+                            <textbox sclass="span10 search-query" style="height:24px;" focus="false" id="testNameIdProfile"
+                                     value="@{patientLabOrder.testName,load-after='onChange'}" readonly="true"
+                                     cols="24"/>
+                            <a disabled="${controller.readonly}" zclass="lookupbtn">
+                                <attribute name="onClick">
+                                    Map m = com.nzion.util.UtilMisc.toMap("testName",
+                                    testNameIdProfile,"patientLabOrder",patientLabOrder);
+                                    Executions.createComponents("/soap/lab-profile-lookup.zul", null, m);
+                                </attribute>
+                                Lookup
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div zclass="span12" id="labPanelDiv" visible="false">
+                    <label value="Lab Panel Name" mold="required"/>
+                    <div zclass="form-search">
+                        <div zclass="input-append">
+                            <textbox sclass="span10 search-query" style="height:24px;" focus="false" id="testNameIdPanel"
+                                     value="@{patientLabOrder.testName,load-after='onChange'}" readonly="true"
+                                     cols="24"/>
+                            <a disabled="${controller.readonly}" zclass="lookupbtn">
+                                <attribute name="onClick">
+                                    Map m = com.nzion.util.UtilMisc.toMap("testName",
+                                    testNameIdPanel,"patientLabOrder",patientLabOrder);
+                                    Executions.createComponents("/soap/lab-panel-lookup.zul", null, m);
+                                </attribute>
+                                Lookup
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>-->
+            <div zclass="row-fluid">
+                <div zclass="span3" style="margin-top: 15px;">
+                    <checkbox checked="@{patientLabOrder.homeService,load-after='onChange'}"/>
+                    <label sclass="homeDelivery" class="z-label-bold">Home Service </label>
+                </div>
+                <div zclass="span4">
+                    <label value="Start" class="z-label-bold"/>
+                    <datebox value="@{patientLabOrder.startDate}" sclass="span12"/>
+                </div>
+                <div zclass="span4">
+                    <label value="End" class="z-label-bold"/>
+                    <datebox value="@{patientLabOrder.endDate}" sclass="span12"/>
+                </div>
+            </div>
+            <div zclass="row-fluid">
+                <div zclass="span12">
+                    <label value="Reason" class="z-label-bold"/>
+                    <textbox rows="2"  value="@{patientLabOrder.reasonForTest}"  sclass="span12"/>
+                </div>
+            </div>
+            <div zclass="row-fluid">
+                <div zclass="span12">
+                    <label value="Comments" class="z-label-bold"/>
+                    <textbox rows="2" sclass="span12"
+                             value="@{patientLabOrder.testNotes}"/>
+                </div>
+            </div>
+        </div>
+        <div sclass="panelFoot">
+            <button disabled="${isOrdered}" zclass="btn btn-success" id="addEditBtn" label="Add" onClick="saveTestOrder();">
+            </button>
+        </div>
+
+        <zscript>
+            void saveTestOrder(){
+            if(com.nzion.util.UtilValidator.isEmpty(labCompLookup.getValue())){
+            com.nzion.util.UtilMessagesAndPopups.displayError("Please Provide Test Name");
+            return;
+            }
+            patientLabOrder.setStatus(com.nzion.domain.emr.soap.PatientLabOrder.STATUS.NEW);
+            section.addPatientLabOrder(patientLabOrder);
+            patientLabOrder.setLabOrderRequest(labOrderRequest);
+            //labOrderRequest.setOrderStatus(com.nzion.domain.emr.lab.LabOrderRequest.ORDERSTATUS.BILLING_REQUIRED);
+            labOrderRequest.addPatientLabOrder(patientLabOrder);
+            if(saveBtn != null){
+                Events.postEvent("onClick",saveBtn,null);
+            }
+            addEditLo.detach();
+            }
+        </zscript>
+    </window>
+</zk>

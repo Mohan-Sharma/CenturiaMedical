@@ -1,0 +1,259 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zk.ui.util.Composition" arg0="/WEB-INF/layout/billingtemplate.zul"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./newInvoiceWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?component name="cptlookup" macro-uri="/utilities/cptlookup.zul" inline="false"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client"
+    xmlns:schemaLocation="http://www.zkoss.org/2005/zul http://www.zkoss.org/2005/zul/zul.xsd">
+    <zscript>
+        import com.nzion.util.UtilDateTime;
+        import com.nzion.domain.Patient;
+        import  com.nzion.domain.screen.BillingDisplayConfig;
+        import com.nzion.dto.HisModuleDto;
+        
+        String invoiceId = Executions.getCurrent().getParameter("invoiceId");
+        
+        com.nzion.service.common.CommonCrudService commonCrudService = com.nzion.util.Infrastructure.getSpringBean("commonCrudService");
+        com.nzion.domain.billing.Invoice inv = null;
+        if(com.nzion.util.UtilValidator.isNotEmpty(invoiceId)){
+        	 inv = commonCrudService.getById(com.nzion.domain.billing.Invoice.class,Long.valueOf(invoiceId.toString()));
+        }
+        
+        setPageTitle("Patient Invoice", " " ,UtilDateTime.format(new Date()),"Continue",false,false,false,inv);
+        com.nzion.domain.Schedule currentSchedule = null;
+        
+        List moduleDetailsDtos = com.nzion.util.RestServiceConsumer.getHISModules();
+        BillingDisplayConfig billingDisplayConfig = commonCrudService.getByPractice(BillingDisplayConfig.class);
+			        	
+    </zscript>
+
+    <window id="newInvoiceWin" self="@{define(content)}" style="min-height:400px;"
+            apply="org.zkoss.bind.BindComposer" viewModel="@id('vm') @init('com.nzion.zkoss.composer.NewInvoiceViewModel')">
+		<custom-attributes invoiceId="${invoiceId}"/>
+        <div zclass="container-fluid" style="margin-top:2px;">
+            <div zclass="row-fluid">
+                <div zclass="span6">
+                    <label value="Patient" mold="required" style="font-weight:bold;"/>
+                    <patientlookup id="patientAccountNumber" onChange="@command('getPatientOldInvoices')">
+                        <attribute name="onChange">
+                        <![CDATA[
+							
+							vm.getDto().setPatient((Patient)event.getOrigin().getData());
+							/* on change  clear the item in oldInvoiceCombobix */
+							oldInvoiceCombobix.setSelectedItem(null);
+                            boolean corporatePatientContinue = true;
+                            if("CORPORATE".equals(vm.getDto().getPatient().getPatientType()) ){
+                            	if(vm.getDto().getPatient().getPatientCorporate() == null){
+                            		com.nzion.util.UtilMessagesAndPopups.showError("Please add Tariff Category");
+                            		return;
+                            	}
+                            	if("OneTime".equals(vm.getDto().getPatient().getPatientCorporate().getModeOfClaim())){
+                            		Set corporateDocuments = vm.getDto().getPatient().getPatientCorporate().getPatientCorporateDocuments();
+                            		if(com.nzion.util.UtilValidator.isEmpty(corporateDocuments)){
+                            			com.nzion.util.UtilMessagesAndPopups.confirm("No valid document attached. Do you want to add document?", "Confirmation", Messagebox.YES
+            									| Messagebox.NO, Messagebox.QUESTION, new org.zkoss.zk.ui.event.EventListener() {
+            					        public void onEvent(Event event) {
+             						    if ("onYes".equals(event.getName())) {
+                              	    	Window w = (Window) Executions.createComponents("/patient/patientCorporateDocumentList.zul",null,
+                              	    			com.nzion.util.UtilMisc.toMap("patient",vm.getDto().getPatient(),"corporatePatientContinue",corporatePatientContinue));
+                              	    	w.setMode("modal");
+                              	    	w.setWidth("80%");
+                              	    	w.setClosable(true);
+             						    }else{
+             						    	corporatePatientContinue = true;
+             						    }
+										}										
+										}
+										);
+                             		}
+                            		corporatePatientContinue = true;
+                            	}else if(vm.getDto().getPatient().getPatientCorporate().getPatientCorporateDocuments() != null){
+                            		Set corporateDocuments = vm.getDto().getPatient().getPatientCorporate().getPatientCorporateDocuments();
+                            		Iterator itr = corporateDocuments.iterator();
+                            		com.nzion.domain.PatientCorporateDocument lastElement = null;
+                            		corporatePatientContinue = false;
+                            	    while(itr.hasNext()) {
+                            	        lastElement= (com.nzion.domain.PatientCorporateDocument) itr.next();
+                            	        if(lastElement.getValidUpTo().compareTo(new Date()) >= 0)
+                            	        	corporatePatientContinue = true;
+                            	    }
+                            	    if(!corporatePatientContinue){
+                            	    	corporatePatientContinue = true;
+                            	    	com.nzion.util.UtilMessagesAndPopups.confirm("No valid document attached. Do you want to add document?", "Confirmation", Messagebox.YES
+            									| Messagebox.NO, Messagebox.QUESTION, new org.zkoss.zk.ui.event.EventListener() {
+            					        public void onEvent(Event event) {
+             						    if ("onYes".equals(event.getName())) {
+                              	    	Window w = (Window) Executions.createComponents("/patient/patientCorporateDocumentList.zul",null,
+                              	    			com.nzion.util.UtilMisc.toMap("patient",vm.getDto().getPatient(),"corporatePatientContinue",corporatePatientContinue));
+                              	    	w.setMode("modal");
+                              	    	w.setWidth("80%");
+                              	    	w.setClosable(true);
+             						    }else{
+             						    	corporatePatientContinue = true;
+             						    }
+										}										
+										}
+									);
+                            	    	
+                            	    }
+                            	}
+                            }
+                            
+                            patientinfo.setDynamicProperty("vm",vm);
+                            patientinfo.setSrc("/portlets/billingPatientInfo.zul");
+                            patientinfo.invalidate();
+                            billingDiv.setVisible(true);
+                            //invoiceDiv.setVisible(true);
+                            
+                        ]]>          
+                        </attribute>
+                        <attribute name="onTrigger"><![CDATA[
+                       	
+                       	vm.getDto().setPatient((Patient)event.getData());
+                        if(vm.getDto().getPatient() != null && vm.getDto().getPatient().getPatientInsurances() != null && vm.getDto().getPatient().getPatientInsurances().size() > 0){
+                          		vm.getDto().setPatientInsurance(vm.getDto().getPatient().getPatientInsurances().iterator().next());
+                        }else{
+                        	vm.getDto().setPatientInsurance(null);
+                        }
+                          	
+                          	
+   			            String defaultHisModulde = billingDisplayConfig.getDefaultHisModuleId();
+   			            if( "INSURANCE".equals( vm.getDto().getPatient().getPatientType() ) ){
+   			    	        for(HisModuleDto hisModuleDto : moduleDetailsDtos){
+   			    	            if(hisModuleDto.getHisModuleId().equals(defaultHisModulde))
+   			    	            	vm.getDto().setHisModuleDto(hisModuleDto);
+   			    	        }
+   			            }else{
+   			            	vm.getDto().setHisModuleDto(null);
+   			            }
+                       	
+                       	patientinfo.setDynamicProperty("vm",vm);
+                        patientinfo.setSrc("/portlets/billingPatientInfo.zul");
+                        patientinfo.invalidate();
+                        billingDiv.setVisible(true);
+                        //invoiceDiv.setVisible(true);
+                        
+                        ]]></attribute>
+                    </patientlookup>
+
+                    <button zclass="btn-primary btn" label="New Patient" style="margin-left: 20px;">
+                        <attribute name="onClick">
+                            <![CDATA[
+                            Executions.createComponents("/patient/newPatientModalWindow.zul",
+                            		null,com.nzion.util.UtilMisc.toMap("isQuickBook", false,"currentSchedule", null,
+                            				"patientinfoFromInvoice",patientinfo,"vm",vm,"patientAccountNumber",patientAccountNumber,"billingDiv",billingDiv));
+                            ]]>
+                        </attribute>
+                    </button>
+                    <button label="Reset" sclass="btn btn-primary" style="margin-left: 10px;" >
+                        <attribute name="onClick">
+                            Executions.getCurrent().sendRedirect("/portlets/newInvoice.zul");
+                        </attribute>
+                    </button>
+                </div>
+                <div zclass="span6" visible="false" id="invoiceDiv">
+                    <label value="Invoice : " style="font-weight:bold;"/>
+                    <combobox id="oldInvoiceCombobix"  model="@load(vm.oldInvoices)" readonly="true"
+                    	selectedItem="@load(vm.dto.oldInvoice) @save(vm.dto.oldInvoice)" onChange="@command('updatePatientInvoice')">
+                        <template name="model" var="item">
+                            <comboitem value="@bind{item}" label="@bind(item.invoiceNumber)">
+                            </comboitem>
+                        </template>
+                    </combobox>
+                </div>
+            </div>
+            <div zclass="row-fluid">
+                <div zclass="span12">
+                    <include id="patientinfo" width="100%" />
+                </div>
+            </div>
+
+         <div width="100%" sclass="clr chiefComp soapNoteCont curSOAP ui-resizable" id="billingDiv" visible="false">
+            <div style="float:right" height="2px;">
+                <button id="add" label="Add" zclass="btn btn-xs" width="50px" sclass="btn btn-xs" onClick="@command('addItem')" visible="false">
+                </button>
+            </div>
+            <listbox oddRowSclass="false" model="@bind(vm.patientInvoiceItems)">
+                <listhead>
+                    <listheader label="Service" width="460px"/>
+                    <!--<listheader label="Service" />-->
+                    <listheader label="Doctor" width="290px"/>
+                    <listheader label="Speciality"/>
+                    <listheader label="Qty" width="160px"/>
+                    <!-- <listheader label="Unit Amount" width="160px"/>
+                    <listheader label="Gross Amount" width="160px"/> -->
+                    <listheader label="Action" width="100px"/>
+                </listhead>
+                <template name="model" var="patientInvoiceItem">
+                <listitem >
+                    <listcell>
+                        <billingservice patientInvoiceItem="@bind(patientInvoiceItem)" dto="@bind(vm.dto)" selectedTariffCatagory="@bind(vm.selectedTariffCatagory)"
+                           patientService="@bind(vm.patientService)" billingService="@bind(vm.billingService)" selectedProvider="@bind(vm.selectedProvider)"
+                           sopenNoteTypes="@bind(vm.sopenNoteTypes)"
+                                        entity="com.nzion.domain.emr.Cpt" style="width:420px;"
+                                 displaycolumns="Service Group,Service,Price" value="@bind(patientInvoiceItem.formattedServiceName)" hideListHeader="false"
+                                 onChange="@command('addCpt',patientInvoiceItem=patientInvoiceItem)">
+                            <attribute name="onLookedUp">
+                                <![CDATA[
+                                    vm.refreshItem(event.getData());
+                                ]]>
+                            </attribute>
+                            <attribute name="onChange">
+                                <![CDATA[
+
+							    ]]>
+                            </attribute>
+                        </billingservice>
+                    </listcell>
+                    <listcell>
+                        <combobox model="@bind(vm.providerList)" visible="@bind(patientInvoiceItem.doctor)"
+                                  readonly="true" selectedItem="@bind(patientInvoiceItem.provider)" 
+                                  onSelect="@command('refreshItem',patientInvoiceItem=patientInvoiceItem)" disabled="true">
+                            <template name="model" var="item">
+                                <comboitem value="@bind{item}" label="@bind(item)">
+                                </comboitem>
+                            </template>
+                        </combobox>
+                    </listcell>
+                    <listcell>
+                    	<label value="@bind(patientInvoiceItem.speciality)" visible="@bind(patientInvoiceItem.doctor)"/>
+                    </listcell>
+                    <listcell>
+                        <decimalbox value="@bind(patientInvoiceItem.quantity)" 
+                        	onChange="@command('refreshItemQuantity',patientInvoiceItem=patientInvoiceItem,comp = self)"/>
+                    </listcell>
+                    <!-- <listcell>
+                        <decimalbox readonly="true" format="#,##0.000" value="@bind(patientInvoiceItem.unitPrice)"/>
+                        <label value="KD"/>
+                    </listcell>
+                   <listcell>
+                        <decimalbox readonly="true" format="#,##0.000" value="@bind(patientInvoiceItem.grossAmount)"/>
+                       <label value="KD"/>
+                    </listcell> -->
+                    <listcell>
+                        <button visible="false" label="Delete" zclass="btn btn-danger btn-xs" width="50px" sclass="btn btn-xs"
+                                onClick="@command('removeItem',patientInvoiceItem=patientInvoiceItem)">
+                        </button>
+
+                        <image src="/images/BillingIcon/DeleteCancel.png" width="30px" height="30px" >
+                            <attribute name="onClick">
+                                Events.postEvent("onClick",self.getParent().getFirstChild(),null);
+                            </attribute>
+                        </image>
+
+                    </listcell>
+                </listitem>
+                </template>
+            </listbox>
+
+
+        </div>
+
+        </div>
+
+        <div style="margin-top:5px">
+            <button label="Save" id="saveBtn" visible="false" zclass="btn-success btn" onClick="@command('Save')"/>
+        </div>
+    </window>
+</zk>

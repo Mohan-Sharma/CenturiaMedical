@@ -1,0 +1,89 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./receiveInvItemWin"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript> <![CDATA[
+        com.nzion.domain.product.order.PurchaseOrder purchaseOrder = arg.get("purchaseOrder");
+		com.nzion.oms.zkoss.ReceiveInvItemsController receiveItemsController = new com.nzion.oms.zkoss.ReceiveInvItemsController(purchaseOrder);
+	]]></zscript>
+	<window id="receiveInvItemWin" apply="${receiveItemsController}">
+	<panel title="Receive Inventory Items">
+		<panelchildren>
+	<div style="overflow: auto; max-height: 400px;">
+		<listbox id="receiveItemsListbox" model="@{receiveItemsController.inventoryItems,load-after='self.onReload'}">
+			<listhead>
+				<listheader label="Product Name"/>
+				<listheader label="Order Qty"/>
+				<listheader label="Batch Number"/>
+				<listheader label="Accepted Qty"/>
+				<listheader label="Free Qty"/>
+				<listheader label="Rejected Qty"/>
+				<!-- <listheader label="Inventory Item Type"/> -->
+				<listheader label="Rejection Reason"/> 
+				<!-- <listheader label="Manufactured Date"/> -->
+				<listheader label="Expiry Date"/>
+			</listhead>
+			<listitem self="@{each='inv'}" value="@{inv}">
+				<listcell label="@{inv.product.tradeName}"/>
+				<listcell label="@{inv.atp}"/>
+				<listcell>
+					<textbox value="@{inv.batchNumber}" />
+				</listcell>
+				<listcell>
+					<intbox value="@{inv.qoh}"
+						onChange='receiveItemsController.calculateDischargeQuantity(self.getParent().getParent().getValue());
+										self.addForward("onChange",receiveItemsListbox,"onReload");' >
+					</intbox>
+				</listcell>
+				<listcell>
+					<intbox value="@{inv.freeQty}">
+					</intbox>
+				</listcell>
+				<listcell label="@{inv.rejectedQuantity}" />
+				<!-- <listcell>
+					<combobox selectedItem="@{inv.serialized}" >
+						<comboitem label="Serialized" value="${false}"/>
+						<comboitem label="Non-Serialized" value="${true}"/>
+					</combobox>
+				</listcell> -->
+				<listcell>
+					<combobox selectedItem="@{inv.rejectionReason}" >
+						<comboitem label="Damaged" value="Damaged"/>
+						<comboitem label="Not Ordered" value="Not Ordered"/>
+						<comboitem label="Over Shipped" value="Over Shipped"/>
+						<attribute name="onCreate">
+                        	com.nzion.domain.product.inventory.InventoryItem invItem = self.getParent().getParent().getValue();
+                        if(invItem.getRejectedQuantity() == 0){
+                        	self.setDisabled(true);
+                        }
+                        </attribute>
+					</combobox>
+				</listcell>
+				<!-- <listcell>
+					<datebox value="@{inv.manufactureDate}"/>
+				</listcell> -->
+				<listcell>
+					<datebox value="@{inv.expiryDate}" style="@{inv,converter='com.nzion.oms.zkoss.ReceiveInvItemsController'}" />
+				</listcell>
+			</listitem>		
+		</listbox>
+		</div>
+		<separator/>
+		<div sclass="panelFoot" align="center">
+			<button id="save" label="Save">
+			<attribute name="onClick">
+				for(Listitem item : receiveItemsListbox.getItems()){
+					for(Component comp : item.getChildren()){
+						if( (comp.getFirstChild()) instanceof Datebox ){
+							((Datebox) comp.getFirstChild()).getValue();
+						}
+					}
+				}
+				receiveItemsController.saveInventoryItem();
+			</attribute>
+			</button>
+			<button label="Cancel" onClick='com.nzion.zkoss.ext.Navigation.navigate("receiveInventory", null,"contentArea");'/>
+		</div>
+		</panelchildren>
+	</panel>
+	</window>
+</zk>

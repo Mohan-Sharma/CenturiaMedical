@@ -1,0 +1,34 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./appointmentDisplayScreen"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+    xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native">
+    <window id="appointmentDisplayScreen" >
+        <zscript>
+            com.nzion.domain.screen.ScheduleConfig screenDisplay = scheduleService.getAppointmentDisplayScreen();
+            List statusConfigs = screenDisplay.getStatusConfigs();
+        </zscript>
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Status Color</h:small>
+            </h:h1>
+        </div>
+
+        <listbox model="@{statusConfigs}">
+            <listitem self="@{each='config'}" value="@{config}">
+                <listcell>
+                    <label value="@{config.status.description}"/>
+                </listcell>
+                <listcell>
+                    <colorbox color="@{config.color}" onChange="self.getParent().getParent().getValue().setColor(self.getColor())"/>
+                </listcell>
+            </listitem>
+        </listbox>
+
+        <separator></separator>
+        <div  align="center">
+            <button label="Save" zclass="btn btn-success" onClick="commonCrudService.save(screenDisplay.getStatusConfigs());com.nzion.util.UtilMessagesAndPopups.showSuccess();"/>
+        </div>
+    </window>
+</zk>

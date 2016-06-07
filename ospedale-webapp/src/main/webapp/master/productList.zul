@@ -1,0 +1,11 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<zk>
+<zscript>
+setPageTitle("Product List", "");
+</zscript>
+	<window>
+		<screen width="100%" pagetitle="Product List" listtitle="List of Product" addpage="addEditProduct" hidedeletebtn="true"
+				entityclass="com.nzion.domain.pms.Product" fields="id,tradeName,genericName,brandName"
+				labels="ID,Trade Name,Generic Name,Brand Name" addmodepopup="true" />	
+	</window>
+</zk>

@@ -1,0 +1,61 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./patientBookAppointment"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client"
+    xmlns:schemaLocation="http://www.zkoss.org/2005/zul http://www.zkoss.org/2005/zul/zul.xsd">
+    <zscript>
+        import com.nzion.domain.Patient;
+        Patient patient = arg.get("patient");
+        
+    </zscript>
+
+    <window id="patientBookAppointment"
+            apply="org.zkoss.bind.BindComposer" viewModel="@id('vm') @init('com.nzion.zkoss.composer.PatientBookAppointmentViewModel', patient=patient)" visible="@bind(vm.showBookAppointmentWindow)">
+        <div zclass="container-fluid">
+            <div zclass="row-fluid">
+                <div zclass="span4">
+                    <label value="Appointment Date" mold="required"/>
+                    <datebox value="@bind(vm.selectedDate)" constraint="no past"/>
+                </div>
+            </div>
+            <div zclass="row-fluid">
+
+                <div zclass="span4">
+                    <label value="Doctor" mold="required"/>
+                    <combobox id="doctorsCombobox" model="@bind(vm.providerList)" selectedItem="@bind(vm.selectedProvider)"
+                              constraint="no empty" readonly="true" onChange="@command('searchFreeSlot')">
+                        <template name="model" var="item">
+                            <comboitem label="@bind(item.firstName)" value="@bind{item}">
+                            </comboitem>
+                        </template>
+                    </combobox>
+                </div>
+                
+                <div zclass="span4">
+                     <label value="Visit Type" mold="required" />
+                     <combobox id="visitTypebox" sclass="span12" selectedItem="@bind(vm.visitType)"
+                               model="@bind(vm.allSoapNoteTypes)" constraint="no empty" onChange="@command('searchFreeSlot')">
+                         <comboitem self="@{each='slotType'}" value="@{slotType}" label="@{slotType.name}"/>
+                     </combobox>
+                </div>
+
+                <div zclass="span4">
+                    <label value="Time Slot" mold="required"/>
+                   <listbox mold="select" model="@bind(vm.searchResult)" selectedItem="@bind(vm.selectedSlotAvailability)"  id="slotListbox" zclass="span12">
+                       <template name="model" var="item">
+                           <listitem label="@bind(item.slot) @converter('com.nzion.zkoss.composer.appointment.PatientSlotConverter')" value="@bind{item}">
+                           </listitem>
+                       </template>
+                    </listbox>
+
+                </div>
+                
+            </div>
+
+            <div style="margin-top:5px" >
+                <button label="Book Appointment" id="bookAppointment" zclass="btn-success btn" onClick="@command('save')"/>
+            </div>
+        </div>
+    </window>
+</zk>

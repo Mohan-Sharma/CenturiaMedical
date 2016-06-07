@@ -1,0 +1,247 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./billingPreferenceWindow"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <window id="billingPreferenceWindow" hflex="1" apply="org.zkoss.bind.BindComposer" viewModel="@id('vm') @init('com.nzion.view.practice.NotificationSettingVM')">
+        <caption label="@{vm.SMS_SENDER}"/>
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Notification Setting</h:small>
+            </h:h1>
+        </div>
+        <div id="notificationDiv">
+            <listbox>
+                <listhead>
+                    <listheader label="Notification"/>
+                    <listheader width="7%" label="By SMS" align="center"/>
+                    <listheader width="7%" align="center" label="By Email"/>
+                    <listheader width="5%" align="center" label="In App" visible="false"/>
+                    <listheader width="18%" label="Trigger Points"/>
+                    <listheader label="Frequency"/>
+                    <listheader width="24%" align="center" label="Roles/Users"/>
+                    <listheader width="7%" align="center" label="Required?" visible="false"/>
+                </listhead>
+                <listitem>
+                    <listcell>When appointment is given</listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentGiven.bySMS)"/>
+                    </listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentGiven.byEmail)"/>
+                    </listcell>
+                    <listcell visible="false">
+                        <checkbox checked="@bind(vm.appointmentGiven.inApp)"/>
+                    </listcell>
+                    <listcell>
+                        <div  width="60%" style="float: left;">
+                            <label value="Minutes After"/>
+                        </div>
+                        <div width="40%" style="float: left;">
+                            <intbox style="width :60%;margin-left: 5px;" value="@bind(vm.appointmentGiven.triggetPointValue)" constraint="no negative"/>
+                        </div>
+                    </listcell>
+                    <listcell>
+                    </listcell>
+                    <listcell>
+                        <checkbox label="Patient" checked="@bind(vm.appointmentGiven.patientRole)"/>
+                        <checkbox label="Doctor" style="margin-left: 5px;" checked="@bind(vm.appointmentGiven.doctorRole)" disabled="true" visible="false"/>
+                        <checkbox label="Receptionist" style="margin-left: 5px;" checked="@bind(vm.appointmentGiven.receptionistRole)" disabled="true" visible="false"/>
+                    </listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentGiven.notificationRequired)"/>
+                    </listcell>
+                </listitem>
+                <listitem>
+                    <listcell>When appointment is rescheduled</listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentRescheduled.bySMS)"/>
+                    </listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentRescheduled.byEmail)"/>
+                    </listcell>
+                    <listcell visible="false">
+                        <checkbox checked="@bind(vm.appointmentRescheduled.inApp)"/>
+                    </listcell>
+                    <listcell>
+                        <div  width="60%" style="float: left;">
+                            <label value="Minutes After"/>
+                        </div>
+                        <div width="40%" style="float: left;">
+                            <intbox style="margin-left: 5px; width: 60%" value="@bind(vm.appointmentRescheduled.triggetPointValue)" constraint="no negative : Required Positive"/>
+                        </div>
+                    </listcell>
+                    <listcell>
+
+                    </listcell>
+                    <listcell>
+                        <checkbox label="Patient" checked="@bind(vm.appointmentRescheduled.patientRole)"/>
+                        <checkbox label="Doctor" style="margin-left: 5px;" checked="@bind(vm.appointmentRescheduled.doctorRole)" disabled="true" visible="false"/>
+                        <checkbox label="Receptionist" style="margin-left: 5px;" checked="@bind(vm.appointmentRescheduled.receptionistRole)" disabled="true" visible="false"/>
+                    </listcell>
+                    <listcell visible="false">
+                        <checkbox checked="@bind(vm.appointmentRescheduled.notificationRequired)"/>
+                    </listcell>
+                </listitem>
+                <listitem>
+                    <listcell>When appointment is cancelled</listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentCancelled.bySMS)"/>
+                    </listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentCancelled.byEmail)"/>
+                    </listcell>
+                    <listcell visible="false">
+                        <checkbox checked="@bind(vm.appointmentCancelled.inApp)"/>
+                    </listcell>
+                    <listcell>
+                        <div  width="60%" style="float: left;">
+                            <label value="Minutes After"/>
+                        </div>
+                        <div width="40%" style="float: left;">
+                            <intbox style="margin-left: 5px; width: 60%" value="@bind(vm.appointmentCancelled.triggetPointValue)" constraint="no negative : Required Positive"/>
+                        </div>
+                    </listcell>
+                    <listcell>
+
+                    </listcell>
+                    <listcell>
+                        <checkbox label="Patient" checked="@bind(vm.appointmentCancelled.patientRole)"/>
+                        <checkbox label="Doctor" style="margin-left: 5px;" checked="@bind(vm.appointmentCancelled.doctorRole)" disabled="true" visible="false"/>
+                        <checkbox label="Receptionist" style="margin-left: 5px;" checked="@bind(vm.appointmentCancelled.receptionistRole)" disabled="true" visible="false"/>
+                    </listcell>
+                    <listcell visible="false">
+                        <checkbox checked="@bind(vm.appointmentCancelled.notificationRequired)"/>
+                    </listcell>
+                </listitem>
+                <listitem>
+                    <listcell>First reminder regarding appointment</listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentFirstReminder.bySMS)"/>
+                    </listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentFirstReminder.byEmail)"/>
+                    </listcell>
+                    <listcell visible="false">
+                        <checkbox checked="@bind(vm.appointmentFirstReminder.inApp)"/>
+                    </listcell>
+                    <listcell>
+                        <div  width="60%" style="float: left;">
+                            <label value="Minutes Before"/>
+                        </div>
+                        <div width="40%" style="float: left;">
+                            <intbox style="margin-left: 5px; width: 60%" value="@bind(vm.appointmentFirstReminder.triggetPointValue)" constraint="no negative : Required Positive"/>
+                        </div>
+                    </listcell>
+                    <listcell>
+
+                    </listcell>
+                    <listcell>
+                        <checkbox label="Patient" checked="@bind(vm.appointmentFirstReminder.patientRole)"/>
+                        <checkbox label="Doctor" style="margin-left: 5px;" checked="@bind(vm.appointmentFirstReminder.doctorRole)" disabled="true" visible="false"/>
+                        <checkbox label="Receptionist" style="margin-left: 5px;" checked="@bind(vm.appointmentFirstReminder.receptionistRole)" disabled="true" visible="false"/>
+                    </listcell>
+                    <listcell visible="false">
+                        <checkbox checked="@bind(vm.appointmentFirstReminder.notificationRequired)"/>
+                    </listcell>
+                </listitem>
+                <listitem>
+                    <listcell>Second reminder regarding appointment</listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentSecondReminder.bySMS)"/>
+                    </listcell>
+                    <listcell>
+                        <checkbox checked="@bind(vm.appointmentSecondReminder.byEmail)"/>
+                    </listcell>
+                    <listcell visible="false">
+                        <checkbox checked="@bind(vm.appointmentSecondReminder.inApp)"/>
+                    </listcell>
+                    <listcell>
+                        <div  width="60%" style="float: left;">
+                            <label value="Minutes Before"/>
+                        </div>
+                        <div width="40%" style="float: left;">
+                            <intbox style="margin-left: 5px; width: 60%" value="@bind(vm.appointmentSecondReminder.triggetPointValue)" constraint="no negative : Required Positive"/>
+                        </div>
+                    </listcell>
+                    <listcell>
+
+                    </listcell>
+                    <listcell>
+                        <checkbox label="Patient" checked="@bind(vm.appointmentSecondReminder.patientRole)"/>
+                        <checkbox label="Doctor" style="margin-left: 5px;" checked="@bind(vm.appointmentSecondReminder.doctorRole)" disabled="true" visible="false"/>
+                        <checkbox label="Receptionist" style="margin-left: 5px;" checked="@bind(vm.appointmentSecondReminder.receptionistRole)" disabled="true" visible="false"/>
+                    </listcell>
+                    <listcell visible="false">
+                        <checkbox checked="@bind(vm.appointmentSecondReminder.notificationRequired)"/>
+                    </listcell>
+                </listitem>
+                <!--<listitem>
+                    <listcell>Blocking of a Doctor</listcell>
+                    <listcell>
+                        <checkbox/>
+                    </listcell>
+                    <listcell>
+                        <checkbox/>
+                    </listcell>
+                    <listcell>
+                        <checkbox/>
+                    </listcell>
+                    <listcell>
+                        <div  width="40%" style="float: left;">
+                            <label value="Hours After"/>
+                        </div>
+                        <div width="40%" style="float: left;">
+                            <intbox style="margin-left: 5px; width: 60%" constraint="no negative : Required Positive"/>
+                        </div>
+                    </listcell>
+                    <listcell>
+
+                    </listcell>
+                    <listcell>
+                        <checkbox label="Patient"/>
+                        <checkbox label="Doctor" style="margin-left: 5px;" disabled="true"/>
+                        <checkbox label="Receptionist" style="margin-left: 5px;" disabled="true"/>
+                    </listcell>
+                    <listcell>
+                        <checkbox/>
+                    </listcell>
+                </listitem>
+                <listitem>
+                    <listcell>Cancellation of blocked time slot</listcell>
+                    <listcell>
+                        <checkbox/>
+                    </listcell>
+                    <listcell>
+                        <checkbox/>
+                    </listcell>
+                    <listcell>
+                        <checkbox/>
+                    </listcell>
+                    <listcell>
+                        <div  width="40%" style="float: left;">
+                            <label value="Hours After"/>
+                        </div>
+                        <div width="40%" style="float: left;">
+                            <intbox style="margin-left: 5px; width: 60%" constraint="no negative : Required Positive"/>
+                        </div>
+                    </listcell>
+                    <listcell>
+
+                    </listcell>
+                    <listcell>
+                        <checkbox label="Patient"/>
+                        <checkbox label="Doctor" style="margin-left: 5px;" disabled="true"/>
+                        <checkbox label="Receptionist" style="margin-left: 5px;" disabled="true"/>
+                    </listcell>
+                    <listcell>
+                        <checkbox/>
+                    </listcell>
+                </listitem>-->
+            </listbox>
+        </div>
+        <div sclass="panelFoot"  align="center" style="margin-top: 20px;">
+            <button label="Save" id="saveNotification"  zclass="btn-success btn" onClick="@command('saveNotification')"/>
+        </div>
+
+    </window>
+</zk>

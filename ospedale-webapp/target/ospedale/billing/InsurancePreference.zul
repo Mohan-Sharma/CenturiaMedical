@@ -1,0 +1,98 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./billingPreferenceWindow"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript><![CDATA[
+        import com.nzion.domain.*;
+        com.nzion.service.common.CommonCrudService commonCrudService = com.nzion.util.Infrastructure.getSpringBean("commonCrudService");
+        com.nzion.domain.screen.BillingDisplayConfig billingDisplayConfig = commonCrudService.getByPractice(com.nzion.domain.screen.BillingDisplayConfig.class);
+        List hismodules = com.nzion.util.RestServiceConsumer.getHISModules();
+        com.nzion.util.RestServiceConsumer restConsumer = new com.nzion.util.RestServiceConsumer();
+        List pharmacies = restConsumer.getPharmacies();
+        Practice practice = commonCrudService.getAll(Practice.class).get(0);
+        if((practice.isLogoWithAddress()) != null){
+            practice.setLogoWithAddress(!practice.isLogoWithAddress());
+        }
+        ]]></zscript>
+    <window id="billingPreferenceWindow">
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Clinic Preference</h:small>
+            </h:h1>
+        </div>
+        <div class="container-fluid">
+            <div zclass="row-fluid">
+                <div zclass="span3">
+                    <label value="Benefit"  />
+                    <combobox sclass="span12" readonly="true" selectedItem="@{billingDisplayConfig.defaultHisModuleId}">
+                        <comboitem forEach="${hismodules}" label="${each.hisBenefitName}" value="${each.hisModuleId}">
+                        </comboitem>
+                    </combobox>
+                </div>
+            </div>
+
+            <div zclass="row-fluid">
+                <div zclass="span3">
+                    <label value="Pharmacy"  />
+                    <combobox sclass="span12" readonly="true" selectedItem="@{billingDisplayConfig.pharmacyId}" id="pharmacyCombobox">
+                        <comboitem forEach="${pharmacies}" label="${each.pharmacyName}" value="${each.pharmacyId}"/>
+                    </combobox>
+                </div>
+            </div>
+            <div zclass="row-fluid">
+                <div zclass="span3" style="margin-left: 5px">
+                    <button label="Upload Clinic Logo" upload="true">
+                        <attribute name="onUpload">
+                            org.zkoss.util.media.Media media = event.getMedia();
+                            if (media instanceof org.zkoss.image.Image) {
+                            uploadClinicLogo(media);
+                            //Practice prac = com.nzion.util.Infrastructure.getPractice();
+                            practice.setImageUrl("/images/"+media.getName());
+                            commonCrudService.save(practice);
+                            com.nzion.util.UtilMessagesAndPopups.showSuccess();
+                            } else {
+                            Messagebox.show("Not an image: " + media, "Error", Messagebox.OK,Messagebox.ERROR);
+                            break; //not to show too many errors
+                            }
+                        </attribute>
+                    </button>
+                </div>
+                <div zclass="span3">
+                    <checkbox checked="@{practice.logoWithAddress}"/>
+                    <label value="Print address in output header"  />
+                </div>
+            </div>
+            <separator></separator>
+        </div>
+
+        <div sclass="panelFoot"  align="center">
+            <button label="Save" id="send"  zclass="btn-success btn">
+                <attribute name="onClick">
+                    practice.setLogoWithAddress(!practice.isLogoWithAddress());
+                    if(pharmacyCombobox.getSelectedItem() != null)
+                    billingDisplayConfig.setPharmacyId(pharmacyCombobox.getSelectedItem().getValue());
+                    commonCrudService.save(billingDisplayConfig);
+                    commonCrudService.save(practice);
+                    com.nzion.util.UtilMessagesAndPopups.showSuccess();
+                </attribute>
+            </button>
+        </div>
+        <zscript>
+            import java.io.*;
+            void uploadClinicLogo(org.zkoss.util.media.Media media){
+            File newFile = new File("images/");
+            try {
+            if(!newFile.exists())
+            newFile.mkdir();
+            newFile = new File("images/"+media.getName());
+            FileOutputStream fos = new FileOutputStream(newFile, false);
+            org.apache.commons.io.IOUtils.copy(media.getStreamData(), fos);
+            fos.flush();
+            org.apache.commons.io.IOUtils.closeQuietly(fos);
+            } catch (IOException e) {
+            e.printStackTrace();
+            }
+            }
+        </zscript>
+    </window>
+</zk>

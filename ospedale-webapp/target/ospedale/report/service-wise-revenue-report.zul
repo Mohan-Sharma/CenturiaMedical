@@ -1,0 +1,890 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./serviceWiseRevenueReportWindow"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+<zscript>
+        <![CDATA[
+        import com.nzion.util.UtilValidator;
+        com.nzion.zkoss.ext.DataExporter exporter = new com.nzion.zkoss.ext.CsvDataExporter();
+        com.nzion.zkoss.composer.emr.BillingSearchController billingSearchController = new com.nzion.zkoss.composer.emr.BillingSearchController();
+        com.nzion.service.billing.BillingService billingService=com.nzion.util.Infrastructure.getSpringBean("billingService");
+        List cpt = commonCrudService.getAll(com.nzion.domain.emr.Cpt.class);
+        List slottype=commonCrudService.getAll(com.nzion.domain.SlotType.class);
+       // List consultant=commonCrudService.getAll(com.nzion.domain.Provider.class);
+         List consultant = new ArrayList();
+         boolean admin = com.nzion.domain.Roles.hasRole(com.nzion.domain.Roles.ADMIN);
+        if(admin) {
+            consultant = commonCrudService.getAll(com.nzion.domain.Provider.class); }
+        else if(com.nzion.domain.Roles.hasRole(com.nzion.domain.Roles.PROVIDER)) {
+            consultant.add((com.nzion.domain.Provider)com.nzion.util.Infrastructure.getLoggedInPerson()); }
+
+       com.nzion.repository.common.CommonCrudRepository  commonCrudRepository = com.nzion.util.Infrastructure.getSpringBean("commonCrudRepository");
+
+        List invoicesTmp;
+        List patientInsuranceIds = null;
+        StringBuilder content = null;
+        StringBuilder header = null;
+         Map doctorGroup;
+         Map serviceTypeGroup;
+        ]]>
+</zscript>
+
+       <window id="serviceWiseRevenueReportWindow" apply="${billingSearchController}" >
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Service Wise Revenue Report</h:small>
+            </h:h1>
+        </div>
+        <div class="container-fluid">
+          <div zclass="row-fluid">
+            <div zclass="span2">
+                <label value="Doctor"  style="margin-left:20px"/>
+                  <combobox id="providerId" selectedItem="@save(billingSearchController.billingSearchVO.consultant)" sclass="span9" readonly="true">
+                    <comboitem value="" label="" if="${admin}"/>
+                    <comboitem forEach = "${consultant}" value = "${each}" label="${each.firstName}">
+                     <attribute name = "onCreate">
+                       if(consultant.size() == 1) {
+                           self.getParent().setSelectedItem(self);
+                           billingSearchController.getBillingSearchVO().setConsultant(self.getValue());
+                           }
+                     </attribute>
+                    </comboitem>
+                     <attribute name = "onSelect">
+                        if("".equals(providerId.getSelectedItem().getValue())){
+                           billingSearchController.getBillingSearchVO().setConsultant(null);
+                        }else {
+                           billingSearchController.getBillingSearchVO().setConsultant(self.getSelectedItem().getValue());
+                        }
+                     </attribute>
+                  </combobox>
+            </div>
+
+            <div zclass="span2" style="margin-left: -10px;">
+                   <label value="Invoice Date From" mold="required" />
+                      <datebox id="fromDate" value="@{billingSearchController.billingSearchVO.fromDate}" sclass="span9" constraint="no empty, no future"/>
+            </div>
+            <div zclass="span2" style="margin-left: -10px;">
+                   <label value="Invoice Date Thru" mold="required"/>
+                       <datebox id="thruDate" value="@{billingSearchController.billingSearchVO.thruDate}" sclass="span9" constraint="no empty, no future"/>
+            </div>
+            <div zclass="span2" style="margin-left: -10px;">
+                   <label value="Service Type"/>
+                      <combobox id="sT" selectedItem="@{billingSearchController.billingSearchVO.serviceType}" sclass="span9" readonly="true">
+                          <comboitem value=" " label="ALL "/>
+                          <comboitem value="OPD_CONSULTATION" label="CONSULTATION"/>
+                          <comboitem value="OPD_PROCEDURE" label="PROCEDURES"/>
+
+                          <attribute name="onSelect">
+
+                              if("OPD_CONSULTATION".equals(sT.getSelectedItem().getValue())){
+                                slotTypeDiv.setVisible(true);
+                                cptTypeDiv.setVisible(false);
+                              billingSearchController.getBillingSearchVO().setCpt(null);
+                              }
+                              if("OPD_PROCEDURE".equals(sT.getSelectedItem().getValue())){
+                                slotTypeDiv.setVisible(false);
+                                cptTypeDiv.setVisible(true);
+                              billingSearchController.getBillingSearchVO().setSlottype(null);
+                              }
+                              if(" ".equals(sT.getSelectedItem().getValue())) {
+                              slotTypeDiv.setVisible(false);
+                              cptTypeDiv.setVisible(false);
+                              billingSearchController.getBillingSearchVO().setSlottype(null);
+                              billingSearchController.getBillingSearchVO().setCpt(null);
+                              }
+                          </attribute>
+                       </combobox>
+            </div>
+
+
+            <div zclass="span2" style="margin-left: -10px;" id="slotTypeDiv" visible="false">
+                     <label value="Service Name"  />
+                     <combobox  id="slottype" model="@{slottype}" selectedItem="@{billingSearchController.billingSearchVO.slottype}" sclass="span9" autodrop="true">
+                         <comboitem self="@{each='user'}" value="@{user}" label="@{user}" style="padding-right:10px" />
+                     </combobox>
+            </div>
+
+            <div zclass="span2" style="margin-left: -10px;" id="cptTypeDiv" visible="false" >
+                      <label value="Service Name"  />
+                     <combobox id="cpt" model="@{cpt}" selectedItem="@{billingSearchController.billingSearchVO.cpt}" sclass="span9" autodrop="true">
+                     <comboitem self="@{each='user'}" value="@{user}" label="@{user}" style="padding-right:10px" />
+                     </combobox>
+            </div>
+
+
+          </div>
+        </div>
+           <div sclass="gridCont" >
+            <div align="center" sclass="panelFoot"  >
+             <button label="Search" id="searchButton" zclass="btn btn-primary"  >
+                <attribute name="onClick">
+                    <![CDATA[
+                    fromDate.getValue();
+                    thruDate.getValue();
+                    if(com.nzion.util.UtilDateTime.getIntervalInDays(fromDate.getValue(),thruDate.getValue()) > 31){
+                        com.nzion.util.UtilMessagesAndPopups.showError("Search Date range cannot be greater than 30 days");
+                        return;
+                    }
+
+                    content = new StringBuilder();
+                     if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getConsultant())){
+           				content.append("Doctor :"+billingSearchController.getBillingSearchVO().getConsultant()).append(" | ");
+             		}
+
+                	if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getFromDate())){
+                		content.append("From Date: "+com.nzion.util.UtilDateTime.format( billingSearchController.getBillingSearchVO().getFromDate())).append(" | ");
+                   	}
+                  	if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getThruDate())){
+                    	content.append("Thru Date: "+com.nzion.util.UtilDateTime.format(billingSearchController.getBillingSearchVO().getThruDate())).append(" | ");
+                    }
+                     billingSearchController.searchInvoiceItemWithOutCount(fromDate.getValue(),thruDate.getValue(),patientInsuranceIds);
+          			 searchResults.setVisible(true);
+          			 searchResultsSplitter.setVisible(true);
+          			 searchResultGrid.setVisible(true);
+          			 groupByServiceType.setVisible(false);
+                     groupByDoctor.setVisible(false);
+                   //  groupByServiceName.setVisible(false);
+                     groupByComboBox.selectItem(null);
+          			// java.math.BigDecimal totalAmts = java.math.BigDecimal.ZERO;
+                     invoicesTmp =  billingSearchController.getInvoices();
+                     if(searchResultGrid.getSelectedCount()>0){
+                       invoicesTmp = new ArrayList();
+                        Set selectedlistItems = searchResultGrid.getSelectedItems();
+                         for(Object obj : selectedlistItems)
+                        	invoicesTmp.add(((com.nzion.domain.billing.Invoice)((Listitem)obj).getValue()));
+                     }
+          			]]>
+                </attribute>
+             </button>
+        </div>
+        <separator></separator>
+<space height="5px" />
+<hlayout width="100%" style="text-align:center;background-color:grey" id="searchResultsSplitter" visible="false">
+            <image src="/images/collapse-content.png" style="text-align:center">
+                <attribute w:name="onClick">
+                    jq(this.$f('searchForm')).slideToggle(1000);
+                </attribute>
+                <attribute name="onClick">
+                    if(self.getSrc().contains("expand")){
+                    self.setSrc("/images/collapse-content.png");
+                    }
+                    else if(self.getSrc().contains("collapse")){
+                    self.setSrc("/images/expand-content.png");
+                    }
+                </attribute>
+            </image>
+</hlayout>
+       <space height="5px" />
+        <panel visible="false" id="searchResults" title="Search Results" width="100%" >
+            <caption height="15px">
+                <div style="float:right; margin-right: 2%; background-color: white;width: 15%;text-align: center;text-decoration: none;" >
+					<a  tooltiptext="Export" label="Export" sclass="reminderBtn">
+                        <attribute name="onClick">
+                            exportData();
+                        </attribute>
+                    </a>
+                </div>
+            </caption>
+<panelchildren>
+
+     <hlayout  style="padding:10px" width="10%">
+                    <label value="Group By:" />
+        <listbox id="groupByComboBox" mold="select" sizedByContent="true" style="padding:2px">
+                        <listitem/>
+                        <listitem label="Doctor" value="doctor" />
+                        <listitem label="Service Type" value="ServiceType" />
+                        <!--<listitem label="Service Name" value="ServiceName" />-->
+                     <attribute name="onSelect">
+                     <![CDATA[
+
+                       graphByComboBox.selectItem(barGraph);
+                       graphViewDiv.setVisible(false);
+                       Events.postEvent("onSelect",graphByComboBox,null);
+                       gridView.setChecked(true);
+                       Events.postEvent("onCheck",gridView,null);
+
+               		 if(self.getSelectedItem().getValue() != null && self.getSelectedItem().getValue().equals("doctor")){
+                         searchResultGrid.setVisible(false);
+                         groupByServiceType.setVisible(false);
+                      //   groupByServiceName.setVisible(false);
+                         groupByDoctor.setVisible(self.getSelectedItem().getValue() != null);
+                         if(self.getSelectedItem().getValue() != null){
+                         doctorGroup =billingSearchController.groupByDoctorForInvoiceItem();
+                         }
+                         doctorGroupColumn.setLabel(self.getSelectedItem().getLabel());
+
+                         }
+
+                         else if (self.getSelectedItem().getValue() != null && self.getSelectedItem().getValue().equals("ServiceType")) {
+                           searchResultGrid.setVisible(false);
+                           groupByDoctor.setVisible(false);
+                           groupByServiceType.setVisible(self.getSelectedItem().getValue() != null);
+                           if(self.getSelectedItem().getValue() != null){
+                           serviceTypeGroup =billingSearchController.groupByServiceTypeForInvoiceItem();
+                           }
+                           serviceTypeGroupColumn.setLabel(self.getSelectedItem().getLabel());
+                           } else {
+                            groupByDoctor.setVisible(false);
+                            groupByServiceType.setVisible(false);
+                           }
+                           searchResultGrid.setVisible(self.getSelectedItem().getValue() == null);
+                           viewRadioGroup.setVisible(self.getSelectedItem().getValue() != null);
+                           graphViewDiv.setVisible(false);
+                     ]]>
+                     </attribute>
+        </listbox>
+        <radiogroup sclass="span12" width="200px" id="viewRadioGroup" visible="false">
+                                <radio label="Grid View" value="gridView" checked="true" id="gridView">
+                                    <attribute name="onCheck">
+                                        gridViewDiv.setVisible(true);
+                                        graphByLabel.setVisible(false);
+                                       	graphByComboBox.setVisible(false);
+                                       	graphViewDiv.setVisible(false);
+
+                                    </attribute>
+                                </radio>
+                                <radio label="Graphical View" style="margin-left: 10px;" value="graphicalView" visible="false">
+                                    <attribute name="onCheck">
+                                       gridViewDiv.setVisible(false);
+                                       graphByLabel.setVisible(true);
+                                       graphByComboBox.setVisible(true);
+                                       graphViewDiv.setVisible(true);
+                                    </attribute>
+                                </radio>
+                                </radiogroup>
+
+                            <label value="Graph By:" id="graphByLabel" visible="false"/>
+                            <listbox id="graphByComboBox" mold="select" sizedByContent="true" style="padding:2px" visible="false">
+                                <listitem label="Bar Graph" value="barGraph" selected="true" id="barGraph"/>
+                                <listitem label="Pie Chart" value="pieChart" />
+                               	  <attribute name="onSelect">
+                                    <![CDATA[
+
+        		  if(self.getSelectedItem().getValue() != null && self.getSelectedItem().getValue().equals("barGraph")){
+        				barGraphView.setVisible(true);
+        				pieChartView.setVisible(false);
+
+        				org.jfree.data.category.DefaultCategoryDataset dataset = new org.jfree.data.category.DefaultCategoryDataset();
+
+        if(groupByComboBox.getSelectedItem().getValue() != null &&"ServiceType".equals(groupByComboBox.getSelectedItem().getValue())){
+        	                				 Map getInvoiceItemMap = billingSearchController.groupByInvoiceItems();
+        	                				 Set keySet = getInvoiceItemMap.keySet();
+        	                				 for(String key : keySet){
+        	                					 Double amount = 0;
+        	                					 Set invoiceItems = getInvoiceItemMap.get(key);
+        	                					 for(com.nzion.domain.billing.InvoiceItem invoiceItem: invoiceItems){
+        	                						 amount = amount + (invoiceItem.getPrice() != null ? invoiceItem.getPrice().getAmount().doubleValue():0);
+        	                					 }
+        	                					 dataset.addValue(amount,"",key);
+        	                				 }
+        	                	}
+        	      if(groupByComboBox.getSelectedItem().getValue() != null && "doctor".equals(groupByComboBox.getSelectedItem().getValue())){
+                  	              		 Map getInvoiceMap = billingSearchController.groupByDoctor();
+                  	                				 Set keySet = getInvoiceMap.keySet();
+                  	                				 for(String key : keySet){
+                  	                					 Double amount = 0;
+                  	                					 Set invoices = getInvoiceMap.get(key);
+                  	                					 for(com.nzion.domain.billing.Invoice invoice: invoices){
+                  	                						 amount = amount + invoice.getTotalAmount().getAmount().doubleValue();
+                  	                					 }
+                  	                					 dataset.addValue(amount,"",key);
+                  	                				 }
+                  	                			}
+
+
+			   org.jfree.chart.JFreeChart chart = org.jfree.chart.ChartFactory.createBarChart("Invoice Bar Chart", "Service Name","Amount",dataset,
+			   org.jfree.chart.plot.PlotOrientation.VERTICAL, true,true,false);
+			   org.jfree.chart.plot.CategoryPlot barPlot = chart.getCategoryPlot();
+			   barPlot.setBackgroundPaint(java.awt.Color.lightGray);
+			   barPlot.setDomainGridlinePaint(java.awt.Color.white);
+			   barPlot.setRangeGridlinePaint(java.awt.Color.white);
+			   final org.jfree.chart.renderer.category.CategoryItemRenderer renderer = barPlot.getRenderer();
+			   renderer.setBaseItemLabelGenerator(new org.jfree.chart.labels.StandardCategoryItemLabelGenerator("{2}", java.text.NumberFormat.getInstance()));
+			   renderer.setBaseItemLabelsVisible(true);
+
+
+			  java.awt.image.BufferedImage bi = chart.createBufferedImage(1000, 600, java.awt.image.BufferedImage.TRANSLUCENT , null);
+			  byte[] bytes = org.jfree.chart.encoders.EncoderUtil.encode(bi, org.jfree.chart.encoders.ImageFormat.PNG, true);
+
+			  org.zkoss.image.AImage image = new org.zkoss.image.AImage("Bar Grpah", bytes);
+			  barGraphImage.setContent(image);
+		}
+
+		              	else if(self.getSelectedItem().getValue() != null && self.getSelectedItem().getValue().equals("pieChart")){
+                        										barGraphView.setVisible(false);
+                        										pieChartView.setVisible(true);
+                        										org.jfree.data.general.DefaultPieDataset pieDataset = new org.jfree.data.general.DefaultPieDataset();
+                      if(groupByComboBox.getSelectedItem().getValue() != null &&"ServiceType".equals(groupByComboBox.getSelectedItem().getValue())){
+                                 Map getInvoiceItemMap = billingSearchController.groupByInvoiceItems();
+                                 Set keySet = getInvoiceItemMap.keySet();
+                                 for(String key : keySet){
+                                     Double amount = 0;
+                                     Set invoiceItems = getInvoiceItemMap.get(key);
+                                     for(com.nzion.domain.billing.InvoiceItem invoiceItem: invoiceItems){
+                                         amount = amount + (invoiceItem.getPrice() != null ? invoiceItem.getPrice().getAmount().doubleValue():0);
+                                     }
+                                     dataset.addValue(amount,"",key);
+                                 }
+                      }
+
+                      if(groupByComboBox.getSelectedItem().getValue() != null && "doctor".equals(groupByComboBox.getSelectedItem().getValue())){
+
+                                 Map getInvoiceMap = billingSearchController.groupByDoctor();
+                                 Set keySet = getInvoiceMap.keySet();
+                                 Double totalAmount = 0;
+
+                                Map amountMap = new HashMap();
+                                for(String key : keySet){
+                                    Double amount = 0;
+                                    Set invoices = getInvoiceMap.get(key);
+                                    for(com.nzion.domain.billing.Invoice invoice: invoices){
+                                         amount = amount + invoice.getTotalAmount().getAmount().doubleValue();
+                                     }
+                                    amountMap.put(key,amount);
+                                    totalAmount = totalAmount + amount;
+                                    }
+                                for(Object key : amountMap.keySet()){
+                                    Double dataValue = (amountMap.get(key) * 360) / totalAmount ;
+                                    pieDataset.setValue(key.toString(),dataValue);
+                                }
+
+                      }
+
+
+                 	org.jfree.chart.JFreeChart chart = org.jfree.chart.ChartFactory.createPieChart("Invoice Pie Chart", pieDataset,true,true,false);
+                 										org.jfree.chart.plot.PiePlot plot = (org.jfree.chart.plot.PiePlot) chart.getPlot();
+                 										plot.setForegroundAlpha(0.5f);
+                 										org.jfree.chart.labels.PieSectionLabelGenerator generator = new org.jfree.chart.labels.StandardPieSectionLabelGenerator(
+                 												"{0} = {2}", new java.text.DecimalFormat("0"), new java.text.DecimalFormat("0.00%"));
+                 										plot.setLabelGenerator(generator);
+
+                 										java.awt.image.BufferedImage bi = chart.createBufferedImage(700, 500, java.awt.image.BufferedImage.TRANSLUCENT , null);
+                 										byte[] bytes = org.jfree.chart.encoders.EncoderUtil.encode(bi, org.jfree.chart.encoders.ImageFormat.PNG, true);
+
+                 										org.zkoss.image.AImage image = new org.zkoss.image.AImage("Pie Chart", bytes);
+                 										pieChartImage.setContent(image);
+
+                 		}
+
+             graphViewDiv.setVisible(self.getSelectedItem().getValue() != null);
+             									]]>
+
+             			  </attribute>
+        </listbox>
+     </hlayout>
+                                        <div id="graphViewDiv" visible="false">
+                                        	<div id="barGraphView" align="center">
+                                        		<image id="barGraphImage" style="align:center;"/>
+                                        	</div>
+                                        	<div id="pieChartView" visible="false" align="center">
+                                        		<image id="pieChartImage"  style="align:center;"/>
+
+                                        	</div>
+                                </div>
+
+
+
+          <div id="gridViewDiv">
+              <div sclass="panelHeadTop pagination" >
+                  <div sclass="fr" style="background-color:#24aadd">
+                      <paging detailed="true" id="listboxPaging" pageSize="20" pageIncrement="1" />
+                  </div>
+              </div>
+          <div style="overflow:auto" id="searchResultDiv">
+        <listbox  id="searchResultGrid" model="@{billingSearchController.invoiceItems,load-after='searchButton.onClick'}" mold="paging" paginal="${listboxPaging}" >
+           <listhead>
+                  <listheader label="Service Type" width="100px" />
+    			  <listheader label="Service Name" width="180px"  />
+    			   <listheader label="Invoice Date" width="100px"/>
+    			   <listheader label="Civil Id" width="100px" />
+                   <listheader label="Afya Id" width="70px" />
+                   <listheader label="File No." width="90px" />
+                   <listheader label="Name" width="100px"/>
+                   <listheader label="Doctor Name" width="100px"/>
+
+                   <listheader label="Invoice No." width="90px" />
+                   <listheader label="Invoice Status" width="100px" />
+                   <listheader label="Gross Amt" width="70px" />
+                   <listheader label="Concession" width="70px" />
+                   <listheader label="Net Amt" width="70px" />
+                   <listheader label="Insurance Pay" width="90px" />
+                   <listheader label="Patient Pay" width="70px" />
+                  <!--  <listheader label="Net Income" width="90px"  /> -->
+                   <listheader label="Referral Amount" width="100px"  />
+                   <listheader label="Referred by" width="90px" />
+                    <listheader label="Net Income" width="90px"  />
+           </listhead>
+            <listitem self="@{each='invoiceItems'}" value="@{invoiceItems}">
+                              <listcell >
+                                    <label value="@{invoiceItems.itemType.description}" />
+                              </listcell>
+                              <listcell>
+                                    <label value="@{invoiceItems.description}" />
+                                 <!--  <label value="@{invoiceItems.itemId}" /> -->
+                              </listcell>
+                              <listcell label="@{invoiceItems.invoice.invoiceDate,converter='com.nzion.view.component.DateConverter'}" />
+                              <listcell>
+                                    <label value="@{invoiceItems.invoice.patient.civilId}" />
+
+                              </listcell>
+                              <listcell>
+                                    <label value="@{invoiceItems.invoice.patient.afyaId}" />
+                              </listcell>
+                              <listcell>
+                                     <label value="@{invoiceItems.invoice.patient.fileNo}" />
+                              </listcell>
+                              <listcell>
+                                      <name object="@{invoiceItems.invoice.patient}" />
+                              </listcell>
+                              <listcell>
+                                  <name object="@{invoiceItems.invoice.consultant}" />
+                              </listcell>
+                              <listcell >
+                                    <label value="@{invoiceItems.invoice.invoiceNumber}" />
+                              </listcell>
+                              <listcell label="@{invoiceItems.invoice.invoiceStatus}" />
+                              <!--<listcell >
+         							<label value="@{invoiceItems.netPrice}" />
+         					  </listcell>-->
+                            <listcell >
+                                <label value="@{invoiceItems.price}" />
+                            </listcell>
+                            <!--<listcell style="text-align:right">
+                                <attribute name="onCreate">
+                                    <![CDATA[
+                                                if(self.getParent().getValue() instanceof com.nzion.domain.billing.Invoice){
+                                                    java.math.BigDecimal  totalGrossAmount = java.math.BigDecimal.ZERO;
+                                                    for(com.nzion.domain.billing.InvoiceItem ii : self.getParent().getValue().getInvoiceItems()){
+                                                        if(!"Cancel".equals(ii.getInvoiceItemStatus()))
+                                                        totalGrossAmount = totalGrossAmount.add(ii.getPrice().getAmount().setScale(3, java.math.RoundingMode.HALF_UP));
+                                                    }
+                                                    self.setLabel(totalGrossAmount.setScale(3, java.math.RoundingMode.HALF_UP).toString());
+                                                }
+                                                ]]>
+                                </attribute>
+                            </listcell>-->
+                              <listcell style="text-align:right">
+                                   <!--<label value="@{invoiceItems.concessionAmount}" >-->
+                                   <attribute name="onCreate">
+                                       <![CDATA[
+                                    if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem)
+                                    {
+                                      com.nzion.domain.billing.InvoiceItem invoiceItems=self.getParent().getValue();
+                                      if(invoiceItems.getNetPrice() != null) {
+                                      java.math.BigDecimal concession=invoiceItems.getPrice().getAmount().subtract(invoiceItems.getNetPrice()).setScale(3,java.math.RoundingMode.HALF_UP);
+                                      self.setLabel(concession.toString());
+                                      }
+                                    }
+                                    ]]>
+                                   </attribute>
+
+                                  <!-- </label>-->
+                              </listcell>
+                             <listcell style="text-align:right">
+                   			 <label value="@{invoiceItems.netPrice}" />
+                   			 </listcell>
+                             <listcell style="text-align:right">
+                             <attribute name="onCreate">
+                              <![CDATA[
+                                         if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                             Map result = new com.nzion.util.PatientInsuranceUtility().getPatientPayableAndInsurancePayableForInvoiceItem(self.getParent().getValue());
+                                             if(result.size()>0){
+                                            self.setLabel(result.get("insurancePayable").toString());
+                                    }
+                                 }
+                              ]]>
+                             </attribute>
+                              </listcell>
+
+                              <listcell style="text-align:right">
+                                    <attribute name="onCreate">
+                                        <![CDATA[
+                                        if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                            Map result = new com.nzion.util.PatientInsuranceUtility().getPatientPayableAndInsurancePayableForInvoiceItem(self.getParent().getValue());
+                                            if(result.size()>0){
+                                                self.setLabel(result.get("patientPayable").toString());
+                                            }
+                                        }
+                                        ]]>
+                                    </attribute>
+                              </listcell>
+                              <listcell id="referralAmt" style="text-align:right"> <label value="@{invoiceItems.referral_amountTobePaid}">
+                                 <!-- <attribute name="onCreate">
+                                      <![CDATA[
+                                    if(self.getParent().getValue()==null){
+                                      self.setValue("0.000");
+                                    }
+                                    ]]>
+                                  </attribute>-->
+                              </label> </listcell>
+                              <listcell>
+                               <!--  <listcell label="@{invoiceItems.referral_contract.referral_clinic_id}" />
+                                 <label value="@{invoiceItems.invoice.consultant}" style="font-weight:normal" /> -->
+                                 <label style="font-weight:normal">
+                                 <attribute name="onCreate">
+                                    <![CDATA[
+                                       com.nzion.domain.billing.InvoiceItem invItem = self.getParent().getParent().getValue();
+                                       if(invItem.getReferralId() != null){
+                                       List referralList = commonCrudRepository.findByEquality(com.nzion.domain.Referral.class,new String[]{"id"},new Object[]{invItem.getReferralId()});
+                                       self.setValue(referralList.get(0).getClinicName());
+                                       }
+                                    ]]>
+                                 </attribute>
+                                 </label>
+                              </listcell>
+                              <!--<listcell style = "text-align:right">
+                                  <label value="@{invoiceItems.netPrice}" style="font-weight:normal" />
+                              </listcell>-->
+                            <listcell style="text-align:right">
+                                <attribute name="onCreate">
+                                    <![CDATA[
+                                   // String referralAmt = "0.000";
+                                  // if(self.getParent().getValue() == null) {
+                                 // if(self.getParent().getValue() == null ) { self.setValue(0.00);  }
+                                    if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                    com.nzion.domain.billing.InvoiceItem invoiceItems = self.getParent().getValue();
+                                    if(invoiceItems.getReferral_amountTobePaid() != null){
+                                    java.math.BigDecimal netIncome=invoiceItems.getNetPrice().subtract(invoiceItems.getReferral_amountTobePaid()).setScale(3,java.math.RoundingMode.HALF_UP);
+                                    self.setLabel(netIncome.toString());
+                                    }
+                                    }
+                                   // }
+                                    ]]>
+                                </attribute>
+                            </listcell>
+            </listitem>
+        </listbox>
+        </div></div>
+        <grid id="groupByDoctor" fixedLayout="true" model="@{doctorGroup,load-after='groupByComboBox.onSelect'}"
+                                  visible="false">
+                                <columns>
+                                    <column width="40px"></column>
+                                    <column label="Doctor" id="doctorGroupColumn" sortAscending="${billingSearchController.ascendingComparator}"
+                                            sortDescending="${billingSearchController.descendingComparator}">
+                                    </column>
+                                </columns>
+                                <rows>
+                                	 <row self="@{each='doctorGroup'}" value="@{doctorGroup}">
+                                        <detail open="false">
+                                <listbox  model="@{doctorGroup.value}" mold="paging" paginal="${listboxPaging}" >
+
+                                   <listhead>
+                                                   <listheader label="Service Type" width="100px" />
+                                       		       <listheader label="Service Name" width="180px"  />
+                                       		       <listheader label="Invoice Date" width="100px"  />
+                                       		       <listheader label="Civil Id" width="100px" />
+                                       		       <listheader label="Afya Id"  width="70px" />
+                                       		       <listheader label="File No." width="90px"  />
+                                       		       <listheader label="Name" width="100px"  />
+                                       		       <listheader label="Doctor Name" width="100px" />
+                                       		       <listheader label="Invoice No." width="70px" />
+                                       		       <listheader label="Invoice Status" width="100px" />
+                                       		       <listheader label="Gross Amt" width="70px" />
+                                                   <listheader label="Concession" width="70px" />
+                                                   <listheader label="Net Amt" width="70px" />
+                                                   <listheader label="Insurance Pay" width="90px"  />
+                                                   <listheader label="Patient Pay" width="70px" />
+
+                                                   <listheader label="Referral Amount" width="100px"  />
+                                                   <listheader label="Referred by" width="90px"  />
+                                                   <listheader label="Net Income" width="90px"  />
+
+                                   </listhead>
+
+                                    <listitem self="@{each='invoiceItems'}" value="@{invoiceItems}">
+                                      <listcell >
+                                            <label value="@{invoiceItems.itemType.description}" />
+                                      </listcell>
+                                      <listcell>
+                                             <label value="@{invoiceItems.description}" />
+                                      </listcell>
+                                      <listcell label="@{invoiceItems.invoice.invoiceDate,converter='com.nzion.view.component.DateConverter'}" />
+                                      <listcell>
+                                            <label value="@{invoiceItems.invoice.patient.civilId}" />
+                                      </listcell>
+                                      <listcell>
+                                            <label value="@{invoiceItems.invoice.patient.afyaId}" />
+                                      </listcell>
+                                      <listcell>
+                                             <label value="@{invoiceItems.invoice.patient.fileNo}" />
+                                      </listcell>
+                                      <listcell>
+                                              <name object="@{invoiceItems.invoice.patient}" />
+                                      </listcell>
+                                      <listcell>
+                                              <name object="@{invoiceItems.invoice.consultant}" />
+                                      </listcell>
+                                      <listcell >
+                                            <label value="@{invoiceItems.invoice.invoiceNumber}" />
+                                      </listcell>
+                                      <listcell label="@{invoiceItems.invoice.invoiceStatus}" />
+                                      <listcell >
+                 								<label value="@{invoiceItems.price}" />
+                                      </listcell>
+
+
+                                     <listcell style="text-align:right">
+                                         <attribute name="onCreate">
+                                             <![CDATA[
+                                            if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem)
+                                            {
+                                              com.nzion.domain.billing.InvoiceItem invoiceItems=self.getParent().getValue();
+                                              if(invoiceItems.getNetPrice() != null) {
+                                              java.math.BigDecimal concession=invoiceItems.getPrice().getAmount().subtract(invoiceItems.getNetPrice()).setScale(3,java.math.RoundingMode.HALF_UP);
+                                              self.setLabel(concession.toString());
+                                              }
+                                            }
+                                            ]]>
+                                         </attribute>
+                                     </listcell>
+                                     <listcell style="text-align:right">
+                           			 <label value="@{invoiceItems.netPrice}" />
+                           			 </listcell>
+                                     <listcell style="text-align:right">
+                                     <attribute name="onCreate">
+                                      <![CDATA[
+                                      if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                       Map result = new com.nzion.util.PatientInsuranceUtility().getPatientPayableAndInsurancePayableForInvoiceItem(self.getParent().getValue());
+                    	               if(result.size()>0){
+                    	               self.setLabel(result.get("insurancePayable").toString());
+                    	               }
+                                       }
+                                       ]]>
+                                       </attribute>
+                                      </listcell>
+
+                                      <listcell style="text-align:right">
+                                      <attribute name="onCreate">
+                                      <![CDATA[
+                                      if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                      Map result = new com.nzion.util.PatientInsuranceUtility().getPatientPayableAndInsurancePayableForInvoiceItem(self.getParent().getValue());
+                                      if(result.size()>0){
+                                      self.setLabel(result.get("patientPayable").toString());
+                                      }
+                                      }
+                                      ]]>
+                                      </attribute>
+                                      </listcell>
+
+                                    <listcell style="text-align:right"> <label value="@{invoiceItems.referral_amountTobePaid}">
+                                    </label> </listcell>
+                                  <listcell>
+                                      <label style="font-weight:normal">
+                                          <attribute name="onCreate">
+                                  <![CDATA[
+                                   com.nzion.domain.billing.InvoiceItem invItem = self.getParent().getParent().getValue();
+                                   if(invItem.getReferralId() != null){
+                                   List referralList = commonCrudRepository.findByEquality(com.nzion.domain.Referral.class,new String[]{"id"},new Object[]{invItem.getReferralId()});
+                                   self.setValue(referralList.get(0).getClinicName());
+                                   }
+                                  ]]>
+                                          </attribute>
+                                      </label>
+                                  </listcell>
+                                    <listcell style="text-align:right">
+                                        <attribute name="onCreate">
+                                            <![CDATA[
+                                        if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                        com.nzion.domain.billing.InvoiceItem invoiceItems = self.getParent().getValue();
+                                        if(invoiceItems.getReferral_amountTobePaid() != null){
+                                        java.math.BigDecimal netIncome=invoiceItems.getNetPrice().subtract(invoiceItems.getReferral_amountTobePaid()).setScale(3,java.math.RoundingMode.HALF_UP);
+                                        self.setLabel(netIncome.toString());
+                                        }
+                                        }
+                                            ]]>
+                                        </attribute>
+                                    </listcell>
+                            </listitem>
+
+                                </listbox>
+                                        </detail>
+                                        <label value="@{doctorGroup.key}" />
+                                </row>
+                                </rows>
+        </grid>
+        <grid id="groupByServiceType" fixedLayout="true" model="@{serviceTypeGroup,load-after='groupByComboBox.onSelect'}"
+                                  visible="false">
+                                <columns>
+                                    <column width="40px"></column>
+                                    <column label="Service Type" id="serviceTypeGroupColumn" sortAscending="${billingSearchController.ascendingComparator}"
+                                            sortDescending="${billingSearchController.descendingComparator}">
+                                    </column>
+                                </columns>
+                                <rows>
+                                    <row self="@{each='servTypeGroup'}" value="@{servTypeGroup}">
+                                    <detail open="false">
+                                <listbox  model="@{servTypeGroup.value}" mold="paging" paginal="${listboxPaging}" >
+                                    <listhead>
+                                        <listheader label="Service Type" width="100px" />
+                                        <listheader label="Service Name" width="180px"  />
+                                        <listheader label="Invoice Date" width="100px" />
+                                        <listheader label="Civil Id" width="100px" />
+                                        <listheader label="Afya Id" width="70px" />
+                                        <listheader label="File No." width="90px" />
+                                        <listheader label="Name" width="100px" />
+                                        <listheader label="Doctor Name" width="100px" />
+                                        <listheader label="Invoice No." width="70px"  />
+                                        <listheader label="Invoice Status" width="100px" />
+                                        <listheader label="Gross Amt" width="70px" />
+                                         <listheader label="Concession" width="70px" />
+                                         <listheader label="Net Amt" width="70px" />
+                                         <listheader label="Insurance Pay" width="90px" />
+                                         <listheader label="Patient Pay" width="70px"  />
+
+                                         <listheader label="Referral Amount" width="100px"  />
+                                         <listheader label="Referred by" width="90px"  />
+                                         <listheader label="Net Income" width="90px" />
+                                    </listhead>
+                                <listitem self="@{each='invoiceItems'}" value="@{invoiceItems}">
+                                               <listcell >
+                                                     <label value="@{invoiceItems.itemType.description}" />
+                                               </listcell>
+                                               <listcell>
+                                                      <label value="@{invoiceItems.description}" />
+                                               </listcell>
+                                               <listcell label="@{invoiceItems.invoice.invoiceDate,converter='com.nzion.view.component.DateConverter'}" />
+                                               <listcell>
+                                                     <label value="@{invoiceItems.invoice.patient.civilId}" />
+                                               </listcell>
+                                               <listcell>
+                                                     <label value="@{invoiceItems.invoice.patient.afyaId}" />
+                                               </listcell>
+                                               <listcell>
+                                                      <label value="@{invoiceItems.invoice.patient.fileNo}" />
+                                               </listcell>
+                                               <listcell>
+                                                       <name object="@{invoiceItems.invoice.patient}" />
+                                               </listcell>
+                                               <listcell>
+                                                       <name object="@{invoiceItems.invoice.consultant}" />
+                                               </listcell>
+                                               <listcell >
+                                                     <label value="@{invoiceItems.invoice.invoiceNumber}" />
+                                               </listcell>
+                                               <listcell label="@{invoiceItems.invoice.invoiceStatus}" />
+                                               <listcell >
+                                                        <label value="@{invoiceItems.price}" />
+                                               </listcell>
+                                              <listcell style="text-align:right">
+                                                  <attribute name="onCreate">
+                                                      <![CDATA[
+                                                        if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem)
+                                                        {
+                                                          com.nzion.domain.billing.InvoiceItem invoiceItems=self.getParent().getValue();
+                                                          if(invoiceItems.getNetPrice() != null) {
+                                                          java.math.BigDecimal concession=invoiceItems.getPrice().getAmount().subtract(invoiceItems.getNetPrice()).setScale(3,java.math.RoundingMode.HALF_UP);
+                                                          self.setLabel(concession.toString());
+                                                          }
+                                                        }
+                                                      ]]>
+                                                  </attribute>
+                                              </listcell>
+                                              <listcell style="text-align:right">
+                                                 <label value="@{invoiceItems.netPrice}" />
+                                              </listcell>
+                                              <listcell style="text-align:right">
+                                              <attribute name="onCreate">
+                                               <![CDATA[
+                                               if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                               Map result = new com.nzion.util.PatientInsuranceUtility().getPatientPayableAndInsurancePayableForInvoiceItem(self.getParent().getValue());
+                                               if(result.size()>0){
+                                               self.setLabel(result.get("insurancePayable").toString());
+                                               }
+                                               }
+                                               ]]>
+                                               </attribute>
+                                               </listcell>
+                                               <listcell style="text-align:right">
+                                               <attribute name="onCreate">
+                                               <![CDATA[
+                                               if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                               Map result = new com.nzion.util.PatientInsuranceUtility().getPatientPayableAndInsurancePayableForInvoiceItem(self.getParent().getValue());
+                                               if(result.size()>0){
+                                               self.setLabel(result.get("patientPayable").toString());
+                                               }
+                                               }
+                                               ]]>
+                                               </attribute>
+                                               </listcell>
+
+                                                <listcell style="text-align:right"> <label value="@{invoiceItems.referral_amountTobePaid}"/>
+                                                </listcell>
+                                                <listcell>
+                                                    <label style="font-weight:normal">
+                                                        <attribute name="onCreate">
+                                                            <![CDATA[
+                                               com.nzion.domain.billing.InvoiceItem invItem = self.getParent().getParent().getValue();
+                                               if(invItem.getReferralId() != null){
+                                               List referralList = commonCrudRepository.findByEquality(com.nzion.domain.Referral.class,new String[]{"id"},new Object[]{invItem.getReferralId()});
+                                               self.setValue(referralList.get(0).getClinicName());
+                                               }
+                                              ]]>
+                                                        </attribute>
+                                                    </label>
+                                                </listcell>
+                                                <listcell style="text-align:right">
+                                                    <attribute name="onCreate">
+                                                <![CDATA[
+                                               if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                                com.nzion.domain.billing.InvoiceItem invoiceItems = self.getParent().getValue();
+                                                if(invoiceItems.getReferral_amountTobePaid() != null){
+                                                java.math.BigDecimal netIncome=invoiceItems.getNetPrice().subtract(invoiceItems.getReferral_amountTobePaid()).setScale(3,java.math.RoundingMode.HALF_UP);
+                                                self.setLabel(netIncome.toString());
+                                                }
+                                                }
+                                                ]]>
+                                                    </attribute>
+                                                </listcell>
+                                 </listitem>
+
+                                </listbox>
+                                </detail>
+                                   <label value="@{servTypeGroup.key}" />
+                                </row>
+                                </rows>
+        </grid>
+
+</panelchildren>
+        </panel>
+           </div>
+
+        <zscript>
+                    void exportData(){
+                    List items = new ArrayList();
+                    /*if(UtilValidator.isNotEmpty(searchResultGrid.getSelectedItems())){
+                    for(Object itm : searchResultGrid.getSelectedItems()){
+                    com.nzion.domain.billing.Invoice inv = (com.nzion.domain.billing.Invoice)((Listitem)itm).getValue();
+                    items.add(inv);
+                    }
+                    }
+                    else*/
+                         //items = billingSearchController.getInvoiceItems();
+            items = billingSearchController.getUpdatedInvoiceItemForExport();
+                         if(com.nzion.util.UtilValidator.isNotEmpty(items))
+                         if(content.length()> 0)
+                         header = new StringBuilder(content.substring(0, content.length() - 1));
+                         exporter.exportWithHeader(header,items,
+                         new String[]{"itemType.description","description","invoice.invoiceDate","invoice.patient.civilId","invoice.patient.afyaId","invoice.patient.fileNo",
+                         "invoice.patient","invoice.consultant","invoice.invoiceNumber","invoice.invoiceStatus","price","concessionAmount","netPrice","insurancePayable","patientPayable","invoice.totalReferralAmountTobePaid","referralClnicName","netIncome"},
+                         new String[]{"Service Type","Service Name","Invoice Date", "Civil Id","Afya Id","File No.","Patient Name","Doctor Name",
+                        "Invoice No.","Invoice Status", "Gross Amount", "Concession Amount","Net Amount","Insurance Pay","Patient Payable","Referral Amount","Referred by","Net Income"}, "ServiceWiseRevenueReport.xlsx","SERVICE WISE REVENUE REPORT",null);
+                    }
+                    <!--java.math.BigDecimal sumOfGrossAmountBillItemsAmts(Set invs){
+                                java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+                                for(Object obj : invs){
+                                com.nzion.domain.billing.InvoiceItem invObj = (com.nzion.domain.billing.InvoiceItem)obj;
+
+                               	java.math.BigDecimal  totalGrossAmount = java.math.BigDecimal.ZERO;
+                                 if(!"Cancel".equals(invObj.getInvoiceItemStatus()))
+                                totalGrossAmount = invObj.getPrice().getAmount().setScale(3, java.math.RoundingMode.HALF_UP);
+
+                                totalInvsAmt = totalInvsAmt.add(totalGrossAmount);
+                                }
+                                return totalInvsAmt;
+                             }
+
+-->
+        </zscript>
+</window>
+</zk>

@@ -1,0 +1,59 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./invItemDiv"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<zk xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+<style>
+	.divContent{
+		border-style: solid;
+	    border-width: 1px;
+	    border-color: #C9C9C9;
+	    margin-left: 20px;
+	    position: inherit;
+	    -webkit-border-radius: 12px;
+		-moz-border-radius: 12px;
+		border-radius: 12px;
+	}
+</style>
+
+	<div id="invItemDiv" sclass="divContent">
+		<vlayout>
+			<hlayout spacing="3px">
+				<div width="120px" align="right">
+					<label value="Drug name : "/>
+				</div>
+				<label value="${prescribedMedicine.drugName}"/>
+			</hlayout>
+			
+				<hlayout spacing="3px">
+				<div width="120px" align="right">
+					<label value="Generic Name: "/>
+				</div>
+				<label value="${prescribedMedicine.drug.genericName}"/>
+			</hlayout>
+			<hlayout spacing="3px">
+				<div width="120px" align="right">
+					<label value="Quantity: "/>
+				</div>
+				<label value="${prescribedMedicine.orderedQuantity}"/>
+			</hlayout>
+			
+			<hlayout  spacing="3px">
+				<div width="120px" align="right">
+					<label value="Supply Unit : "/>
+				</div>
+				<label value="${prescribedMedicine.supplyUnit}"/>
+			</hlayout>
+				<hlayout  spacing="3px">
+				<div width="120px" align="right">
+					<label value="Drug Strength : "/>
+				</div>
+				<label value="${prescribedMedicine.drugStrength}"/>
+			</hlayout>
+			<!-- <hlayout  spacing="3px">
+				<div width="120px" align="right">
+					<label value="Drug to be taken : "/>
+				</div>
+				<label value="${prescribedMedicine.drugFrequency}"/>
+			</hlayout> -->
+		</vlayout>
+	</div>
+</zk>

@@ -1,0 +1,82 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./productInfDiv"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+	xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native"
+	xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<div id="productInfDiv">
+		<div class="panelContInp divCol2">
+			<div>
+				 <label value="${c:l('productType')}" mold="required"/>
+				 <combobox constraint="no empty" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" model="@{productTypesList}" id="productType" readonly="true" selectedItem="@{productController.product.productDetails.productType}"
+				 	onSelect="productController.getProductCategory(self.getSelectedItem().getValue());supplierTab.setDisabled(false);">
+				 	<comboitem self="@{each}" label="@{each}" value="@{each}"/>
+				 </combobox>
+			</div>
+			<separator></separator>
+			<div>
+				 <label value="Product Category" mold="required"/>
+				 <combobox constraint="no empty" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" model="@{productController.productCategories,load-after='productType.onSelect'}" id="productCategoriesCombobox" readonly="true" selectedItem="@{productController.product.productCategory}">
+				 	<attribute name="onSelect">
+				 		if( "LAB ORDER".equals(self.getSelectedItem().getValue().getName()) || "CLINICAL SERVICE".equals(self.getSelectedItem().getValue().getName()) ){
+				 			supplierTab.setDisabled(true);
+				 		}else{
+				 		    supplierTab.setDisabled(false);
+				 		}
+				 	</attribute>
+				 	<comboitem self="@{each='pc'}" label="@{pc.description}" value="@{pc}"/>
+				 </combobox>
+			</div>
+			<separator></separator>
+			<div>
+				<label value="${c:l('productDisplay')}"/>
+				<textbox value="@{productController.product.productDetails.productDisplayName}" width="200px"/>
+			</div>
+			<separator></separator>
+			<div>
+				<label value="Internal Name"/>
+				<textbox value="@{productController.product.productDetails.internalName}" width="200px"/>
+			</div>
+			<separator></separator>
+			<div>
+				<label value="Brand Name"/>
+				<textbox value="@{productController.product.productDetails.brandName}" width="200px"/>
+			</div>	
+			<separator></separator>
+			<div>
+				<label value="Perishable" mold="required"/>
+				<combobox constraint="no empty" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" selectedItem="@{productController.product.productDetails.perishable}">
+					<comboitem label="Yes" value="${true}" />
+					<comboitem label="No"  value="${false}" />
+				</combobox>
+			</div>
+			<separator></separator>
+		</div>
+		<div class="panelContInp divCol2">
+		 	<div>
+				 <label value="${c:l('returnable')}"/>
+				 <combobox id="returnable">
+					<comboitem label="Yes" onClick="productController.getproduct().getProductDetails().setReturnable(true)"/>
+					<comboitem label="No"  onClick="productController.getproduct().getProductDetails().setReturnable(false)"/>
+				</combobox>
+			</div>
+			<separator></separator>
+			<div>
+				<label value="${c:l('includeInPromotions')}" />
+				<combobox id="includeInPromotions">
+					<comboitem label="Yes" onClick="productController.getproduct().getProductDetails().setIncludeInPromotions(true)"/>
+					<comboitem label="No"  onClick="productController.getproduct().getProductDetails().setIncludeInPromotions(false)"/>
+				</combobox>
+			</div>
+			<separator></separator>
+			<div>
+				<label value="${c:l('taxable')}"/>
+				<combobox id="taxable">
+					<comboitem label="Yes" onClick="productController.getproduct().getProductDetails().setTaxable(true)"/>
+					<comboitem label="No"  onClick="productController.getproduct().getProductDetails().setTaxable(false)"/>
+				</combobox>
+			</div>
+		</div>
+		
+	</div>
+</zk>

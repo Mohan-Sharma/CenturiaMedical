@@ -1,0 +1,61 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<!--@author By Mohan Sharma-->
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./insuranceDetails"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript>
+        <![CDATA[
+            import com.nzion.domain.*;
+            com.nzion.service.common.CommonCrudService commonCrudService = arg.get("commonCrudService");
+            Practice practice = commonCrudService.getAll(Practice.class) != null ? commonCrudService.getAll(Practice.class).get(0) : null;
+            List insurances = com.nzion.util.RestServiceConsumer.getListOfInsuranceForGivenTenant(practice != null ? practice.getTenantId() : null)
+	    ]]>
+    </zscript>
+    <window id="insuranceDetails" mode="modal" sclass="modalStyle" width="60%" title="Insurance Details" closable="true">
+        <grid height="250px">
+            <columns>
+                <column>Payer Code</column>
+                <column>Payer Name</column>
+                <column>Payer Type</column>
+            </columns>
+            <rows>
+                <row forEach="${insurances}" popup="detail_${each.payerId}, position=end_before" style="cursor:pointer" tooltiptext="click to view associated plans">
+                    <custom-attributes insurance="${each}"/>
+                    <cell><label value="${each.insuranceCode}"/></cell>
+                    <cell><label value="${each.insuranceName}"/></cell>
+                    <cell><label value="${each.payerType}"/></cell>
+                    <cell>
+                        <popup id="detail_${each.payerId}" width="300px" vflex="1">
+                            <window>
+                                <custom-attributes payerId="${each.payerId}"/>
+                                <zscript>
+                                    <![CDATA[
+                                        List plans = com.nzion.util.RestServiceConsumer.getPlansForGivenInsurance(payerId);
+                                    ]]>
+                                </zscript>
+                                <grid emptyMessage="No Plans To Show" mold="paging" pageSize="5">
+                                    <columns>
+                                        <column align="center">Plan Name</column>
+                                    </columns>
+                                    <rows>
+                                        <row forEach="${plans}">
+                                            <label value="${each.policyName}"/>
+                                        </row>
+                                    </rows>
+                                </grid>
+                            </window>
+                        </popup>
+                    </cell>
+                </row>
+            </rows>
+        </grid>
+        <div sclass="panelFoot">
+            <button label="Close" zclass="btn-danger btn">
+                <attribute name="onClick">
+                    insuranceDetails.detach();
+                </attribute>
+            </button>
+        </div>
+    </window>
+</zk>

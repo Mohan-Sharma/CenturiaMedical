@@ -1,0 +1,68 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./storeSalesOrder"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript>
+		
+	</zscript>
+	<window id="storeSalesOrder" apply="org.zkoss.bind.BindComposer" 
+		viewModel="@id('vm') @init('com.nzion.oms.zkoss.StoreSalesOrderController')" >
+	<div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Sales Order</h:small>
+            </h:h1>
+        </div>
+	<div sclass="container-fluid">
+       <div sclass="row-fluid">
+           <div sclass="span3">
+	             <label value="Patient"/>
+				 <patientlookup onChange="vm.setPatientFromLookup((com.nzion.domain.Patient)event.getOrigin().getData())" sclass="span12"/>
+           </div>
+           <div sclass="span3">
+	            <label value="External Patient Name"/>
+	            <textbox sclass="span12" value="@bind(vm.outSidePatient)"></textbox>
+           </div>
+       		<div sclass="span3">
+	            <label value="Admission Number"/>
+	            <textbox sclass="span12" value="@bind(vm.admissionNumber)"></textbox>
+           </div>
+       </div>
+    </div>
+    <div align="center" sclass="panelFoot">
+    	<button label="Search" onClick="@command('findSalesOrder')"/>
+    	<button label="New" onClick="@command('createOrderScreen')"/>
+    </div>
+	<panel id="searchResults" title="Search Results" style="margin-top:10px;">
+	<panelchildren>
+	 <grid id="salesOrderGrid" model="@bind(vm.salesOrders)" mold="paging" pageSize="8">
+           <columns menupopup="auto">
+           	   <column label="Order No"/>
+               <column label="Patient"/>
+               <column label="Doctor"/>
+               <column label="Status"/>
+               <column label="Action"/>
+           </columns>
+           <template name="model" var="salesOrder">
+               <row value="@load(salesOrder)" >
+               	   <label value="@load(salesOrder.id)"/>
+               	   <vlayout spacing="2px">
+                    <label value="@load(salesOrder)@converter('com.nzion.view.component.StorePatientConverter')" />
+                   </vlayout>
+                   <label value="@load(salesOrder) @converter('com.nzion.view.component.StoreProviderConverter')"/>
+                   <label value="@load(salesOrder.status)"/>
+                   
+                 
+                   <a href="#" sclass="btn mini-btn" label="Edit" >
+					<attribute name="onClick">
+							 com.nzion.domain.product.order.SalesOrder salesOrder = (com.nzion.domain.product.order.SalesOrder)self.getParent().getValue();
+							 com.nzion.zkoss.ext.Navigation.navigate("storeSalesOrderCreate", com.nzion.util.UtilMisc.toMap("salesOrder",salesOrder),"contentArea");
+						</attribute>
+						
+       				</a>
+               </row>
+           </template>
+       </grid>
+	 
+	</panelchildren>
+	</panel>
+	</window>
+</zk>

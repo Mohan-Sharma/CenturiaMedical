@@ -1,0 +1,45 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./personLabWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?component name="toolbar" macro-uri="/toolbar.zul"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native">
+    <window  id="personLabWin">
+        <zscript>
+            com.nzion.zkoss.composer.PersonProfileController profileController = desktop.getAttribute("profileController");
+            List personLabs = profileController.getPersonFavourites(com.nzion.domain.person.PersonLab.class);
+        </zscript>
+        <panel title="Person Favourite Lab" id="labPanel"
+               onAddClick='profileController.favouriteAddClicked(personLabWin,personFavouriteLabDisplayGrid,personLabs,"/person/add-person-lab.zul")'
+               onDeleteClick="profileController.deleteFavourites(personFavouriteLabDisplayGrid,personLabs);">
+            <attribute name="onSearchClick">
+                personLabs=personService.searchPersonFavouriteLabs((String)event.getData(),profileController.getPerson());
+            </attribute>
+            <panelchildren>
+                <toolbar listenercomponent="${labPanel}" hidecancel="true"/>
+                <listbox multiple="true" id="personFavouriteLabDisplayGrid" checkmark="true" mold="paging" pageSize="10" pagingPosition="top"
+                         model="@{personLabs,load-after='labPanel.onSearchClick, self.onReloadRequest'}">
+                    <attribute name="onReloadRequest">
+                        personLabs = profileController.getPersonFavourites(com.nzion.domain.person.PersonLab.class);
+                    </attribute>
+                    <listhead>
+                        <listheader label="Lab Group"/>
+                        <listheader label="Type"/>
+                        <listheader label="Name"/>
+                    </listhead>
+                    <listitem self="@{each='personLab'}" value="@{personLab}" >
+                        <listcell>
+                            <label value="@{personLab.labGroup.labGroupName}" />
+                        </listcell>
+                        <listcell>
+                            <label width="100px" value="@{personLab.testType}"/>
+                        </listcell>
+                        <listcell>
+                            <label value="@{personLab.testName}" width="100px"/>
+                        </listcell>
+                    </listitem>
+                </listbox>
+            </panelchildren>
+        </panel>
+    </window>
+</zk>

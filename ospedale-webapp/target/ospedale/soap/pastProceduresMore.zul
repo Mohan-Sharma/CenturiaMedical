@@ -1,0 +1,47 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./pastlabOrderWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript><![CDATA[
+		import com.nzion.util.UtilValidator;
+		import com.nzion.domain.Patient;
+		import com.nzion.zkoss.ext.Navigation;
+		import com.nzion.enums.CommunicationPreference;
+		Patient patient = (Patient) arg.get("patient");
+		List allLabOrders = soapNoteService.getAllPatientClinicalRecords(patient, com.nzion.domain.emr.soap.PatientCpt.class);
+		//Collections.sort(allLabOrders, new Comparator(){
+		//public int compare(com.nzion.domain.emr.soap.PatientLabOrder m1, com.nzion.domain.emr.soap.PatientLabOrder m2) {
+         //   return m1.testName.compareTo(m2.testName);
+         //   }
+		//});
+	]]>
+    </zscript>
+    <window id="pastlabOrderWin" style="margin-top:0px;" mode="modal" sclass="modalStyle" width="70%">
+        <grid height="300px">
+            <columns>
+                <column>Procedure Code</column>
+                <column>Procedure Description</column>
+                <column>Unit</column>
+                <column>Home Service</column>
+                <column>Status</column>
+            </columns>
+            <rows>
+                <row forEach="${allLabOrders}">
+                    <cell><label value="${each.cpt.id}"/></cell>
+                    <cell><label value="${each.cpt.description}"/></cell>
+                    <cell><label value="${each.unit}"/></cell>
+                    <cell><label value="${each.homeServiceRequired}"/></cell>
+                    <cell><label value="${each.cptStatus}"/></cell>
+                </row>
+            </rows>
+        </grid>
+        <div sclass="panelFoot">
+            <button label="Close" zclass="btn-danger btn">
+                <attribute name="onClick">
+                    pastlabOrderWin.detach();
+                </attribute>
+            </button>
+        </div>
+    </window>
+</zk>

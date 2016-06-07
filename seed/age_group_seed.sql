@@ -1,0 +1,4 @@
+INSERT INTO `age_group`(ID,AGE_GROUP) VALUES
+(1,'ADULT'),
+(2,'PEDIATRIC'),
+(3,'GERIATRIC');

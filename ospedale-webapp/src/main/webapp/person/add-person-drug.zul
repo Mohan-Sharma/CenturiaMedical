@@ -1,0 +1,113 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./localDrugSearchWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native"
+    xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <window id="localDrugSearchWin" mode="modal" position="center,top" width="60%" height="60%"
+            title="Add Drugs" closable="true">
+        <zscript><![CDATA[
+            import com.nzion.domain.person.*;
+	List list=arg.get("list");
+	com.nzion.zkoss.composer.PersonProfileController profileController = desktop.getAttribute("profileController");
+	List frequency = commonCrudService.getAll(com.nzion.domain.drug.Frequency.class);
+	List frequencyQualifier = commonCrudService.getAll(com.nzion.domain.drug.FrequencyQualifier.class);
+	List personDrugGroup = profileController.getPersonFavourites(com.nzion.domain.person.DrugGroup.class);
+	List drugs = commonCrudService.getAll(com.nzion.domain.drug.Drug.class);
+	ProviderDrug providerDrug = new ProviderDrug();
+]]></zscript>
+        <div zclass="container-fluid">
+            <div zclass="row-fluid">
+                <div zclass="span5">
+                    <div width="80px">
+                        <label sclass="drugGroup">Drug Group :</label>
+                    </div>
+                    <div>
+                        <combobox id="drugGroupCombobox"
+                                  mold="default" vflex="true"
+                                  selectedItem="@{providerDrug.drugGroup, load-after='Save.onClick', save-when='Save.onClick'}" width="300px"
+                                  w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+                            <comboitem forEach="${personDrugGroup}" value="${each}" label="${each.drugGroup}"></comboitem>
+                        </combobox>
+                    </div>
+                </div>
+                <div width="80px">
+                    <label value="Drug Name :" mold="required" sclass="formLabel"/>
+                </div>
+                <div>
+                    <combobox id="drugCombobox"
+                              mold="default" vflex="true"
+                              selectedItem="@{providerDrug.drug, load-after='Save.onClick', save-when='Save.onClick'}" width="300px" constraint="no empty:Required"
+                              w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+                        <comboitem forEach="${drugs}" value="${each}" label="${each.tradeName}"></comboitem>
+                    </combobox>
+                </div>
+            </div>
+            <div zclass="row-fluid">
+                <div zclass="span5">
+                    <div width="80px">
+                        <label sclass="frequency" mold="required">Frequency :</label>
+                    </div>
+                    <div>
+                        <combobox id="frequencyCombobox"
+                                  mold="default" vflex="true"
+                                  selectedItem="@{providerDrug.frequency, load-after='Save.onClick', save-when='Save.onClick'}" width="300px" constraint="no empty:Required"
+                                  w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+                            <comboitem forEach="${frequency}" value="${each}" label="${each}"></comboitem>
+                        </combobox>
+                    </div>
+                </div>
+                <div zclass="span5">
+                    <div width="150px">
+                        <label value="Frequency Qualifier :" mold="required"/>
+                    </div>
+                    <div>
+                        <combobox id="frequencyQualifierCombobox"
+                                  mold="default" vflex="true"
+                                  selectedItem="@{providerDrug.frequencyQualifier,load-after='Save.onClick', save-when='Save.onClick'}" width="300px" constraint="no empty:Required"
+                                  w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+                            <comboitem forEach="${frequencyQualifier}" label="${each}" value="${each}"></comboitem>
+                        </combobox>
+                    </div>
+                </div>
+            </div>
+            <div zclass="row-fluid" style="margin-top: 5px;">
+                <div zclass="span5">
+                    <div width="80px">
+                        <label mold="required">Total Count :</label>
+                    </div>
+                    <div>
+                        <intbox width="200px" value="@{providerDrug.totalCount,load-after='Save.onClick', save-when='Save.onClick'}" constraint="no zero, no negative, no empty:Required Positive Number > 0"
+                                w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"/>
+                    </div>
+                </div>
+                <div zclass="span5">
+                    <div width="150px">
+                        <label mold="required">Number Of Days :</label>
+                    </div>
+                    <div>
+                        <intbox width="200px" value="@{providerDrug.numberOfDays,load-after='Save.onClick', save-when='Save.onClick'}" constraint="no zero, no negative, no empty:Required Positive Number > 0"
+                                w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"/>
+                    </div>
+                </div>
+            </div>
+            <div sclass="panelFoot">
+                <button label="Save" id="Save" zclass="btn-success btn">
+                    <attribute name="onClick">
+                        String success = profileController.savePersonDrug(providerDrug, localDrugSearchWin);
+                        if(success.equals("success")){
+                        successLabel.setVisible(true);
+                        providerDrug = new ProviderDrug();
+                        }
+                    </attribute>
+                </button>
+                <button label="Close" sclass="btn">
+                    <attribute name="onClick"><![CDATA[
+                        localDrugSearchWin.detach();
+                    ]]></attribute>
+                </button>
+                <label value="Successfully Saved.." style="color: green; font-size: small" id="successLabel" visible="false"></label>
+            </div>
+        </div>
+    </window>
+</zk>

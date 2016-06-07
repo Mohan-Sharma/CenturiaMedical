@@ -1,0 +1,203 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./invoiceCollectionWin"?>
+<?component name="cptlookup" macro-uri="/utilities/cptlookup.zul" inline="false"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+
+    
+    <window id="invoiceCollectionWin" apply="org.zkoss.bind.BindComposer" viewModel="@id('vm') @init('com.nzion.zkoss.composer.InvoiceCollectionReportViewModel')">
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Collection Report</h:small>
+            </h:h1>
+        </div>
+        
+        <div class="container-fluid">
+        	<div zclass="row-fluid">
+                <div zclass="span2">
+                    <label value="Patient"  />
+                    <patientlookup onChange="vm.setPatient((com.nzion.domain.Patient)event.getOrigin().getData())" />
+                </div>
+                
+                <div zclass="span2" style="margin-left:112px;">
+                    <label value="Patient Type"  />
+                    <combobox selectedItem="@save(vm.patientType)" sclass="span9">
+                        <comboitem label="Cash" value="CASH PAYING" />
+                        <comboitem label="Insurance" value="INSURANCE"/>
+                        <comboitem label="Corporate" value="CORPORATE"/>
+                    </combobox>
+                </div>
+                <div zclass="span2">
+						<label value="Doctor" style="margin-left: 15px;"/>
+						<combobox model="@load(vm.providers)" selectedItem="@save(vm.selectedProvider)" sclass="span12" readonly="true">
+							<template name="model" var="provider">
+								<comboitem label="@load(provider)" value="@bind(provider)" >
+									<attribute name="onCreate">
+										if(vm.getProviders().size() == 1){
+										self.getParent().setSelectedItem(self);
+										vm.setSelectedProvider(self.getValue());
+										}
+									</attribute>
+								</comboitem>
+							</template>
+						</combobox>
+                </div>
+
+                <div zclass="span2">
+                    <label value="From Date"  />
+                    <datebox id="fromDate" value="@save(vm.fromDate)" sclass="span9"/>
+                </div>
+                
+                <div zclass="span2">
+                    <label value="To Date"  />
+                    <datebox id="toDate" value="@save(vm.toDate)" sclass="span12"/>
+                </div>
+                
+            </div>
+            
+        </div>
+        
+        <div align="center" sclass="panelFoot"  >
+            <button label="Search" id="searchButton" zclass="btn btn-primary"  onClick="@command('search')"/>
+        </div>
+        <separator></separator>
+      <panel visible="false" id="searchResults" title="Search Results" width="100%">
+	    <caption height="15px">
+	        <div style="float:right; margin-right: 2%; background-color: white;width: 15%;text-align: center;text-decoration: none;">
+				<a tooltiptext="Export" label="Export" sclass="reminderBtn">
+                     <attribute name="onClick">
+                         exportData();
+                     </attribute>
+                 </a>
+	        </div>
+	    </caption> 
+	    <panelchildren>
+	    <separator/>
+        <listbox model="@bind(vm.paymentList)">
+        	<listhead>
+        		<listheader label="Receipt Number" width="120px"/>
+        		<listheader label="Date"/>
+        		<listheader label="Afya ID"/>
+				<listheader label="File No."/>
+        		<listheader label="Civil ID"/>
+				<listheader label="Invoice Number"/>
+				<listheader label="Doctor Name"/>
+        		<listheader label="Patient Name"/>
+        		<listheader label="Invoice Amount"/>
+        		<listheader label="Paid Amount"/>
+        		<listheader label="Insurance Amount" width="130px"/>
+        		<listheader label="Corporate Amount" width="130px"/>
+        		<listheader label="Mode"/>
+        		<listheader label="TransRef/CheckNum" width="130px"/>
+        		<listheader label="Bank"/>
+        		<listheader label="Cheque Date"/>
+        	</listhead>
+        	<template name="model" var="invoicePayment">
+        	<listitem>
+        		<listcell label="@bind(invoicePayment.receiptNumber)"></listcell>
+        		<listcell label="@bind(invoicePayment.paymentDate) @converter('formatedDate', format='dd/MM/yyyy')"></listcell>
+        		<listcell label="@bind(invoicePayment.afyaId)"></listcell>
+				<listcell label="@bind(invoicePayment.fileNo)"></listcell>
+        		<listcell label="@bind(invoicePayment.civilId)"></listcell>
+				<listcell label="@bind(invoicePayment.invoiceNumber)"></listcell>
+				<listcell label="@bind(invoicePayment.doctorName)"></listcell>
+        		<listcell label="@bind(invoicePayment.patientName)"></listcell>
+        		<listcell>
+        			<div align="right">
+	        			<label value="@bind(invoicePayment.billableAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listcell>
+        		<listcell>
+        			<div align="right">
+        			<label value="@bind(invoicePayment.paidAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listcell>
+        		<listcell>
+        			<div align="right">
+        			<label value="@bind(invoicePayment.insuranceAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listcell>
+        		<listcell>
+        			<div align="right">
+        			<label value="@bind(invoicePayment.corporateAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listcell>
+        		<listcell label="@bind(invoicePayment.modeDescription)"></listcell>
+        		<listcell label="@bind(invoicePayment.transRefOrCheckNumber)"></listcell>
+        		<listcell label="@bind(invoicePayment.bankName)"></listcell>
+        		<listcell label="@bind(invoicePayment.checkDate) @converter('formatedDate', format='dd/MM/yyyy')"></listcell>
+        	</listitem>
+        	</template>
+        	<listfoot>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter>
+        			<div align="right">
+        			<label value="@bind(vm.totalBillableAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listfooter>
+        		<listfooter>
+        			<div align="right">
+        			<label value="@bind(vm.totalPaidAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listfooter>
+        		<listfooter>
+        			<div align="right">
+        			<label value="@bind(vm.totalInsuranceAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listfooter>
+        		<listfooter>
+        			<div align="right">
+        			<label value="@bind(vm.totalCorporateAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        	</listfoot>
+        </listbox>
+        <div align="center">
+        	<label value="@bind(vm.totalDescriptionFooter1)" style="font-weight:bold;"/>
+        </div>
+        <div align="center">
+        	<label value="@bind(vm.totalDescriptionFooter2)" style="font-weight:bold;"/>
+        </div>
+      </panelchildren>
+    </panel>
+    
+     <zscript>
+     	com.nzion.zkoss.ext.DataExporter exporter = new com.nzion.zkoss.ext.CsvDataExporter();
+        void exportData(){
+	        Set keySet=new LinkedHashSet();
+	        keySet.add("receiptNumber");
+	        keySet.add("paymentDate");
+	        keySet.add("afyaId");
+		 	keySet.add("fileNo");
+	        keySet.add("civilId");
+		 	keySet.add("invoiceNumber");
+		 	keySet.add("doctorName");
+	        keySet.add("patientName");
+	        keySet.add("billableAmount");
+	        keySet.add("paidAmount");
+	        keySet.add("insuranceAmount");
+	        keySet.add("corporateAmount");
+	        keySet.add("modeDescription");
+	        keySet.add("transRefOrCheckNumber");
+	        keySet.add("bankName");
+	        keySet.add("checkDate");
+	        StringBuilder builder = new StringBuilder();
+	        builder.append("Invoice Collection");
+	        if(com.nzion.util.UtilValidator.isNotEmpty(vm.paymentList))
+	        	exporter.exportWithHeader(builder,vm.paymentList,null,
+	        		new String[]{"Receipt Number", "Date", "Afya ID", "File Number", "Civil ID", "Invoice Number","Doctor Name", "Patient Name", "Invoice Amount", "Paid Amount", "Insurance Amount", "Corporate Amount", "Mode", "TransRef/CheckNum", "Bank", "Cheque Date"},
+	        		"invoiceCollection.xlsx","INVOICE COLLECTION REPORT",keySet);
+        }
+    </zscript>
+    
+    </window>
+</zk>

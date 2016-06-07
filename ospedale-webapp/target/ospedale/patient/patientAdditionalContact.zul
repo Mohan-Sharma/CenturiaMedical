@@ -1,0 +1,217 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./patientAdditionalContactWindow"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript>
+	<![CDATA[
+	        
+	import com.nzion.domain.Patient;
+	import com.nzion.util.UtilValidator;
+	Patient patient = (Patient) arg.get("patient");
+
+
+ java.util.List statusConfigs = com.nzion.util.RestServiceConsumer.getPatientContactsFromAfyaId(patient.getAfyaId());
+
+ //alert("hi");
+
+]]>
+	</zscript>
+	<window id="patientAdditionalContactWindow" apply="org.zkoss.bind.BindComposer"
+			viewModel="@id('vm') @init('com.nzion.zkoss.composer.PatientAdditionalContactVM', patient = patient)">
+		<div>
+<!--<div align="center">
+	<button id="add" label="Add New" zclass="btn btn-xs" width="150px" sclass="btn btn-xs" onClick="@command('addItem')"/>
+</div>-->
+			<!--<div>
+				<listbox model="@load(vm.contactMapList1)">
+					<template name="model" var="patientInvoiceItem">
+						<listitem>
+							<listcell>
+								<combobox sclass="span9" readonly="true" width="30%">
+									<comboitem value="EMAIL" label="EMAIL"/>
+									<comboitem value="MOBILE" label="MOBILE"/>
+									<attribute name="onCreate">
+                                        //self.setValue(self.getParent().getParent().getValue().get("contactValue"));
+										self.setSelectedIndex(1);
+                                    </attribute>
+								</combobox>
+							</listcell>
+							<listcell>
+								&lt;!&ndash;<textbox value="@load(each)" forEach="${patientInvoiceItem.values()}">&ndash;&gt;
+								<textbox width="30%">
+									<attribute name="onCreate">
+										//self.setValue(self.getParent().getParent().getValue().get("a"));
+										self.setPlaceholder("Email or Mobile Number");
+									</attribute>
+									<attribute name="onChange">
+
+									</attribute>
+								</textbox>
+							</listcell>
+							<listcell>
+								<button label="Delete" zclass="btn btn-danger btn-xs" width="80px" sclass="btn btn-xs"
+										onClick="@command('removeItem',patientInvoiceItem=patientInvoiceItem)">
+								</button>
+							</listcell>
+						</listitem>
+					</template>
+				</listbox>
+			</div>-->
+			<!--<div align="center">
+				<button label="Add New Contact">
+					<attribute name="onClick">
+						addContact.setVisible(true);
+						addContact.appendChild(new Separator());
+						Combobox combobox = new Combobox();
+						combobox.appendItem("EMAIL");
+						combobox.appendItem("MOBILE");
+
+						Textbox txtbox = new Textbox();
+						txtbox.setWidth("150px");
+
+						addContact.appendChild(combobox);
+						Separator separator = new Separator("vertical");
+						separator.setSpacing("50px");
+						addContact.appendChild(separator);
+						addContact.appendChild(txtbox);
+
+					</attribute>
+				</button>
+			</div>-->
+			<div><separator width="30px;"/>
+				<textbox id="contactValue" value="@bind(vm.contactValue)" width="15%" style="margin-left:20px;">
+					<attribute name="onCreate">
+						self.setPlaceholder("Email or Mobile Number");
+					</attribute>
+				</textbox>
+				<combobox sclass="span9" readonly="true" width="20%" id="contactTypeCombobox" selectedItem="@bind(vm.contactType)" placeholder="Select Type">
+					<comboitem value="EMAIL" label="EMAIL"/>
+					<comboitem value="MOBILE" label="MOBILE"/>
+				</combobox>
+				<button label="Add">
+					<attribute name="onClick">
+						if((contactTypeCombobox.getValue() == null) || (contactTypeCombobox.getValue() == "")){
+						com.nzion.util.UtilMessagesAndPopups.showError("Please select contact type");
+						return;
+						}
+						if((contactValue.getValue() == null) || (contactValue.getValue() == "")){
+						com.nzion.util.UtilMessagesAndPopups.showError("Please select contact value");
+						return;
+						}
+						if(contactTypeCombobox.getValue().equals("MOBILE")){
+						if(!com.nzion.util.UtilValidator.validateOnlyDigits(contactValue.getValue())){
+						com.nzion.util.UtilMessagesAndPopups.showError("Invalid mobile Number");
+						return;
+						}
+						}else if(contactTypeCombobox.getValue().equals("EMAIL")){
+						if(!com.nzion.util.UtilValidator.validateEmail(contactValue.getValue())){
+						com.nzion.util.UtilMessagesAndPopups.showError("Invalid Email id");
+						return;
+						}
+						}
+						vm.add();
+						contactValue.setValue(null);
+						contactTypeCombobox.setValue(null);
+						Events.postEvent("onReloadRequest", contactListBox, null);
+					</attribute>
+				</button>
+				<label focus="true" style="margin-left: 20px; color: green;font-weight:bold">Alternate Contact Details added will also receive all notifications from afya</label>
+			</div>
+			<separator width="30px;"/>
+			<!--<div id="addContact" visible="false">-->
+				<!--<combobox id="sT" sclass="span9" readonly="true" width="30%">
+					<comboitem value="EMAIL" label="EMAIL"/>
+					<comboitem value="MOBILE" label="MOBILE"/>
+				</combobox>
+				<textbox id="sd"></textbox>
+			</div>-->
+
+			<div style="overflow: auto; max-height: 400px;">
+				<!--<listbox model="@load(vm.contactMapList)">
+					<template name="model" var="patientInvoiceItem">
+					<listhead>
+						<listheader label="Contact Type"/>
+						<listheader label="Value"/>
+						<listheader label="Action"/>
+					</listhead>
+					<listitem>
+						<listcell>
+							<label>
+								<attribute name="onCreate">
+									self.setValue(self.getParent().getParent().getValue().get("contactType"));
+								</attribute>
+							</label>
+						</listcell>
+						<listcell>
+							<textbox>
+								<attribute name="onCreate">
+									self.setValue(self.getParent().getParent().getValue().get("contactValue"));
+								</attribute>
+							</textbox>
+						</listcell>
+						<listcell>
+							<button label="Remove">
+								<attribute name="onClick">
+									vm.update(self.getParent().getParent().getValue());
+								</attribute>
+							</button>
+							<button label="Update">
+								<attribute name="onClick">
+									vm.update(self.getParent().getParent().getValue());
+								</attribute>
+							</button>
+						</listcell>
+					</listitem>
+					</template>
+				</listbox>-->
+				<!--<listbox model="@bind(vm.contactMapList)" id="contactListBox">-->
+				<listbox model="@{statusConfigs, load-after='self.onReloadRequest'}" id="contactListBox">
+					<attribute name="onReloadRequest">
+						statusConfigs = com.nzion.util.RestServiceConsumer.getPatientContactsFromAfyaId(patient.getAfyaId());
+					</attribute>
+					<template name="model" var="patientInvoiceItem">
+						<listitem>
+							<listcell>
+								<combobox sclass="span9" readonly="true" width="30%">
+									<comboitem value="EMAIL" label="EMAIL"/>
+									<comboitem value="MOBILE" label="MOBILE"/>
+									<attribute name="onCreate">
+										<!--//self.setValue(self.getParent().getParent().getValue().get("contactValue"));
+										self.setSelectedIndex(1);-->
+										if(self.getParent().getParent().getValue().get("contactType").equals("MOBILE")){
+										self.setSelectedIndex(1);
+										} else{
+										self.setSelectedIndex(0);
+										}
+									</attribute>
+								</combobox>
+							</listcell>
+							<listcell>
+								<!--<textbox value="@load(each)" forEach="${patientInvoiceItem.values()}">-->
+								<textbox width="30%">
+									<attribute name="onCreate">
+										self.setValue(self.getParent().getParent().getValue().get("contactValue"));
+										//self.setPlaceholder("Email or Mobile Number");
+									</attribute>
+									<attribute name="onChange">
+
+									</attribute>
+								</textbox>
+							</listcell>
+							<listcell>
+								<button label="Delete" zclass="btn btn-danger btn-xs" width="80px" sclass="btn btn-xs">
+									<attribute name="onClick">
+										vm.remove(self.getParent().getParent().getValue());
+										Events.postEvent("onReloadRequest", contactListBox, null);
+									</attribute>
+								</button>
+							</listcell>
+						</listitem>
+					</template>
+				</listbox>
+			</div>
+			<separator/>
+		</div>
+	</window>
+</zk>

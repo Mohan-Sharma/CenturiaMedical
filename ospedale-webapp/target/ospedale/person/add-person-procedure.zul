@@ -1,0 +1,67 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./localProcedureWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?component name="cptlookup" macro-uri="/utilities/cptlookup.zul" inline="false"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native"
+    xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <window id="localProcedureWin" mode="modal" position="center,top" width="40%" height="40%"
+            title="Add Procedure" closable="true">
+        <zscript><![CDATA[
+            import com.nzion.domain.person.*;
+	List list=arg.get("list");
+	com.nzion.zkoss.composer.PersonProfileController profileController = desktop.getAttribute("profileController");
+	List personProcedureGroup = profileController.getPersonFavourites(com.nzion.domain.person.ProcedureGroup.class);
+	//List cpts = commonCrudService.getAll(com.nzion.domain.emr.Cpt.class);
+	PersonProcedure personProcedure = new PersonProcedure();
+]]></zscript>
+        <div zclass="container-fluid">
+            <div zclass="row-fluid">
+                <div zclass="span5">
+                    <div>
+                        <label sclass="procedureGroup">Procedure Group :</label>
+                    </div>
+                    <div>
+                        <combobox id="procedureGroupCombobox"
+                                  mold="default" vflex="true"
+                                  selectedItem="@{personProcedure.procedureGroup, save-when='Save.onClick',load-after='Save.onClick'}" width="300px"
+                                  w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+                            <comboitem forEach="${personProcedureGroup}" value="${each}" label="${each.procedureGroupName}"></comboitem>
+                        </combobox>
+                    </div>
+                </div>
+                <div width="80px">
+                    <label value="Procedure :" mold="required" sclass="formLabel"/>
+                </div>
+                <div>
+                    <cptlookup style="margin-left:0px;" onChange="personProcedure.setProcedure(event.getOrigin().getData())" value="${personProcedure.procedure}"
+                               id="cptlookupbox" multiple="false"/>
+                </div>
+                <div width="150px">
+                    <label sclass="frequency" mold="required">Unit :</label>
+                </div>
+                <div>
+                    <intbox width="300px" value="@{personProcedure.unit,save-when='Save.onClick'}" constraint = "no negative,no zero,no empty:Required"
+                            w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"/>
+                </div>
+            </div>
+            <div sclass="panelFoot">
+                <button label="Save" id="Save" zclass="btn-success btn">
+                    <attribute name="onClick">
+                        String success = profileController.savePersonProcedure(personProcedure, localProcedureWin);
+                        if(success.equals("success")){
+                        successLabel.setVisible(true);
+                        personProcedure = new PersonProcedure();
+                        }
+                    </attribute>
+                </button>
+                <button label="Close" sclass="btn">
+                    <attribute name="onClick"><![CDATA[
+                        localProcedureWin.detach();
+                    ]]></attribute>
+                </button>
+                <label value="Successfully Saved.." style="color: green; font-size: small" id="successLabel" visible="false"></label>
+            </div>
+        </div>
+    </window>
+</zk>

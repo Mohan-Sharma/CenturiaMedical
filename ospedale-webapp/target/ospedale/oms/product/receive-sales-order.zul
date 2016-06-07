@@ -1,0 +1,76 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./receiveSalesOrderWin"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript> <![CDATA[
+        com.nzion.services.product.ProductService prodService  = com.nzion.util.Infrastructure.getSpringBean("productService");               
+		com.nzion.oms.zkoss.ReceiveSalesOrderController receiveSalesOrderController = new com.nzion.oms.zkoss.ReceiveSalesOrderController();
+		List inPatientDrugOrdersLists = prodService.getTodayDrugSalesOrder();
+		//List inPatientDrugOrdersLists = receiveSalesOrderController.getInPatientDrugOrdersLists();
+	]]></zscript>
+	<window id="receiveSalesOrderWin" apply="${receiveSalesOrderController}">
+	<panel style="padding:5px" title="InPatient Drugs Order">
+	 <panelchildren>
+		<vlayout spacing="20px" sclass="form">
+				<hlayout spacing="3px">
+				<hlayout spacing="3px">
+					<label value="Doctor" sclass="name"/>
+					<providerlookup onChange="receiveSalesOrderController.setProvider((com.nzion.domain.Provider)event.getOrigin().getData())" />
+				</hlayout>
+				<hlayout spacing="3px">
+					<label value="Patient" sclass="name"/>
+					<patientlookup 
+						onChange="receiveSalesOrderController.setPatient((com.nzion.domain.Patient)event.getOrigin().getData())" />
+				</hlayout>
+		
+			
+				<hlayout spacing="3px">
+					<label value="Inpatient Number" sclass="name"/>
+					<textbox value="@{receiveSalesOrderController.ipNumber}"/>
+				</hlayout>
+			</hlayout>
+		</vlayout>
+		<separator/>
+		<div sclass="panelFoot" align="center">
+			<button label="Search" id="btnSearch">
+				<attribute name="onClick">
+					inPatientDrugOrdersLists = receiveSalesOrderController.getDrugSalesOrder();
+					noRecordFoundLabel.setVisible(com.nzion.util.UtilValidator.isEmpty(inPatientDrugOrdersLists));
+				</attribute>
+			</button>
+		</div>
+		<separator />
+		<panel title="Results" id="resultPanel">
+			<panelchildren>
+		    	<div style="width:50%;margin:auto;text-align:center" visible="false" id="noRecordFoundLabel" ><label value="No Record Found" style="font-weight:bold"/></div>
+				<div style="overflow: auto;" height="400px">
+					<listbox model="@{inPatientDrugOrdersLists,load-after='btnSearch.onClick'}">
+						<listhead>
+							<listheader label="InPatient Number" /> 
+							<listheader label="Doctor" /> 
+							<listheader label="Patient" /> 
+							<listheader label="Created Date" /> 
+							<listheader label="Action" />
+						</listhead>
+						<listitem self="@{each='inPatientDrugOrderObj'}" value="@{inPatientDrugOrderObj}">
+							<listcell label="@{inPatientDrugOrderObj.visitAction.inPatientDoctorVisit.consultantsChart.admission.accountNumber}"/>
+							<listcell>
+							   <name object="@{inPatientDrugOrderObj.visitAction.inPatientDoctorVisit.provider}"/>
+							</listcell>
+							<listcell>
+							   <name object="@{inPatientDrugOrderObj.visitAction.inPatientDoctorVisit.consultantsChart.admission.patient}"/>
+							</listcell>
+							<listcell>
+							   <label value="@{inPatientDrugOrderObj.createdTxTimestamp,converter='com.nzion.view.component.DateConverter'}" />
+							</listcell>
+							<listcell>
+							   <button image="@{inPatientDrugOrderObj,converter='com.nzion.inpatient.zkoss.SalesProceedGenerateBillConverter'}" />
+							</listcell>
+						</listitem>
+					</listbox>
+				</div>
+			</panelchildren>
+		</panel>
+		</panelchildren>
+		</panel>
+	</window>
+</zk>

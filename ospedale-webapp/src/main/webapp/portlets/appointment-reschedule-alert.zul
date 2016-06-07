@@ -1,0 +1,87 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./appReschedulingWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+	xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native"
+	xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript>
+		<![CDATA[
+    import com.nzion.domain.*;
+     com.nzion.zkoss.composer.appointment.ScheduleController scheduleController = arg.get("scheduleController");
+     Schedule currentSchedule = arg.get("currentSchedule");
+     Component providerList = arg.get("providerList");
+    ]]>
+	</zscript>
+	<window id="appReschedulingWin" style="margin-top:0px;" mode="modal" sclass="modalStyle">
+		<div style="padding:5px" zclass="page-header titled-well">
+			<h:h1>
+				<h:small>Appointment Rescheduling</h:small>
+				<button type="button" zclass="close" onClick="appReschedulingWin.detach();">×</button>
+			</h:h1>
+		</div>
+		<div zclass="container-fluid">
+			<div zclass="row-fluid">
+				<div zclass="span5" style="margin-left:10px;">
+					<label value="Rescheduling By" mold="required"/>
+					<combobox constraint="no empty" id="rescheduleCombobox">
+						<attribute name="onSelect">
+							if("Patient".equals(self.getSelectedItem().getLabel()) ){
+							scheduleController.setPatientRescheduling(true);
+							scheduleController.setClinicRescheduling(false);
+							}else if("Clinic".equals(self.getSelectedItem().getLabel()) ){
+							scheduleController.setPatientRescheduling(false);
+							scheduleController.setClinicRescheduling(true);
+							}else{
+							scheduleController.setPatientRescheduling(false);
+							scheduleController.setClinicRescheduling(false);
+							}
+						</attribute>
+						<comboitem label="Patient" ></comboitem>
+						<comboitem label="Clinic" ></comboitem>
+					</combobox>
+				</div>
+				<!-- <div zclass="span5" style="margin-left:10px;" >
+                    <label value="Patient Rescheduling" class="z-label-bold" style="margin-left: 8px;"/>
+                    <checkbox>
+                    <attribute name="onCheck">
+                        scheduleController.setPatientRescheduling(self.isChecked());
+                    </attribute>
+                    </checkbox>
+                </div>
+                <div zclass="span5" style="margin-left:10px;" >
+                    <label value="Clinic Rescheduling" class="z-label-bold" style="margin-left: 8px;"/>
+                    <checkbox>
+                    <attribute name="onCheck">
+                        scheduleController.setClinicRescheduling(self.isChecked());
+                    </attribute>
+                    </checkbox>
+                </div> -->
+			</div>
+
+			<div sclass="panelFoot">
+				<button label="Save" zclass="btn-success btn">
+					<attribute name="onClick">
+						<![CDATA[
+                	rescheduleCombobox.getValue();
+                	currentSchedule.setRescheduled(true);
+                	boolean isReschedule = scheduleController.reScheduleHere();
+                	com.nzion.util.UtilMessagesAndPopups.showSuccess();
+					List listItems =  providerList.getItems();
+					for(Listitem listItem : listItems){
+						if(currentSchedule.getPerson().equals(listItem.getValue())){
+							providerList.setSelectedItem(listItem);
+						}
+					}
+					Events.postEvent("onSelect", providerList, null);
+					if(isReschedule)
+						Executions.sendRedirect(null);
+                    appReschedulingWin.detach();
+                    ]]>
+					</attribute>
+				</button>
+			</div>
+
+		</div>
+	</window>
+</zk>

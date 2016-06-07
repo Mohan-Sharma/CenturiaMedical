@@ -1,0 +1,514 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./labOrderSectionWin"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <style>
+        .group {
+            background-color:#DCF7F6 !important;
+        }
+        .line {
+            background-color:#FFF !important;
+        }
+        tr.z-listbox-odd {
+        }
+    </style>
+    <window id="labOrderSectionWin" width="100%">
+        <zscript>
+            <![CDATA[
+	import com.nzion.zkoss.composer.PatientSoapNoteController;
+	import com.nzion.domain.emr.soap.*;
+	import com.nzion.zkoss.composer.SoapLabOrderComposer;
+	import com.nzion.domain.emr.lab.LabOrderRequest;
+	com.nzion.service.common.CommonCrudService commonCrudService = com.nzion.util.Infrastructure.getSpringBean("commonCrudService");
+	com.nzion.service.emr.lab.LabService labService = com.nzion.util.Infrastructure.getSpringBean("labService");
+	PatientSoapNoteController controller = arg.get("controller");
+	PatientSoapNote lastEncounter = controller.getLastEncounter();
+	List patientLabOrders = new ArrayList();
+	if(lastEncounter != null){
+	    List soapSections = commonCrudService.findByEquality(SoapSection.class, new String[]{"soapNote.id"}, new Object[]{lastEncounter.getId()});
+	    for(Object obj : soapSections){
+	        if(obj instanceof LabOrderSection){
+	            List patientLabOrderList = commonCrudService.findByEquality(PatientLabOrder.class, new String[]{"soapSection.id"}, new Object[]{((LabOrderSection)obj).getId()});
+	            for(PatientLabOrder prx : patientLabOrderList){
+	                PatientLabOrder px  = org.apache.commons.lang.SerializationUtils.clone(prx);
+	                px.setId(null);
+	                patientLabOrders.add(px);
+	            }
+	        }
+	    }
+	}
+	LabOrderSection section = controller.getSoapSection(LabOrderSection.class);
+	PatientLabOrder patientLabOrder;
+	SoapLabOrderComposer soapLabOrderComposer = new SoapLabOrderComposer();
+	soapLabOrderComposer.setLabOrderSection(section);	
+	LabOrderRequest  labOrderRequest =  commonCrudService.getByUniqueValue(LabOrderRequest.class,"patientSoapNote",controller.getSoapNote());	
+	labOrderRequest = labOrderRequest == null ? new LabOrderRequest() : labOrderRequest;
+	Boolean isOrdered = labOrderRequest.getId() != null;
+	Boolean isCompleted = labOrderRequest.getOrderStatus() ==  LabOrderRequest.ORDERSTATUS.COMPLETED;	
+	//labService.getLabResultFor(controller.getPatient(), null,null,null);
+	List labTestResults = new ArrayList();
+	List labCategories = commonCrudService.getAll(com.nzion.domain.emr.lab.LabCategory.class);
+	com.nzion.util.RestServiceConsumer restConsumer = new com.nzion.util.RestServiceConsumer();
+	List laboratories = restConsumer.getLaboratories();
+	controller.setProviderFavoriteLabDtos(controller.getAllProviderFavoriteLabDto());
+]]>
+            Component lastSelectedComponent;
+        </zscript>
+
+        <div sclass="chiefComp soapNoteCont curSOAP ui-resizable" style="position:relative;">
+            <panel>
+                <caption label="Lab Section"/>
+                <panelchildren>
+                    <n:div class="subTabs" id="tabSection">
+                        <n:ul>
+                            <n:li>
+                                <a id="labOrderButton" class="cur" w:onClick='javascript:toggleLabOrder();' onClick='setStyle(self);resultPageDiv.getChildren().clear();'>
+                                    Lab Order
+                                </a>
+                            </n:li>
+                            <n:li>
+                                <a id="labResultButton" sclass="" w:onClick='javascript:toggleLabResults();' >
+                                    <attribute name="onClick">
+                                        setStyle(self);
+                                        resultPageDiv.getChildren().clear();
+                                        LabResultVlayout.setVisible(true);
+                                        List labTestResults = labService.getLabResultForPatient(controller.getPatient());
+                                        Executions.createComponents("/soap/soapLabResultsPage.zul",resultPageDiv,com.nzion.util.UtilMisc.toMap("labResultTmp",labTestResults,"controller",controller));
+                                    </attribute>
+                                    Lab Result
+                                </a>
+                            </n:li>
+                            <n:li>
+                                <a id="labProcedureButton" sclass="" w:onClick='javascript:toggleLabResults();' >
+                                    <attribute name="onClick">
+                                        setStyle(self);
+                                        resultPageDiv.getChildren().clear();
+                                        LabResultVlayout.setVisible(false);
+                                        com.nzion.domain.emr.SoapModule soapModule = commonCrudService.getById(com.nzion.domain.emr.SoapModule.class,Long.valueOf("10012"));
+                                        controller.setSelectedModule(soapModule);
+                                        Executions.createComponents("/soap/soapProcedure.zul",resultPageDiv,
+                                        com.nzion.util.UtilMisc.toMap("controller",controller,"labProcedureButton",labProcedureButton));
+                                    </attribute>
+                                    Procedure
+                                </a>
+                            </n:li>
+                        </n:ul>
+                    </n:div>
+                    <n:div id="labOrderDiv">
+                        <h:table width="100%" cellpadding="0px" cellspacing="0px" style="border:0px">
+                            <h:tr>
+                                <h:td class="soapNoteContL">
+                                    <div >
+                                        <div >
+				     									<span sclass="linkBtn linkBtnOn">
+															<a label="Print Order"> <attribute name="onClick">
+                                                                if(labOrderRequest.getId() != null){
+                                                                Executions.getCurrent().sendRedirect("/lab/labTestRequestPreview.zul?labOrderReqId=" + labOrderRequest.getId()+"&amp;pageName=Requestprint", "_requestprint");
+                                                                }else{
+                                                                com.nzion.util.UtilMessagesAndPopups.displayError("Please Create Order To Preview");
+                                                                }
+
+                                                            </attribute> </a>
+														   <span />
+														</span>
+                                        </div>
+                                        <div id="buttonBlock" >
+													<span sclass="linkBtn linkBtnOn">
+														<a disabled="${controller.readonly}" id="addBtn" sclass="addBtn" label="New">
+                                                            <attribute name="onClick">
+                                                                addEditOrder(null);
+                                                            </attribute>
+                                                            <n:i class="icon-plus-sign"></n:i>
+                                                        </a>
+														<span />
+													</span>
+                                        </div>
+                                        <div>
+                                            <combobox id="selectLab"
+                                                      mold="rounded" vflex="true" width="200px"
+                                                      w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}" placeholder="Select Laboratory"
+                                                      selectedItem="@{section.laboratoryTenantId, save-when='saveBtn.onClick'}">
+                                                <comboitem value="Default" label="---Default---"/>
+                                                <comboitem forEach="${laboratories}" label="${each.labName}" value="${each.tenantId}"></comboitem>
+                                            </combobox>
+                                        </div>
+                                    </div >
+                                </h:td>
+                            </h:tr>
+                            <h:tr>
+                                <h:td class="soapNoteContL">
+                                    <panel title="Past Lab Orders">
+                                        <panelchildren>
+                                            <div>
+                                                <n:table id="medicationListbox" cellpadding="0" cellspacing="0" border="0" class="display">
+                                                    <n:thead>
+                                                        <n:tr>
+                                                            <n:th style="text-align:left">Test Name</n:th>
+                                                            <n:th style="text-align:left">Status</n:th>
+                                                            <n:th style="text-align:left">Home Service</n:th>
+                                                            <n:th style="text-align:left">Action</n:th>
+                                                        </n:tr>
+                                                    </n:thead>
+                                                    <n:tbody>
+                                                        <n:tr forEach="${patientLabOrders}">
+                                                            <n:td style="text-align:left">${each.testName}</n:td>
+                                                            <n:td style="text-align:left">${each.status.description}</n:td>
+                                                            <n:td style="text-align:left"><checkbox checked="${each.homeService}" w:onCheck="this.setChecked(!this.isChecked())" /></n:td>
+                                                            <n:td style="text-align:left">
+                                                                <image src="/images/Continue.png" width="25px" height="25px" tooltiptext="Continue">
+                                                                    <custom-attributes laborder="${each}"/>
+                                                                    <attribute name="onClick">
+                                                                        laborder.setStatus(com.nzion.domain.emr.soap.PatientLabOrder.STATUS.NEW);
+                                                                        section.addPatientLabOrder(laborder);
+                                                                        laborder.setLabOrderRequest(labOrderRequest);
+                                                                        labOrderRequest.addPatientLabOrder(laborder);
+                                                                        Events.postEvent("onClick",saveBtn,null);
+                                                                    </attribute>
+                                                                </image>
+                                                                <!--<a id="more" label="More" zclass="greyButton" onClick="" w:onClick="jq(this.$f('patDetailsDiv')).slideToggle(200);">
+                                                                  <attribute name="onClick">
+                                                                      Map m = new HashMap();
+                                                                      m.put("patient", patient);
+                                                                      Executions.createComponents("/soap/pastRxMore.zul", null, m);
+                                                                  </attribute>
+                                                                </a>-->
+                                                            </n:td>
+                                                        </n:tr>
+                                                        <n:tr>
+                                                            <n:td>
+                                                                <a id="labMore" label="More" zclass="greyButton" onClick="" w:onClick="jq(this.$f('patDetailsDiv')).slideToggle(200);" visible="false" style="margin-left: 0px;">
+                                                                    <attribute name="onClick">
+                                                                        Map m = new HashMap();
+                                                                        m.put("patient", controller.getPatient());
+                                                                        Executions.createComponents("/soap/pastLabOrdersMore.zul", null, m);
+                                                                    </attribute>
+                                                                    <attribute name="onCreate">
+                                                                        if(patientLabOrders.size() > 0){
+                                                                        labMore.setVisible(true);
+                                                                        }
+                                                                    </attribute>
+                                                                </a>
+                                                            </n:td>
+                                                        </n:tr>
+                                                    </n:tbody>
+                                                </n:table>
+                                            </div>
+                                        </panelchildren>
+                                    </panel>
+                                    <separator/>
+                                    <hbox widths="85%,15%">
+                                        <div sclass="dataTables_scrollBody" style="overflow: auto; height: 330px;">
+                                            <listbox model="@{section.labOrder,load-after='self.onReloadRequest,saveBtn.onClick'}"
+                                                     id="labOrderDisplayGrid" >
+                                                <listhead>
+                                                    <listheader label="Test Name" />
+                                                    <listheader label="Status" />
+                                                    <listheader label="Home Service" />
+                                                    <listheader label="Action" />
+                                                </listhead>
+                                                <listitem self="@{each='labOrder'}" value="@{labOrder}">
+                                                    <listcell>
+                                                        <label value="@{labOrder.testName}" />
+                                                    </listcell>
+                                                    <listcell>
+                                                        <label value="@{labOrder.status.description}" />
+                                                    </listcell>
+                                                    <listcell>
+                                                        <checkbox checked="@{labOrder.homeService,access='load'}" w:onCheck="this.setChecked(!this.isChecked())" />
+                                                    </listcell>
+                                                    <listcell>
+                                                        <a label="Edit" disabled="${controller.readonly}" onClick="addEditOrder((PatientLabOrder)self.getParent().getParent().getValue());"/> |
+                                                        <a label="Remove" disabled="${controller.readonly}">
+                                                            <attribute name="onClick">
+                                                                <![CDATA[
+                                                             removePatientLabOrder((PatientLabOrder)self.getParent().getParent().getValue());
+                                                             Events.postEvent("onClick",saveBtn,null);
+                                                            ]]>
+                                                            </attribute>
+                                                        </a>
+                                                    </listcell>
+                                                </listitem>
+                                                <attribute name="onSelect">
+                                                    patientLabOrder = (PatientLabOrder) self.getSelectedItem().getValue();
+                                                </attribute>
+                                            </listbox>
+                                        </div>
+                                        <div sclass="dataTables_scrollBody" style="overflow: auto; height: 330px;">
+                                            <listbox model="@{controller.providerFavoriteLabDtos,load-after='self.onReloadRequest'}"
+                                                     id="providerFavoriteLabListbox">
+                                                <listhead>
+                                                    <listheader>
+                                                        <textbox value="Search Favorites       *" style="height: 14px !important;">
+                                                            <attribute name="onClick">
+                                                                self.setValue("");
+                                                            </attribute>
+                                                            <attribute name="onBlur">
+                                                                if(UtilValidator.isEmpty(self.getValue())){
+                                                                self.setValue("Search Favorites       *");
+                                                                controller.getAllProviderFavoriteLabDto();
+                                                                Events.postEvent("onReloadRequest",providerFavoriteLabListbox,null);
+                                                                }else{
+                                                                controller.searchProviderFavoriteLabDtosByName(self.getValue());
+                                                                Events.postEvent("onReloadRequest",providerFavoriteLabListbox,null);
+                                                                }
+                                                            </attribute>
+                                                        </textbox>
+                                                    </listheader>
+                                                </listhead>
+                                                <listitem self="@{each='providerFavoriteLabDto'}" value="@{providerFavoriteLabDto}"
+                                                          zclass="none" sclass="@{providerFavoriteLabDto.css}" tooltiptext="double click to select from the list">
+                                                    <attribute name="onDoubleClick">
+                                                        if(!controller.readonly){
+                                                        section = controller.addPatientForLab(self.getValue(),labOrderRequest);
+                                                        Events.postEvent("onReloadRequest",labOrderDisplayGrid,null);
+                                                        Events.postEvent("onClick",saveBtn,null);
+                                                        }
+                                                    </attribute>
+                                                    <listcell>
+                                                        <label value="@{providerFavoriteLabDto.name}"/>
+                                                    </listcell>
+                                                </listitem>
+                                            </listbox>
+                                        </div>
+                                    </hbox>
+                                    <div style="float:right">
+                                        <hbox>
+                                            <textbox style="background-color: #DCF7F6 !important; font-weight:bold !important;" value="Group" width="80px" readonly="true"/>
+                                            <textbox style="background-color: #FFF !important; font-weight:bold !important;" value="Lab" width="76px" readonly="true"/>
+                                        </hbox>
+                                    </div>
+                                    <div sclass="panelFoot" >
+                                        <button disabled="${controller.readonly}"  label="Save" zclass="btn btn-success" id="saveBtn" onClick="saveLabOrder()">
+                                        </button>
+                                    </div>
+                                </h:td>
+                            </h:tr>
+                        </h:table>
+                        <zscript>
+                            void saveLabOrder(){
+                            <!--if(com.nzion.util.UtilValidator.isEmpty(labOrderRequest.getPatientLabOrders())){
+                            com.nzion.util.UtilMessagesAndPopups.showError("Please Add atleast One test");
+                            return;
+                            }-->
+                            labOrderRequest.setPatientSoapNote(controller.getSoapNote());
+                            labOrderRequest.setPatient(controller.getSoapNote().getPatient());
+                            labOrderRequest.setProvider(controller.getProvider());
+                            controller.setLabOrderRequest(labOrderRequest);
+                            if(com.nzion.util.UtilValidator.isNotEmpty(labOrderRequest.getId())){
+                            LabOrderRequest labOrderRequest2 = commonCrudService.getById(LabOrderRequest.class,labOrderRequest.getId());
+                            commonCrudService.save(labOrderRequest2);
+                            }
+                            else
+                            commonCrudService.save(labOrderRequest);
+
+                            controller.saveSoapSection();
+                            com.nzion.util.UtilMessagesAndPopups.showSuccess();
+                            Events.postEvent("onReloadRequest", labOrderDisplayGrid, null);
+
+                            }
+
+                            void addEditOrder(PatientLabOrder pLabOrder){
+                            pLabOrder = pLabOrder ==  null ? new PatientLabOrder() : pLabOrder;
+                            Window w =com.nzion.zkoss.ext.Navigation.navigateToModalWindow("/soap/addEdtSoapLabOrder",com.nzion.util.UtilMisc.toMap("patientLabOrder",pLabOrder,"labSection",section,"labOrderRequest",labOrderRequest,"controller",controller,"saveBtn", saveBtn));
+                            w.addForward("onDetach", labOrderDisplayGrid, "onReloadRequest");
+
+                            }
+
+                            void removePatientLabOrder(PatientLabOrder patientLabOrder) {
+                            if(!PatientLabOrder.STATUS.NEW.equals(patientLabOrder.getStatus())){
+                            com.nzion.util.UtilMessagesAndPopups.showMessage("You Cannot Delete this order with status " + patientLabOrder.getStatus().getDescription());
+                            return;
+                            }
+                            Messagebox.show("Are you sure you wish to delete this record?", "Delete Confirm?", Messagebox.YES | Messagebox.NO,
+                            Messagebox.QUESTION, new org.zkoss.zk.ui.event.EventListener() {
+                            public void onEvent(Event evt) throws Exception {
+                            if ("onYes".equals(evt.getName())) {
+                            try {
+                            section.getLabOrder().remove(patientLabOrder);
+                            labOrderRequest.getPatientLabOrders().remove(patientLabOrder);
+                            commonCrudService.save(labOrderRequest);
+                            controller.saveSoapSection();
+                            controller.setEventMessage("Lab Order Record deleted");
+                            Events.postEvent("onReloadRequest", labOrderDisplayGrid, null);
+                            Events.postEvent("onClick",saveBtn,null);
+                            } catch (Exception e) {
+                            e.printStackTrace();
+                            }
+                            } else {
+                            return;
+                            }
+                            }
+                            });
+                            }
+                        </zscript>
+                    </n:div>
+                    <separator></separator>
+                    <n:div id="labResultDiv" >
+                        <div align="center" style="bgcolor:#fff;">
+                            <vlayout spacing="10px" id="LabResultVlayout">
+                                <hlayout spacing="10px">
+                                    <div>
+                                        <label value="Name" class="z-label-bold"> </label> <textbox id="testName"></textbox>
+                                    </div>
+                                    <div visible="false">  <label value="Category" class="z-label-bold"> </label>
+                                        <combobox id="labCategory" model="@{labCategories}">
+                                            <comboitem self="@{each='labCat'}" value="@{labCat}" label="@{labCat.name}">
+                                            </comboitem>
+                                        </combobox>
+                                    </div>
+                                    <div> <label value="Days From" class="z-label-bold"> </label>
+                                        <combobox  id="daysBefore">
+                                            <comboitem value="30"   label="Last 30 Days"></comboitem>
+                                            <comboitem value="60"   label="Last 60 Days"></comboitem>
+                                            <comboitem value="90"   label="Last 3 Months"></comboitem>
+                                            <comboitem value="180"  label="Last 6 Months"></comboitem>
+                                            <comboitem value="365"  label="Last 1 Year"></comboitem>
+                                            <comboitem value="1825" label="Last 5 Year"></comboitem>
+                                            <comboitem value="3650" label="Last 10 Year"></comboitem>
+                                        </combobox>
+                                    </div>
+                                    <div sclass="buttonPanel">
+                                        <button id="searchTest" label="Search" sclass="btn btn-primary">
+                                            <attribute name="onClick">
+                                                <![CDATA[
+				     						     Integer noOfDay = null;
+				     						     if(daysBefore.getSelectedItem() != null){
+				     						     	 noOfDay = new Integer(daysBefore.getSelectedItem().getValue());
+				     						     }				     						  
+				     						     com.nzion.domain.emr.lab.LabCategory labCategorySel = null;
+				     						     if(labCategory.getSelectedItem() != null ){
+				     						     	labCategorySel = (com.nzion.domain.emr.lab.LabCategory)labCategory.getSelectedItem().getValue();
+				     						     }			
+				     							 labTestResults = labService.getLabResultFor(controller.getPatient(), testName.getValue(),labCategorySel,noOfDay);
+				     							 if(resultPageDiv.getChildren() !=null)
+				     							 	resultPageDiv.getChildren().clear();
+				     							 Executions.createComponents("/soap/soapLabResultsPage.zul",resultPageDiv,com.nzion.util.UtilMisc.toMap("labResultTmp",labTestResults,"controller",controller));				     							  							
+				     							]]>
+                                            </attribute>
+                                        </button>
+                                    </div>
+                                    <div >
+												<span sclass="linkBtn linkBtnOn" style="float:right;">
+													<a  disabled="${controller.readonly}" id="addTestResult" sclass="addBtn" label="Add Test Result">
+                                                        <attribute name="onClick">
+                                                            addEdit(null);
+                                                        </attribute>
+                                                    </a>
+													<span />
+												</span>
+                                    </div>
+                                </hlayout>
+                            </vlayout>
+                            <separator></separator>
+                            <div id="resultPageDiv" />
+                        </div>
+                    </n:div>
+                </panelchildren>
+            </panel>
+        </div>
+        <script type="text/javascript">
+            zk.afterMount(function() {
+
+                $("#labOrderDiv").show();
+                $("#labResultDiv").hide();
+            });
+        </script>
+        <script type="text/javascript">
+            function toggleLabOrder(){
+                $("#labOrderDiv").show();
+                $("#labResultDiv").hide();
+            };
+        </script>
+        <script type="text/javascript">
+            function toggleLabResults(){
+                $("#labOrderDiv").hide();
+                $("#labResultDiv").show();
+            };
+        </script>
+        <zscript>
+            <![CDATA[
+    lastSelectedComponent = labOrderButton;
+		void setStyle(Component cmp) {
+		((A) cmp).setSclass("cur");
+		if (lastSelectedComponent != null && !lastSelectedComponent.equals(cmp)) ((A) lastSelectedComponent).setSclass("");
+		lastSelectedComponent = cmp;
+		}
+	]]>
+        </zscript>
+        <zscript>
+
+            void addEdit(String  id){
+            com.nzion.domain.emr.lab.OBXSegment obxItem = null;
+            if(id!=null){
+            obxItem = commonCrudService.getById(com.nzion.domain.emr.lab.OBXSegment.class, new Long(id));
+            if(!obxItem.getSoapNote().equals(controller.getSoapNote())){
+            com.nzion.util.UtilMessagesAndPopups.displayError("This record does not belong to current section.Cannot be edited/deleted.");
+            return;
+            }
+            }else{
+            obxItem = new com.nzion.domain.emr.lab.OBXSegment();
+            }
+
+            Window w = com.nzion.zkoss.ext.Navigation.navigateToModalWindow("/lab/addExternalLabResult",com.nzion.util.UtilMisc.toMap("section",section,"controller",controller,"labTestResults",labTestResults,"labCategories",labCategories,"obxItem",obxItem));
+            w.addForward("onDetach",labResultButton, "onClick");
+            }
+
+            void viewTestHistoryForPatient(String  obxName){
+            Window w = com.nzion.zkoss.ext.Navigation.navigateToModalWindow("/lab/viewTestHistoryFor",com.nzion.util.UtilMisc.toMap("pSoapNote",controller.getSoapNote(),"obxName", obxName));
+            }
+            void viewDetail(String  id){
+            com.nzion.domain.emr.lab.OBXSegment obxItem = null;
+            if(id!=null){
+            String idNum = id.substring(0,id.indexOf(','));
+            obxItem = commonCrudService.getById(com.nzion.domain.emr.lab.OBXSegment.class, new Long(idNum));
+            if(obxItem.isExternalTest()){
+            com.nzion.util.UtilMessagesAndPopups.showMessage("No More Details For Externally Conducted Lab Test Results");
+            return;
+            }else{
+            if(obxItem.getObrSegment() != null){
+            LabOrderRequest  labOrderReq = obxItem.getObrSegment().getPatientLabOrder().getLabOrderRequest();
+            Executions.getCurrent().sendRedirect("/lab/viewLabResult.zul?labOrderReqId=" + labOrderReq.getId()+"&amp;pageName=Resultview", "_resultview");
+            }
+            }
+            }
+            }
+
+            void deleteRec(String  id){
+            com.nzion.domain.emr.lab.OBXSegment obxItem = null;
+            if(id!=null){
+            String idNum = id.substring(0,id.indexOf(','));
+            obxItem = commonCrudService.getById(com.nzion.domain.emr.lab.OBXSegment.class, new Long(idNum));
+
+            if(!obxItem.getSoapNote().equals(controller.getSoapNote())){
+            com.nzion.util.UtilMessagesAndPopups.displayError("This record does not belong to current section.Cannot be edited/deleted.");
+            return;
+            }
+
+            if(!obxItem.isExternalTest()){
+            com.nzion.util.UtilMessagesAndPopups.showMessage("You Cannot Delete This Record");
+            return;
+            }else{
+            Messagebox.show("Are you sure you wish to delete this record?", "Delete Confirm?", Messagebox.YES | Messagebox.NO,
+            Messagebox.QUESTION, new org.zkoss.zk.ui.event.EventListener() {
+            public void onEvent(Event evt) throws Exception {
+            if ("onYes".equals(evt.getName())) {
+            try {
+            commonCrudService.delete(obxItem);
+            controller.setEventMessage("Lab Result Deleted");
+            Events.postEvent("onClick",labResultButton,null);
+            } catch (Exception e) {
+            e.printStackTrace();
+            }
+            } else {
+            return;
+            }
+            }
+            });
+
+            }
+            }
+            }
+
+        </zscript>
+    </window>
+</zk>

@@ -1,0 +1,419 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./salesSummaryWindow"?>
+<?component name="cptlookup" macro-uri="/utilities/cptlookup.zul" inline="false"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript>
+        <![CDATA[
+		 import com.nzion.util.UtilValidator;
+		 import com.nzion.view.component.BillingAutoSuggestionServiceBox;
+		 com.nzion.zkoss.ext.DataExporter exporter = new com.nzion.zkoss.ext.CsvDataExporter();
+		 com.nzion.domain.billing.InvoiceStatusItem[] billingStatusesArray = com.nzion.domain.billing.InvoiceStatusItem.values();
+		 com.nzion.zkoss.composer.emr.BillingSearchController billingSearchController = new com.nzion.zkoss.composer.emr.BillingSearchController();
+		 com.nzion.service.billing.BillingService billingService=com.nzion.util.Infrastructure.getSpringBean("billingService");
+		 Map invoiceItemsGroup;
+		 Map invoicePaymentGroup;
+		 List invoicesTmp;
+		 List userLogins = commonCrudService.getAll(com.nzion.domain.UserLogin.class);
+		 Map doctorGroup;
+		 Map payerGroup;
+		 StringBuilder content = null;  
+		 StringBuilder header = null;
+		 List allPayers = com.nzion.util.RestServiceConsumer.getAllPayers();
+		 List allCorporates = com.nzion.util.RestServiceConsumer.getAllCorporates();
+		 com.nzion.repository.common.CommonCrudRepository  commonCrudRepository = com.nzion.util.Infrastructure.getSpringBean("commonCrudRepository");
+		 List patientInsuranceIds = null;
+		 List slotType = commonCrudRepository.getAll(com.nzion.domain.SlotType.class);
+		 String teleConsultationVisit = "";
+		 String homeVisit = "";
+		 String premiumVisit = "";
+		 String revisit = "";
+		 String consultVisit = "";
+		 String followupVisit = "";
+
+		 for(com.nzion.domain.SlotType s:slotType){
+		 if(s.getDescription().contains("Tele")){
+            teleConsultationVisit = s.getId().toString();
+		 }else if(s.getDescription().contains("Home")){
+		    homeVisit = s.getId().toString();
+		 }else if(s.getDescription().contains("Premium")){
+		    premiumVisit = s.getId().toString();
+		 }else if(s.getDescription().contains("Followup")){
+		    followupVisit = s.getId().toString();
+		 }else if(s.getDescription().contains("Revisit")){
+		    revisit = s.getId().toString();
+		 }else{
+		    consultVisit = s.getId().toString();
+		 }
+		 }
+		]]>
+    </zscript>
+    <window id="salesSummaryWindow" apply="${billingSearchController}">
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Sales Summary Report</h:small>
+            </h:h1>
+        </div>
+        <div class="container-fluid">
+            <div zclass="row-fluid">
+                <div zclass="span3">
+                    <label value="Doctor"  style="margin-left:100px"/>
+                    <providerlookup id="empLookup" onChange="billingSearchController.getBillingSearchVO().setConsultant(event.getOrigin().getData())"/>
+                </div>
+				<div zclass="span3">
+					<label value="Invoice Date From" mold="required" />
+					<datebox id="fromDate"   value="@{billingSearchController.billingSearchVO.fromDate}" sclass="span9" constraint="no empty, no future"/>
+				</div>
+				<div zclass="span3">
+					<label value="Invoice Date Thru" mold="required"/>
+					<datebox id="thruDate" value="@{billingSearchController.billingSearchVO.thruDate}" sclass="span9" constraint="no empty, no future"/>
+				</div>
+            </div>
+        </div>
+        <div align="center" sclass="panelFoot"  >
+            <button label="Search" id="searchButton" zclass="btn btn-primary"  >
+                <attribute name="onClick">
+                    <![CDATA[
+                    fromDate.getValue();
+                    thruDate.getValue();
+                    if(com.nzion.util.UtilDateTime.getIntervalInDays(fromDate.getValue(),thruDate.getValue()) > 31){
+                              com.nzion.util.UtilMessagesAndPopups.showError("Search Date range cannot be greater than 30 days");
+                              return;
+                    }
+
+                    content = new StringBuilder();
+
+                    if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getConsultant())){
+						content.append("Doctor :"+billingSearchController.getBillingSearchVO().getConsultant()).append(" | ");
+					}
+
+					if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getFromDate())){
+						content.append("Invoice Date From: "+com.nzion.util.UtilDateTime.format( billingSearchController.getBillingSearchVO().getFromDate())).append(" | ");
+					}
+					if(UtilValidator.isNotEmpty (billingSearchController.getBillingSearchVO().getThruDate())){
+						content.append("Invoice Date Thru: "+com.nzion.util.UtilDateTime.format(billingSearchController.getBillingSearchVO().getThruDate())).append(" | ");
+					}
+
+					    billingSearchController.searchInvoiceItemBy(fromDate.getValue(),thruDate.getValue(),patientInsuranceIds);
+						searchResults.setVisible(true);
+						//searchResultsSplitter.setVisible(true);
+						searchResultGrid.setVisible(true);
+						java.math.BigDecimal totalAmts = java.math.BigDecimal.ZERO;
+					     invoicesTmp =  billingSearchController.getInvoices();													
+				         if(searchResultGrid.getSelectedCount()>0){
+				            invoicesTmp = new ArrayList(); 												        									        	
+				             Set selectedlistItems = searchResultGrid.getSelectedItems();											        	
+				        	  for(Object obj : selectedlistItems)
+				        		invoicesTmp.add(((com.nzion.domain.billing.Invoice)((Listitem)obj).getValue()));											        								        	
+				         }											    	
+
+						]]>
+                </attribute>
+            </button>
+        </div>
+        <separator></separator>
+        <space height="5px" />
+
+        <space height="5px" />
+        <panel visible="false" id="searchResults" title="Search Results" width="100%" >
+            <caption height="15px">
+                <div style="float:right; margin-right: 2%; background-color: white;width: 15%;text-align: center;text-decoration: none;" visible="false">
+					<a  tooltiptext="Export" label="Export" sclass="reminderBtn">
+                        <attribute name="onClick">
+                            exportData();
+                        </attribute>
+                    </a>
+                </div>
+            </caption>
+            <panelchildren>
+                <div id="gridViewDiv">
+                <div style="overflow:auto" id="searchResultDiv">
+                    <listbox  id="searchResultGrid" model="@{billingSearchController.invoiceItems,load-after='searchButton.onClick'}">
+                        <listhead>
+
+                            <listheader label="Doctor"
+                                        onCreate='billingSearchController.setAscendingComparator(self,"invoice.consultant.firstName");billingSearchController.setDescendingComparator(self,"invoice.consultant.firstName")' />
+
+							<listheader label="Sold Quantity"  />
+							<listheader label="Item Name"  />
+							<listheader label="Gross Amount"  />
+							<listheader label="Concession"  />
+							<listheader label="Net Amount"  />
+							<listheader label="Cost Amount"  />
+                            <listheader label="Profit Amount"  />
+                            <listheader label="Profit %"  />
+
+                        </listhead>
+                        <listitem self="@{each='invoiceItem'}" value="@{invoiceItem}">
+
+                             <listcell>
+                                <name object="@{invoiceItem.invoice.consultant}" />
+                            </listcell>
+							<listcell >
+								<label value="@{invoiceItem.quantity}" />
+							</listcell>
+							<listcell >
+								<label value="@{invoiceItem.description}" />
+							</listcell>
+							<listcell >
+								<label value="@{invoiceItem.price}" />
+							</listcell>
+							<listcell style="text-align:right">
+								<label value="@{invoiceItem.concessionAmount}" >
+                                    <attribute name="onCreate">
+                                        <![CDATA[
+                                        if(self.getParent().getValue()==null){
+                                        self.setValue("0.000");
+                                        }
+                                        ]]>
+                                    </attribute>
+                                        </label>
+							</listcell>
+							<listcell style="text-align:right">
+								<label value="@{invoiceItem.netPrice}" />
+							</listcell>
+							<listcell id="costPrice" style="text-align:right">
+								<attribute name="onCreate">
+                                    <![CDATA[
+									String costPrice = "0.000";
+
+									if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                    	com.nzion.domain.billing.InvoiceItem invoiceItem = self.getParent().getValue();
+                                    		if(invoiceItem.getItemType().getDescription().equals("Product")){
+                                                if (invoiceItem.getProduct() != null){
+                                                   costPrice = billingService.getServiceCostForProduct(invoiceItem.getProduct());
+                                                }
+                                    		} else if(invoiceItem.getItemType().getDescription().equals("Procedure")){
+                                                if (invoiceItem.getCpt() != null){
+                                                String type = "cpt";
+                                                    costPrice = billingService.getServiceCost(invoiceItem.getInvoice().getConsultant(), invoiceItem.getInvoice().getTariffCategory(), invoiceItem.getCpt().getId(), type);
+                                                }
+                                    		} else if(invoiceItem.getItemType().getDescription().equals("Consultation")){
+                                    		String type = "consult";
+                                            String description = invoiceItem.getDescription();
+                                            String visitType = "";
+                                            if(description.contains("Tele")){
+                                            visitType = teleConsultationVisit;
+                                            }else if(description.contains("Home")){
+                                            visitType = homeVisit;
+                                            }else if(description.contains("Premium")){
+                                            visitType = premiumVisit;
+                                            }else if(description.contains("Followup")){
+                                            visitType = followupVisit;
+                                            }else if(description.contains("Revisit")){
+                                            visitType = revisit;
+                                            }else{
+                                            visitType = consultVisit;
+                                            }
+
+                                            costPrice = billingService.getServiceCost(invoiceItem.getInvoice().getConsultant(), invoiceItem.getInvoice().getTariffCategory(), visitType, type);
+                                    		}
+
+                                    		if(costPrice == null){
+                                    		costPrice = "0.000";
+                                    		}
+
+                                    		self.setLabel(new java.math.BigDecimal(costPrice).setScale(3,java.math.RoundingMode.HALF_UP).toString());
+                                    	}
+									]]>
+                                </attribute>
+							</listcell>
+                            <listcell style="text-align:right">
+                                <attribute name="onCreate">
+                                    if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                    com.nzion.domain.billing.InvoiceItem invoiceItem = self.getParent().getValue();
+                                    java.math.BigDecimal profit = invoiceItem.getNetPrice().subtract(new java.math.BigDecimal(costPrice)).setScale(3,java.math.RoundingMode.HALF_UP);
+                                    self.setLabel(profit.toString());
+                                    }
+                                </attribute>
+                            </listcell>
+                            <listcell>
+                                <attribute name="onCreate">
+                                    java.math.BigDecimal profitPer = java.math.BigDecimal.ZERO;
+                                    if(self.getParent().getValue() instanceof com.nzion.domain.billing.InvoiceItem){
+                                    com.nzion.domain.billing.InvoiceItem invoiceItem = self.getParent().getValue();
+                                    if(invoiceItem.getNetPrice().compareTo(java.math.BigDecimal.ZERO)>0){
+                                        java.math.BigDecimal profitPer = invoiceItem.getNetPrice().subtract(new java.math.BigDecimal(costPrice)).divide(invoiceItem.getNetPrice(),java.math.RoundingMode.HALF_UP).setScale(3,java.math.RoundingMode.HALF_UP).multiply(new java.math.BigDecimal(100)).setScale(3,java.math.RoundingMode.HALF_UP);
+                                    }
+                                    self.setLabel(profitPer.toString());
+                                    }
+                                </attribute>
+                            </listcell>
+
+
+                        </listitem>
+
+                     </listbox>
+                </div>
+              </div>  
+            </panelchildren>
+        </panel>
+        <zscript>
+            void exportData(){
+            List items = new ArrayList();
+            if(UtilValidator.isNotEmpty(searchResultGrid.getSelectedItems())){
+            for(Object itm : searchResultGrid.getSelectedItems()){
+            com.nzion.domain.billing.Invoice inv = (com.nzion.domain.billing.Invoice)((Listitem)itm).getValue();
+            items.add(inv);
+            }
+            }
+            else
+            items = billingSearchController.getInvoices();
+            if(com.nzion.util.UtilValidator.isNotEmpty(items))
+           // exporter.export(items, new String[]{"patient.firstName","patient.lastName","consultant.firstName","consultant.lastName","invoiceDate","invoiceStatus","totalAmount.amount","collectedAmount.amount"}, new String[]{"Patient First Name","Patient Last Name","Doctor First Name"," Last Name","Invoice Date","Invoice Status", "Total Amount", "Collected Amount"}, "encounters.csv");
+            if(content.length()> 0)
+         	header = new StringBuilder(content.substring(0, content.length() - 1));
+           	exporter.exportWithHeader(header,items,
+            new String[]{"patient","patient.patientType","consultant","invoiceDate","invoiceStatus",
+            "invoiceNumber","totalAmount.amount","collectedAmount.amount"}, new String[]{"Patient Name","Patient Type","Doctor Name",
+            "Invoice Date","Invoice Status","Invoice Number", "Total Amount", "Collected Amount"}, "invoiceReport.xlsx","INVOICE REPORT",null);
+           
+           
+           
+           
+           
+            }
+            java.math.BigDecimal sumOfInvoiceAmts(List invs){
+            java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invs){
+            com.nzion.domain.billing.Invoice invObj = (com.nzion.domain.billing.Invoice)obj;
+            totalInvsAmt = totalInvsAmt.add(invObj.getTotalAmount().getAmount());
+            }
+            return totalInvsAmt;
+            }
+
+            java.math.BigDecimal sumOfBillItemsAmts(Set invs){
+            java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invs){
+            com.nzion.domain.billing.InvoiceItem invObj = (com.nzion.domain.billing.InvoiceItem)obj;
+            totalInvsAmt = totalInvsAmt.add(invObj.getPrice().getAmount());
+            }
+            return totalInvsAmt;
+            }
+
+            java.math.BigDecimal sumOfBillPaymentsAmts(Set invPayments){
+            java.math.BigDecimal totalInvsPaymentAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invPayments){
+            com.nzion.domain.billing.InvoicePayment invObj = (com.nzion.domain.billing.InvoicePayment)obj;
+            totalInvsPaymentAmt = totalInvsPaymentAmt.add(invObj.getAmount().getAmount());
+            }
+            return totalInvsPaymentAmt;
+            }
+
+
+		java.math.BigDecimal sumOfInsurancePayableBillItemsAmts(Set invs){
+            java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invs){
+            com.nzion.domain.billing.InvoiceItem invObj = (com.nzion.domain.billing.InvoiceItem)obj;
+            java.math.BigDecimal amount = java.math.BigDecimal.ZERO;
+            Map result = new com.nzion.util.PatientInsuranceUtility().getPatientPayableAndInsurancePayableForInvoiceItem(invObj);
+            if(result.size()>0)
+ 				amount = result.get("insurancePayable");
+            totalInvsAmt = totalInvsAmt.add(amount);
+            }
+            return totalInvsAmt;
+            }
+            
+       java.math.BigDecimal sumOfPatientPayableBillItemsAmts(Set invs){
+            java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invs){
+            com.nzion.domain.billing.InvoiceItem invObj = (com.nzion.domain.billing.InvoiceItem)obj;
+            java.math.BigDecimal amount = java.math.BigDecimal.ZERO;
+            Map result = new com.nzion.util.PatientInsuranceUtility().getPatientPayableAndInsurancePayableForInvoiceItem(invObj);
+            if(result.size()>0)
+ 				amount = result.get("patientPayable");
+            totalInvsAmt = totalInvsAmt.add(amount);
+            }
+            return totalInvsAmt;
+            }
+            
+       java.math.BigDecimal sumOfInsurancePayableInvoiceAmts(List invs){
+            java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invs){
+            com.nzion.domain.billing.Invoice invObj = (com.nzion.domain.billing.Invoice)obj;
+            java.math.BigDecimal amount = java.math.BigDecimal.ZERO;
+            Map result = new com.nzion.util.PatientInsuranceUtility().getPatientPayableAndInsurancePayable(invObj);
+            if(result.size()>0)
+ 				amount = result.get("insurancePayable");
+            totalInvsAmt = totalInvsAmt.add(amount);
+            }
+            return totalInvsAmt;
+            }
+       
+       java.math.BigDecimal sumOfPatientPayableInvoiceAmts(List invs){
+            java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invs){
+            com.nzion.domain.billing.Invoice invObj = (com.nzion.domain.billing.Invoice)obj;
+            java.math.BigDecimal amount = java.math.BigDecimal.ZERO;
+            Map result = new com.nzion.util.PatientInsuranceUtility().getPatientPayableAndInsurancePayable(invObj);
+            if(result.size()>0)
+ 				amount = result.get("patientPayable");
+            totalInvsAmt = totalInvsAmt.add(amount);
+            }
+            return totalInvsAmt;
+            }
+            
+       		java.math.BigDecimal sumOfGrossAmountInvoiceAmts(List invs){
+            java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invs){
+            com.nzion.domain.billing.Invoice invObj = (com.nzion.domain.billing.Invoice)obj;
+            java.math.BigDecimal amount = java.math.BigDecimal.ZERO;
+            for(com.nzion.domain.billing.InvoiceItem ii : invObj.getInvoiceItems()){
+                if(!"Cancel".equals(ii.getInvoiceItemStatus()))
+                    amount = amount.add(ii.getPrice().getAmount().setScale(3, java.math.RoundingMode.HALF_UP));
+                }
+           	totalInvsAmt = totalInvsAmt.add(amount);
+            }
+            return totalInvsAmt;
+          	}  
+          	
+          	java.math.BigDecimal sumOfConcessionInvoiceAmts(List invs){
+            java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invs){
+            com.nzion.domain.billing.Invoice invObj = (com.nzion.domain.billing.Invoice)obj;
+            java.math.BigDecimal amount = java.math.BigDecimal.ZERO;
+            for(com.nzion.domain.billing.InvoiceItem ii : invObj.getInvoiceItems()){
+                if(!"Cancel".equals(ii.getInvoiceItemStatus()))
+                    amount = amount.add(ii.getPrice().getAmount().setScale(3, java.math.RoundingMode.HALF_UP));
+                }
+            java.math.BigDecimal concession = amount.subtract(invObj.getTotalAmount().getAmount());  
+           	totalInvsAmt = totalInvsAmt.add(concession);
+            }
+            
+            return totalInvsAmt;
+          	}    
+          	
+    java.math.BigDecimal sumOfGrossAmountBillItemsAmts(Set invs){
+            java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invs){
+            com.nzion.domain.billing.InvoiceItem invObj = (com.nzion.domain.billing.InvoiceItem)obj;
+            
+           	java.math.BigDecimal  totalGrossAmount = java.math.BigDecimal.ZERO;
+             if(!"Cancel".equals(invObj.getInvoiceItemStatus()))
+            totalGrossAmount = invObj.getPrice().getAmount().setScale(3, java.math.RoundingMode.HALF_UP);
+            
+            totalInvsAmt = totalInvsAmt.add(totalGrossAmount);
+            }
+            return totalInvsAmt;
+         }
+            
+         java.math.BigDecimal sumOfConcessionBillItemsAmts(Set invs){
+            java.math.BigDecimal totalInvsAmt = java.math.BigDecimal.ZERO;
+            for(Object obj : invs){
+            com.nzion.domain.billing.InvoiceItem invObj = (com.nzion.domain.billing.InvoiceItem)obj;
+            
+           	java.math.BigDecimal  totalGrossAmount = java.math.BigDecimal.ZERO;
+             if(!"Cancel".equals(invObj.getInvoiceItemStatus()))
+            totalGrossAmount = invObj.getPrice().getAmount().setScale(3, java.math.RoundingMode.HALF_UP);
+            
+            java.math.BigDecimal  totalNetAmount = invObj.getNetPrice();
+             java.math.BigDecimal concession = totalGrossAmount.subtract(totalNetAmount);
+            totalInvsAmt = totalInvsAmt.add(concession);
+            }
+            return totalInvsAmt;
+         }    
+            
+        </zscript>
+    </window>
+</zk>

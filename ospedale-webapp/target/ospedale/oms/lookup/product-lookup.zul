@@ -1,0 +1,23 @@
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation" xmlns:n="http://www.zkoss.org/2005/zk/native">
+	<n:div style="width:170px;">
+	<hbox width="100%" widths="80%,20%">
+		<textbox id="productLookupTxt" forward="onChange=onChange" readonly="true"/>
+		<n:div style="width:70px;">
+			<span id="lookUpBtn" sclass="linkBtn linkBtnOn">
+				<a sclass="lookupBtn">
+					<attribute name="onClick">
+						Executions.createComponents("/oms/lookup/product-lookup-search.zul",null,com.nzion.util.UtilMisc.toMap("productLookupTxt", productLookupTxt));
+					</attribute>
+					Lookup
+				</a>
+			 <span/>
+			</span>
+		</n:div>
+	</hbox>
+	</n:div>
+	<zscript>
+		com.nzion.domain.product.Product product = arg.get("param");
+		if(product != null)
+		productLookupTxt.setValue(product.getProductDetails().getProductName());
+	</zscript>
+</zk>

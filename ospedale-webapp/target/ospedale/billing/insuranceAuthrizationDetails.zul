@@ -1,0 +1,86 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./insuranceAuthWin"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+    xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native"
+    xmlns:w="http://www.zkoss.org/2005/zk/client">
+    <zscript>
+    <![CDATA[
+    import java.math.BigDecimal;
+    
+        com.nzion.domain.billing.InvoiceItem invoiceItemObj1 =  arg.get("invoiceItem");
+        com.nzion.zkoss.composer.BillingController billingController =  arg.get("billingController");
+        org.zkoss.zk.ui.Component saveBtn = arg.get("saveBtn");
+        
+        java.math.BigDecimal netAmount = invoiceItemObj1.getNetPrice();
+        
+        java.math.BigDecimal copayAmount = billingController.getCopayAmountOrPercent(netAmount,invoiceItemObj1.getActualCopayAmount(),invoiceItemObj1.getActualCopayPercentage(),invoiceItemObj1.getDeductableAmountOrPercent());
+        java.math.BigDecimal maxAuthorizationAmount = netAmount.subtract(copayAmount.add(invoiceItemObj1.getDeductableAmountOrPercent()));
+        
+		if(invoiceItemObj1.getAuthorizationAmount() == null || invoiceItemObj1.getAuthorizationAmount().compareTo(BigDecimal.ZERO) == 0){
+	        invoiceItemObj1.setAuthorizationAmount(maxAuthorizationAmount);
+		}
+        
+        
+        ]]> </zscript>
+    <window id="insuranceAuthWin" style="margin-top:0px;" mode="modal" sclass="modalStyle">
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Authorization Details</h:small>
+                <button type="button" zclass="close">×
+                 <attribute name="onClick">
+                 	invoiceItemObj1.setAuthorizationAmount(java.math.BigDecimal.ZERO);
+                 	insuranceAuthWin.detach();
+                 </attribute>
+                </button>
+            </h:h1>
+        </div>
+        <div class="container-fluid">
+            <div zclass="row-fluid">
+
+                <div zclass="span3">
+                    <label value="Authorization Number"  mold="required"/>
+                    <textbox value="@{invoiceItemObj1.authorizationNo,save-when='authSave.onClick'}"
+                             constraint="no empty" sclass="span12" />
+                </div>
+                <div zclass="span3">
+                    <label value="Authorization Date" mold="required" />
+                    <datebox
+                             value="@{invoiceItemObj1.authorizationDate,save-when='authSave.onClick'}"
+                             constraint="no empty" sclass="span12"   />
+                </div>
+                <div zclass="span3">
+                    <label value="Authorization Amount" mold="required" />
+                    <decimalbox value="@{invoiceItemObj1.authorizationAmount,save-when='authSave.onClick'}" id="authAmountDecimalBox"
+                            constraint="no empty,no negative:Authorization amount can be >= 0" sclass="span12" format="#,##0.000"/>
+                </div>
+                <div zclass="span3">
+                    <label value="Note" />
+                    <textbox
+                            value="@{invoiceItemObj1.authorizationNote,save-when='authSave.onClick'}"
+                            sclass="span12"   />
+                </div>
+
+            </div>
+
+        </div>
+
+        <div sclass="panelFoot">
+            <button label="Save" zclass="btn-success btn" id="authSave">
+                <attribute name="onClick">
+	                java.math.BigDecimal authAmount = authAmountDecimalBox.getValue();
+	                if(authAmount.compareTo(maxAuthorizationAmount) > 0){
+	                	com.nzion.util.UtilMessagesAndPopups.showError("Authorization Amount can not be greater than the maximum insurance payable");
+	                	return;
+	                }
+                    invoiceItemObj1.setAuthorization(!invoiceItemObj1.getAuthorization());
+                    Events.postEvent("onClick",saveBtn,null);
+                    com.nzion.util.UtilMessagesAndPopups.showSuccess();
+                    //insuranceAuthWin.detach();
+                </attribute>
+            </button>
+        </div>
+
+    </window>
+</zk>

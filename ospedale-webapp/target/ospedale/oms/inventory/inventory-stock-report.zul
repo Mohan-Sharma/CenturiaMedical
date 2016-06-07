@@ -1,0 +1,117 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./inventoryStockWin"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+	<zscript> <![CDATA[
+		com.nzion.oms.zkoss.InventoryStockReportController inventoryStockController = new com.nzion.oms.zkoss.InventoryStockReportController();
+		List ineventoryItems = null;
+		Map inventoryItemsMap =null;
+		com.nzion.zkoss.ext.DataExporter exporter = new com.nzion.zkoss.ext.CsvDataExporter();
+		Date currentDate = new Date();
+	]]></zscript>
+	<window id="inventoryStockWin" apply="${inventoryStockController}">
+	<panel style="padding:5px" title="Inventory Stock Report">
+	 <panelchildren>
+		<vlayout spacing="20px" sclass="form">
+			<hlayout spacing="6px">
+				<hlayout spacing="3px">
+					<label value="Product Name" sclass="name"/>
+					<textbox value="@{inventoryStockController.productName}" />
+				</hlayout>
+				<hlayout spacing="3px">
+					<label value="Supplier" sclass="name"/>
+					<combobox model="@{inventoryStockController.suppliers}" selectedItem="@{inventoryStockController.supplier}">
+						<comboitem self="@{each='supplier'}" value="@{supplier}" label="@{supplier.name}"/>
+					</combobox>
+				</hlayout>
+			</hlayout>
+		</vlayout>
+		<separator/>
+		<div sclass="panelFoot" align="center">
+			<button label="Search" id="btnSearch" zclass="btn btn-primary">
+				<attribute name="onClick">
+					inventoryStockController.searchByCriteria();
+					searchResultGrid.setVisible(true);
+					ineventoryItems = inventoryStockController.getInventoryItems();
+					inventoryItemsMap = inventoryStockController.getInventoryItemsMap();
+					noRecordFoundLabel.setVisible(com.nzion.util.UtilValidator.isEmpty(ineventoryItems));
+					//groupByResultGrid.setVisible(false);
+					//self.addForward("onClick",searchResultGrid,"onReload");
+				</attribute>
+			</button>
+		</div>
+		<separator />
+		</panelchildren>
+		</panel>
+		<panel title="Results" id="resultPanel">
+			<caption>
+				 <div style="float:right">
+					<span sclass="linkBtn linkBtnOn" style="margin:-3px 13px;">
+					<a  tooltiptext="Export" label="Export" sclass="reminderBtn">
+					<attribute name="onClick">	
+					exportData();					
+					</attribute>
+					</a>
+					</span>
+				</div>	
+			</caption>
+			<panelchildren>
+			<div id="noRecordFoundLabel" align="center"><label value="No Record Found" visible="false"  style="font-weight:bold"/></div>
+			<div sclass="grid clr" visible="false">
+				<n:table>
+					<n:thead>
+						<n:tr>
+							<n:td>
+							<hlayout>
+								<label value="Group By:" />
+								<listbox id="groupByComboBox" mold="select">
+									<listitem value=""/>
+									<listitem label="Product" value="PRODUCT" />
+									<listitem label="Inventory Item" value="INVITEM" />									
+									 <attribute name="onSelect"><![CDATA[
+										groupByResultGrid.setVisible(self.getSelectedItem().getValue().equals("PRODUCT"));
+										searchResultGrid.setVisible(self.getSelectedItem().getValue().equals("INVITEM"));
+										if (self.getSelectedItem().getValue().equals("PRODUCT")){
+										    inventoryStockController.searchByGroup();
+										}else if(self.getSelectedItem().getValue().equals("INVITEM")){
+											inventoryStockController.searchByCriteria();
+											Events.postEvent("onClick",btnSearch,null);
+										}
+										]]></attribute>  
+								</listbox>
+							</hlayout>	
+							</n:td>
+							<n:td>
+							</n:td>
+						</n:tr>
+					</n:thead>
+				</n:table>
+			</div>
+			<div style="overflow: auto;">
+			  <grid id="searchResultGrid" fixedLayout="true" model="@{inventoryItemsMap,load-after='groupByComboBox.onSelect,btnSearch.onClick'}"
+				visible="false">
+						<columns>
+						    <column label="Date"></column>
+							<column label="Product Code - Product Name" id="gridItemsColumn" ></column>
+							<column label="Quantity on Hand" />	
+						</columns>
+					    <rows>
+							<row self="@{each='invItemGroup'}" value="@{invItemGroup}">
+								<label value="@{currentDate,converter='com.nzion.view.component.DateConverter'}"></label>
+								<label value="@{invItemGroup.key}"></label>
+								<label value="@{invItemGroup.key,converter='com.nzion.view.component.QohTotalDisplayConverter'}"/>							
+							</row>
+				       </rows>
+				</grid>
+			</div>
+			</panelchildren>
+		</panel>
+	</window>
+	<zscript>
+		void exportData(){
+		  	 List items = new ArrayList();
+		  		items = inventoryStockController.getInvItemForReports();
+			 if(com.nzion.util.UtilValidator.isNotEmpty(items))							
+		    	 exporter.export(items, new String[]{"manufactureDate","product.id","product.tradeName","qoh"}, new String[]{"Date","Product Code","Product Name","Quantity on Hand"}, "inventoryitems.csv");
+		 }	
+	</zscript>
+</zk>

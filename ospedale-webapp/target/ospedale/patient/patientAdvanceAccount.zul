@@ -1,0 +1,44 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./advAmount"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native">
+	<zscript>
+		com.nzion.zkoss.composer.emr.PatientAdvanceAmountController controller = controller;
+	</zscript>
+	<window  id="advAmount">
+		<vlayout spacing="20px">
+			<hlayout spacing="10px" style="margin-top:20px;margin-left:12px;">
+				<label value="Deposit Amount"/>
+				<decimalbox value="@{controller.depositAmount}" constraint="no empty,no negative" id="depositAmount" format="#,##0.000">
+					<attribute name="onCreate">
+					 self.setRoundingMode(java.math.BigDecimal.ROUND_HALF_UP);
+					</attribute>
+				</decimalbox>
+			</hlayout>
+			<hlayout spacing="10px" style="margin-top:20px;">
+				<label value="Withdraw Amount"/>
+				<decimalbox value="@{controller.withdrowAmount}" constraint="no empty,no negative" id="withdrowAmount" format="#,##0.000">
+				<attribute name="onCreate">
+					 self.setRoundingMode(java.math.BigDecimal.ROUND_HALF_UP);
+				</attribute>
+				</decimalbox>
+			</hlayout>
+			<div align="center">
+			<hlayout spacing="10px" style="margin-top:10px;">
+				<button label="Save" >
+				<attribute name="onClick">
+					controller.depositOrwithdraw();
+				</attribute>
+				</button>
+				<button label="Clear">
+				<attribute name="onClick">
+					depositAmount.setValue(java.math.BigDecimal.ZERO);
+					withdrowAmount.setValue(java.math.BigDecimal.ZERO);
+				</attribute>
+				</button>
+			</hlayout>
+			</div>
+		</vlayout>
+	</window>
+</zk>

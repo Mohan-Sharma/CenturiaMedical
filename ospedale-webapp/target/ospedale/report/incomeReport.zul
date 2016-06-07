@@ -1,0 +1,365 @@
+<?page title="Centuria" contentType="text/html;charset=UTF-8"?>
+<?variable-resolver class="org.zkoss.zkplus.spring.DelegatingVariableResolver"?>
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./incomeReportWin"?>
+<?component name="cptlookup" macro-uri="/utilities/cptlookup.zul" inline="false"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml" xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+    xmlns:n="http://www.zkoss.org/2005/zk/native" xmlns:w="http://www.zkoss.org/2005/zk/client">
+    
+    <window id="incomeReportWin" apply="org.zkoss.bind.BindComposer" viewModel="@id('vm') @init('com.nzion.zkoss.composer.IncomeReportViewModel')">
+        <div style="padding:5px" zclass="page-header titled-well">
+            <h:h1>
+                <h:small>Doctor Wise Collection Report</h:small>
+            </h:h1>
+        </div>
+        
+        <div class="container-fluid">
+        	<div zclass="row-fluid">
+                <div zclass="span2">
+                    <label value="Doctor"  />
+                    <combobox model="@load(vm.providers)" selectedItem="@save(vm.selectedProvider)" sclass="span12" readonly="true">
+                    	<template name="model" var="provider">
+							<comboitem label="@load(provider)" value="@bind(provider)" >
+							   <attribute name="onCreate">
+							   if(vm.getProviders().size() == 1) {
+							      self.getParent().setSelectedItem(self);
+							      vm.setSelectedProvider(self.getValue());
+							   }
+							   </attribute>
+							</comboitem>
+						</template>
+                    </combobox>
+                </div>
+                
+                <div zclass="span2">
+                    <label value="Referral"  />
+                    <combobox model="@load(vm.referrals)" selectedItem="@save(vm.selectedReferral)" sclass="span12">
+                    	<template name="model" var="referral">
+							<comboitem label="@load(referral.clinicName)" value="@bind(referral)" />
+						</template>
+                    </combobox>
+                </div>
+                
+                <div zclass="span2">
+                    <label value="From Date"  />
+                    <datebox id="fromDate" value="@save(vm.fromDate)" sclass="span12"/>
+                </div>
+                
+                <div zclass="span2">
+                    <label value="To Date"  />
+                    <datebox id="toDate" value="@save(vm.toDate)" sclass="span12"/>
+                </div>
+                
+            </div>
+            
+        </div>
+        
+        <div align="center" sclass="panelFoot"  >
+            <button label="Search" id="searchButton" zclass="btn btn-primary"  onClick="@command('search')">
+            	<attribute name="onClick">
+            			searchListbox.setVisible(true);
+	             		groupByDoctor.setVisible(false);
+	             		groupByReferral.setVisible(false);
+            	</attribute>
+            </button>
+        </div>
+        <separator></separator>
+      <panel visible="false" id="searchResults" title="Search Results" width="100%">
+	    <caption height="15px">
+	        <div style="float:right; margin-right: 2%; background-color: white;width: 15%;text-align: center;text-decoration: none;">
+				<a tooltiptext="Export" label="Export" sclass="reminderBtn">
+                     <attribute name="onClick">
+                         exportData();
+                     </attribute>
+                 </a>
+	        </div>
+	    </caption> 
+	    <panelchildren>
+	    <hlayout spacing="20px" style="padding:10px" width="50%">
+	    	<label value="Group By:" />
+	    	<listbox id="groupByComboBox" mold="select" sizedByContent="true" style="padding:2px">
+	             <listitem />
+	             <listitem label="Doctor" value="doctor"/>
+	             <listitem label="Referral" value="referral" />
+	             <attribute name="onSelect">
+	             <![CDATA[
+	             	if(com.nzion.util.UtilValidator.isNotEmpty(self.getSelectedItem().getValue()) && "doctor".equals(self.getSelectedItem().getValue()) ){
+	             		searchListbox.setVisible(false);
+	             		groupByDoctor.setVisible(true);
+	             		groupByReferral.setVisible(false);
+	             	}else if(com.nzion.util.UtilValidator.isNotEmpty(self.getSelectedItem().getValue()) && "referral".equals(self.getSelectedItem().getValue())){
+	             		searchListbox.setVisible(false);
+	             		groupByDoctor.setVisible(false);
+	             		groupByReferral.setVisible(true);
+	             	}else{
+	             		searchListbox.setVisible(true);
+	             		groupByDoctor.setVisible(false);
+	             		groupByReferral.setVisible(false);
+	             	}
+	             ]]>
+	             </attribute>
+            </listbox>
+	    </hlayout>
+	    
+	    <separator/>
+        
+        
+        <listbox model="@bind(vm.paymentList)" id="searchListbox">
+        	<listhead>
+        		<listheader label="Date"/>
+        		<listheader label="Afya ID"/>
+        		<listheader label="Civil ID"/>
+				<listheader label="File No."/>
+        		<listheader label="Patient Name"/>
+        		<listheader label="Specialty"/>
+        		<listheader label="Doctor Name"/>
+        		<listheader label="Referral Name"/>
+        		<listheader label="Paid Amount"/>
+        		<listheader label="Insurance Amount" />
+        		<listheader label="Corporate Amount" />
+        	</listhead>
+        	<template name="model" var="invoicePayment">
+        	<listitem>
+        		<listcell label="@bind(invoicePayment.paymentDate) @converter('formatedDate', format='dd/MM/yyyy')"></listcell>
+        		<listcell label="@bind(invoicePayment.afyaId)"></listcell>
+				<listcell label="@bind(invoicePayment.civilId)"></listcell>
+        		<listcell label="@bind(invoicePayment.fileNo)"></listcell>
+        		<listcell label="@bind(invoicePayment.patientName)"></listcell>
+        		<listcell label="@bind(invoicePayment.specialityName)"></listcell>
+        		<listcell label="@bind(invoicePayment.doctorName)"></listcell>
+        		<listcell label="@bind(invoicePayment.referralName)"></listcell>
+        		<listcell>
+        			<div align="right">
+        			<label value="@bind(invoicePayment.paidAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listcell>
+        		<listcell>
+        			<div align="right">
+        			<label value="@bind(invoicePayment.insuranceAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listcell>
+        		<listcell>
+        			<div align="right">
+        			<label value="@bind(invoicePayment.corporateAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listcell>
+        	</listitem>
+        	</template>
+        	<listfoot>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter></listfooter>
+        		<listfooter>
+        			<div align="right">
+        			<label value="@bind(vm.totalPaidAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listfooter>
+        		<listfooter>
+        			<div align="right">
+        			<label value="@bind(vm.totalInsuranceAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listfooter>
+        		<listfooter>
+        			<div align="right">
+        			<label value="@bind(vm.totalCorporateAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+        			</div>
+        		</listfooter>
+        	</listfoot>
+        </listbox>
+        
+        
+        <grid id="groupByDoctor" fixedLayout="true" model="@bind(vm.groupByDoctor)" visible="false">
+                <columns>
+                    <column width="40px"></column>
+                    <column label="Doctor" id="doctorGroupColumn"/>
+                </columns>
+                <rows>
+                <template name="model" var="doctorGroup">
+                	 <row value="@bind{doctorGroup}">
+                        <detail open="false">
+                            <listbox model="@bind(doctorGroup.value)" >
+                                <listhead>
+					        		<listheader label="Date"/>
+					        		<listheader label="Afya ID"/>
+					        		<listheader label="Civil ID"/>
+					        		<listheader label="Patient Name"/>
+					        		<listheader label="Specialty"/>
+					        		<listheader label="Doctor Name"/>
+					        		<listheader label="Referral Name"/>
+					        		<listheader label="Paid Amount"/>
+					        		<listheader label="Insurance Amount" />
+					        		<listheader label="Corporate Amount" />
+					        	</listhead>
+					        	<template name="model" var="invoicePayment">
+					        	<listitem>
+					        		<listcell label="@bind(invoicePayment.paymentDate) @converter('formatedDate', format='dd/MM/yyyy')"></listcell>
+					        		<listcell label="@bind(invoicePayment.afyaId)"></listcell>
+					        		<listcell label="@bind(invoicePayment.civilId)"></listcell>
+					        		<listcell label="@bind(invoicePayment.patientName)"></listcell>
+					        		<listcell label="@bind(invoicePayment.specialityName)"></listcell>
+					        		<listcell label="@bind(invoicePayment.doctorName)"></listcell>
+					        		<listcell label="@bind(invoicePayment.referralName)"></listcell>
+					        		<listcell>
+					        			<div align="right">
+					        			<label value="@bind(invoicePayment.paidAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listcell>
+					        		<listcell>
+					        			<div align="right">
+					        			<label value="@bind(invoicePayment.insuranceAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listcell>
+					        		<listcell>
+					        			<div align="right">
+					        			<label value="@bind(invoicePayment.corporateAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listcell>
+					        	</listitem>
+					        	</template>
+					        	<listfoot>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter>
+					        			<div align="right">
+					        			<label value="@bind(vm.totalPaidAmountDoc) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listfooter>
+					        		<listfooter>
+					        			<div align="right">
+					        			<label value="@bind(vm.totalInsuranceAmountDoc) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listfooter>
+					        		<listfooter>
+					        			<div align="right">
+					        			<label value="@bind(vm.totalCorporateAmountDoc) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listfooter>
+					        	</listfoot>
+                            </listbox>
+                        </detail>
+                        <label value="@bind(doctorGroup.key)" />
+                    </row>
+                    </template>
+                </rows>
+            </grid>
+            
+            
+            <grid id="groupByReferral" fixedLayout="true" model="@bind(vm.groupByReferral)" visible="false">
+                <columns>
+                    <column width="40px"></column>
+                    <column label="Doctor"/>
+                </columns>
+                <rows>
+                <template name="model" var="refGroup">
+                	 <row value="@bind{refGroup}">
+                        <detail open="false">
+                            <listbox model="@bind(refGroup.value)" >
+                                <listhead>
+					        		<listheader label="Date"/>
+					        		<listheader label="Afya ID"/>
+					        		<listheader label="Civil ID"/>
+					        		<listheader label="Patient Name"/>
+					        		<listheader label="Specialty"/>
+					        		<listheader label="Doctor Name"/>
+					        		<listheader label="Referral Name"/>
+					        		<listheader label="Paid Amount"/>
+					        		<listheader label="Insurance Amount" />
+					        		<listheader label="Corporate Amount" />
+					        	</listhead>
+					        	<template name="model" var="invoicePayment">
+					        	<listitem>
+					        		<listcell label="@bind(invoicePayment.paymentDate) @converter('formatedDate', format='dd/MM/yyyy')"></listcell>
+					        		<listcell label="@bind(invoicePayment.afyaId)"></listcell>
+					        		<listcell label="@bind(invoicePayment.civilId)"></listcell>
+					        		<listcell label="@bind(invoicePayment.patientName)"></listcell>
+					        		<listcell label="@bind(invoicePayment.specialityName)"></listcell>
+					        		<listcell label="@bind(invoicePayment.doctorName)"></listcell>
+					        		<listcell label="@bind(invoicePayment.referralName)"></listcell>
+					        		<listcell>
+					        			<div align="right">
+					        			<label value="@bind(invoicePayment.paidAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listcell>
+					        		<listcell>
+					        			<div align="right">
+					        			<label value="@bind(invoicePayment.insuranceAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listcell>
+					        		<listcell>
+					        			<div align="right">
+					        			<label value="@bind(invoicePayment.corporateAmount) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listcell>
+					        	</listitem>
+					        	</template>
+					        	<listfoot>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter></listfooter>
+					        		<listfooter>
+					        			<div align="right">
+					        			<label value="@bind(vm.totalPaidAmountRef) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listfooter>
+					        		<listfooter>
+					        			<div align="right">
+					        			<label value="@bind(vm.totalInsuranceAmountRef) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listfooter>
+					        		<listfooter>
+					        			<div align="right">
+					        			<label value="@bind(vm.totalCorporateAmountRef) @converter('com.nzion.zkoss.composer.appointment.InvoiceCollectionConverter')"/>
+					        			</div>
+					        		</listfooter>
+					        	</listfoot>
+                            </listbox>
+                        </detail>
+                        <label value="@bind(refGroup.key)" />
+                    </row>
+                    </template>
+                </rows>
+            </grid>
+        
+        
+      </panelchildren>
+    </panel>
+    
+     <zscript>
+     	com.nzion.zkoss.ext.DataExporter exporter = new com.nzion.zkoss.ext.CsvDataExporter();
+        void exportData(){
+	        Set keySet=new LinkedHashSet();
+	        keySet.add("paymentDate");
+	        keySet.add("afyaId");
+	        keySet.add("civilId");
+		    keySet.add("fileNo");
+	        keySet.add("patientName");
+	        keySet.add("specialityName");
+	        keySet.add("doctorName");
+	        keySet.add("referralName");
+	        keySet.add("paidAmount");
+	        keySet.add("insuranceAmount");
+	        keySet.add("corporateAmount");
+	        
+	        StringBuilder builder = new StringBuilder();
+	        builder.append("Income Report");
+	        if(com.nzion.util.UtilValidator.isNotEmpty(vm.paymentList))
+	        	exporter.exportWithHeader(builder,vm.paymentList,null,
+	        		new String[]{"Date", "Afya ID", "Civil ID","File Number", "Patient Name","Specialty", "Doctor Name","Referral Name", "Paid Amount", "Insurance Amount", "Corporate Amount"},
+	        		"incomeReport.xlsx","INCOME REPORT",keySet);
+        }
+    </zscript>
+    
+    </window>
+</zk>

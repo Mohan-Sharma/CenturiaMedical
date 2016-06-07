@@ -1,0 +1,67 @@
+<?init class="org.zkoss.zkplus.databind.AnnotateDataBinderInit" root="./productUomDiv"?>
+<?taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c"?>
+<zk xmlns:h="http://www.w3.org/1999/xhtml"
+	xmlns:a="http://www.zkoss.org/2005/zk/annotation"
+	xmlns:n="http://www.zkoss.org/2005/zk/native">
+	 <div class="container-fluid" id="productUomDiv" align="left">
+		       <div zclass="row-fluid">
+                 <div zclass="span5">
+			<label value="Base Purchase UOM"/>
+			<combobox model="@{productController.uomList}" selectedItem="@{productController.product.productDetails.basePurchaseUom}">
+				<comboitem self="@{each='basePurchase'}" label="@{basePurchase}" value="@{basePurchase}"/> 
+			</combobox>
+		</div>
+		
+		   <div zclass="span5">
+			<label value="Base Retail UOM"/>
+			<combobox model="@{productController.uomList}" selectedItem="@{productController.product.productDetails.baseSaleUom}">
+				<comboitem self="@{each='baseSaleUom'}" label="@{baseSaleUom}" value="@{baseSaleUom}"/> 
+			</combobox>
+		</div>
+		</div>
+		<separator></separator>
+		  <div zclass="row-fluid">
+                 <div zclass="span5">
+		    <n:table>
+				  <n:tr><n:td>						
+					<label value="Select Purchase UOM" />				
+					 </n:td>
+					<n:td>
+						<div style="overflow:auto; -moz-box-shadow: 0 2px 6px 0 rgba(147, 147, 202, 0.4) inset;border:1px solid #86A4BE" height="150px"  width="200px" >
+						<listbox  model="@{productController.uomList}" multiple="true" checkmark="true" 
+							selectedItem="@{productController.product.productDetails.purchaseUom, converter=com.nzion.view.component.MultipleListitemBindingConverter}"> 
+						<listhead>
+						<listheader label="Uom"/>
+						</listhead>
+						<listitem self="@{each='purchaseUom'}" label="@{purchaseUom}" value="@{purchaseUom}">
+						</listitem>
+						</listbox>
+						</div>
+					</n:td>
+					</n:tr>
+			</n:table>			
+		</div>
+		
+		   <div zclass="span5">
+		    <n:table>
+				  <n:tr><n:td>						
+					<label value="Select Retail UOM" />				
+					 </n:td>
+					<n:td>
+						<div style="overflow:auto; -moz-box-shadow: 0 2px 6px 0 rgba(147, 147, 202, 0.4) inset;border:1px solid #86A4BE" height="150px"  width="200px" >
+						<listbox  model="@{productController.uomList}" multiple="true" checkmark="true" 
+							selectedItem="@{productController.product.productDetails.saleUom, converter=com.nzion.view.component.MultipleListitemBindingConverter}"> 
+						<listhead>
+						<listheader label="Uom"/>
+						</listhead>
+						<listitem self="@{each='saleUom'}" label="@{saleUom}" value="@{saleUom}">
+						</listitem>
+						</listbox>
+						</div>
+					</n:td>
+					</n:tr>
+			</n:table>			
+		</div>
+		</div>
+	</div>
+</zk>
