@@ -216,7 +216,7 @@
      <n:div id="footer">
 		<div class="content">
 			<n:p>
-                owered by NthDimenzion -
+                Powered by NthDimenzion -
                 <n:a href="http://www.nthdimenzion.com" target="_New" accesskey="C"  style="color:#333;font-weight:bold;">www.nthdimenzion.com/</n:a>
 				<label id="versionNo" style="margin-left: 50px; font-weight: bold;"> </label>
 			</n:p>
