@@ -5,7 +5,7 @@
     <zscript>
         Component patientAccountNumber = arg.get("patientAccountNumber");
     </zscript>
-    <div zclass="form-search">
+    <!--<div zclass="form-search">
         <div zclass="input-append">
             <a zclass="lookupbtn" >
                 <n:i class="icon-search"></n:i>
@@ -15,5 +15,5 @@
                 Patient Lookup in Afya
             </a>
         </div>
-    </div>
+    </div>-->
 </zk>
