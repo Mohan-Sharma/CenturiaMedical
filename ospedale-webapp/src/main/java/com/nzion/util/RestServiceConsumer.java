@@ -523,12 +523,17 @@ public class RestServiceConsumer {
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
         System.out.println("\n\n\ntenant = "+tenantId+"\n\n\n");
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getClinicDetailsByClinicId?clinicId={tenantId}", HttpMethod.GET, requestEntity, String.class, tenantId);
-        String json = responseEntity.getBody();
-        Map<String, Object> result = new HashMap<>();
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        result = (Map<String, Object>) gson.fromJson(json, result.getClass());
-        return result;
+        if (PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getClinicDetailsByClinicId?clinicId={tenantId}", HttpMethod.GET, requestEntity, String.class, tenantId);
+            String json = responseEntity.getBody();
+            Map<String, Object> result = new HashMap<>();
+            Gson gson = new GsonBuilder().serializeNulls().create();
+            result = (Map<String, Object>) gson.fromJson(json, result.getClass());
+            return result;
+        } else {
+            Map<String, Object> map = Collections.EMPTY_MAP;
+            return map;
+        }
     }
 
     public static Map<String, Object> getCorporateMasterByCorporateId(String corporateId) {
@@ -706,7 +711,7 @@ public class RestServiceConsumer {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL+"/anon/getNationalityByNationalityCode?nationalityCode={nationalityCode}", HttpMethod.GET, requestEntity, String.class, nationalityCode);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getNationalityByNationalityCode?nationalityCode={nationalityCode}", HttpMethod.GET, requestEntity, String.class, nationalityCode);
         String json = responseEntity.getBody();
         Map<String, Object> result = new HashMap<>();
         Gson gson = new GsonBuilder().serializeNulls().create();
@@ -741,12 +746,17 @@ public class RestServiceConsumer {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getPatientConsentForAfyaId?afyaId={afyaId}", HttpMethod.GET, requestEntity, String.class, afyaId);
-        String json = responseEntity.getBody();
-        List<Map<String, Object>> result = new ArrayList<>();
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        result = (List<Map<String, Object>>) gson.fromJson(json, result.getClass());
-        return result;
+        if (PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getPatientConsentForAfyaId?afyaId={afyaId}", HttpMethod.GET, requestEntity, String.class, afyaId);
+            String json = responseEntity.getBody();
+            List<Map<String, Object>> result = new ArrayList<>();
+            Gson gson = new GsonBuilder().serializeNulls().create();
+            result = (List<Map<String, Object>>) gson.fromJson(json, result.getClass());
+            return result;
+        } else {
+            List<Map<String, Object>> mapList = Collections.EMPTY_LIST;
+            return mapList;
+        }
     }
 
     public static Map<String, Object> getSMSSenderNameForGivenTenant(String tenantId) {

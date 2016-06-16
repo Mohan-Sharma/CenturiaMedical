@@ -97,7 +97,7 @@ public class PatientNewComposer extends OspedaleAutowirableComposer {
                 Long id = Long.parseLong(s);
                 id = id+1;
                 String str2 = "update entity_sequence set sequence_cur_value= " + id + " where sequence_name='patient_sequence'";
-                afyaId = "KWT"+id;
+                afyaId = "CMM "+id;
                 statement.executeUpdate(str2);
 
                 String str3 = "insert into patient(afya_id, account_number, first_name, last_name, mobile_number)values('"+afyaId+"',null,'"+patientVO.getPatient().getFirstName()+"','"+patientVO.getPatient().getLastName()+"','"+patientVO.getPatient().getContacts().getMobileNumber()+"')";
@@ -238,7 +238,54 @@ public class PatientNewComposer extends OspedaleAutowirableComposer {
         	
             Practice practice = commonCrudService.getAll(Practice.class) != null ? commonCrudService.getAll(Practice.class).get(0) : null;
             patientVO.getPatient().setRegisteredFrom("CLINIC_MANUAL_ENTRY");    // Kannan 2015-12-28
-            String afyaId = RestServiceConsumer.checkIfPatientExistInPortalAndCreateIfNotExist(patientVO.getPatient(), practice != null ? practice.getTenantId() : null);
+            String afyaId = "";
+            if (PORTAL_AUTHENTICATION.equals("true")) {
+                afyaId = RestServiceConsumer.checkIfPatientExistInPortalAndCreateIfNotExist(patientVO.getPatient(), practice != null ? practice.getTenantId() : null);
+            } else if (PORTAL_AUTHENTICATION.equals("false")){
+                Connection connection = null;
+                try {
+
+                    DataSource dataSource = (DataSource)Infrastructure.getSpringBean("tenantDataSource");
+                    connection = dataSource.getConnection();
+                    Statement statement = connection.createStatement();
+
+
+
+
+                /*long afyaSeqId = this.getNextAfyaId();
+                String afyaId = "KWT" + afyaSeqId;
+                return afyaId;*/
+                    String str1 = "select sequence_cur_value from entity_sequence where sequence_name='patient_sequence'";
+                /*String str2 = "update entity_sequence set sequence_cur_value= " + id + " where sequence_name='patient_sequence'";*/
+                    String s = "";
+                    ResultSet resultSet = statement.executeQuery(str1);
+                    while (resultSet.next()) {
+                        s = resultSet.getString(1);
+                        System.out.println("**************************"+s);
+                /*resultSet.beforeFirst();
+                resultSet.last();
+                int size = resultSet.getRow();
+                System.out.println("**************************"+size);*/
+                    }
+                    Long id = Long.parseLong(s);
+                    id = id+1;
+                    String str2 = "update entity_sequence set sequence_cur_value= " + id + " where sequence_name='patient_sequence'";
+                    afyaId = "CMM "+id;
+                    statement.executeUpdate(str2);
+
+                    String str3 = "insert into patient(afya_id, account_number, first_name, last_name, mobile_number)values('"+afyaId+"',null,'"+patientVO.getPatient().getFirstName()+"','"+patientVO.getPatient().getLastName()+"','"+patientVO.getPatient().getContacts().getMobileNumber()+"')";
+                    int i = statement.executeUpdate(str3);
+
+                } catch (Exception e){
+                    e.printStackTrace();
+                } finally {
+                    if (connection != null){
+                        try {
+                            connection.close();
+                        }catch (Exception e){}
+                    }
+                }
+            }
             if (afyaId != null) {
                 patientVO.getPatient().setAfyaId(afyaId);
                 final List<Patient> oldPatientListByAfyaId = commonCrudRepository.findByEquality(Patient.class, new String[]{"afyaId"}, new Object[]{afyaId});

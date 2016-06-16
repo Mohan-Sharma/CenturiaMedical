@@ -104,7 +104,7 @@
 								<checkbox onCheck="visitTypeSoapModule.addOrRemoveSoapModule(self.isChecked(),self.getParent().getParent().getValue())"
 								onCreate='self.setChecked(visitTypeSoapModule.getModules().contains(self.getParent().getParent().getValue()));'/>
 								<label value="@{module.moduleName}">
-									<attribute name="onCreate">
+									<!--<attribute name="onCreate">
 										<![CDATA[
 										if((self.getValue().equals("HPI")) || (self.getValue().equals("Family Hx")) || (self.getValue().equals("Social Hx")) ||
 			(self.getValue().equals("Past Hx")) || (self.getValue().equals("MedicationHx") ||
@@ -113,7 +113,7 @@
 			self.getParent().setVisible(false);
 										}
 										]]>
-									</attribute>
+									</attribute>-->
 								</label>
 							</listcell>
 						</listitem>

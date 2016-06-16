@@ -130,10 +130,10 @@ public class PatientSoapNoteController extends OspedaleAutowirableComposer {
         modules = removeNullFromModules(modules);
         for (SoapModule sm : modules) {
             if (SoapComponents.SUBJECTIVE.equals(sm.getSoapComponentAuthorization().getComponents())) {
-                if(! ("HPI".equals(sm.getModuleName())) ){
+                //if(! ("HPI".equals(sm.getModuleName())) ){
                     subjectiveModules.add(sm);
                     SoapCompAuths.put(SoapComponents.SUBJECTIVE, sm.getSoapComponentAuthorization());
-                }
+               // }
             } else if (SoapComponents.OBJECTIVE.equals(sm.getSoapComponentAuthorization().getComponents())) {
                 objectiveModules.add(sm);
                 SoapCompAuths.put(SoapComponents.OBJECTIVE, sm.getSoapComponentAuthorization());

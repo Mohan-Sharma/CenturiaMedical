@@ -32,10 +32,11 @@
             List allStates = RestServiceConsumer.getAllStates();         
             List patientList = arg.get("patientList");
             Grid patientSearchDisplayGrid = arg.get("patientSearchDisplayGrid");
-            List allNationality = RestServiceConsumer.getAllNationality();
+            //List allNationality = RestServiceConsumer.getAllNationality();
             List tariffCategorys = patientService.getTariffCategoryByPatientCategory("CASH PAYING");
             Practice practice = commonCrudService.getAll(Practice.class) != null ? commonCrudService.getAll(Practice.class).get(0) : null;
-			boolean isJoinINPack = PortalRestServiceConsumer.checkIfTenantIsSubscribedToJoinInPackage(practice.getTenantId());
+			//boolean isJoinINPack = PortalRestServiceConsumer.checkIfTenantIsSubscribedToJoinInPackage(practice.getTenantId());
+			boolean isJoinINPack = false;
 
 			List enumList = commonCrudService.findByEquality(Enumeration.class, new String[]{"enumType"}, new Object[]{"LANGUAGE"});
 
@@ -258,7 +259,7 @@
                         });
                     }
                 </script>
-                <div zclass="span4" style="margin-top: 20px;">
+                <div zclass="span4" style="margin-top: 20px;" visible="false">
                     <patientlookupfromportal id="patientAccountNumber" patientAccountNumber="${self}">
                         <attribute name="onDetailsPopulate">
                             <![CDATA[
@@ -367,7 +368,7 @@
                               w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
                         <attribute name="onCreate">
                             if(patientComposer.getPatientVO().getPatient().nationality == null){
-                            self.setValue("Kuwaiti");
+                            self.setValue("Filipino");
                             }
                         </attribute>
                         <comboitem forEach="${allNationality}" value="${each.nationality}" label="${each.nationality}"></comboitem>
@@ -584,11 +585,11 @@
                              maxlength="50" onChange="com.nzion.util.UtilDisplay.validateNonDigits(self)" />-->
                     <combobox sclass="span12" id="city" selectedItem="@{vo.patient.contacts.postalAddress.city,save-when='save.onClick', load-after='civilId.onBlur, civilId.onScanReload, afyaIdTxt.onBlur, patientAccountNumber.onDetailsPopulate'}"
                               w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
-                        <attribute name="onBlur">
+                        <!--<attribute name="onBlur">
                             <![CDATA[
                             populateStateCountry(self.getValue());
                             ]]>
-                        </attribute>
+                        </attribute>-->
                         <comboitem forEach="${allCities}" value="${each.city}" label="${each.city}"></comboitem>
                     </combobox>
                 </div>
@@ -599,11 +600,18 @@
                 </div>
             </div>
             <div zclass="row-fluid">
-                <div zclass="span2" >
+                <!--<div zclass="span2" >
                     <label value="Governorate" style="text-align:right" id="lblstate" class="z-label-bold"/>
-                    <!--<enumeration id="state" enumType="STATE" itemRenderer="${stateRenderer}" sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"
-                                 value="@{vo.patient.contacts.postalAddress.stateProvinceGeo,save-when='save.onClick'}" style="width:200px;"/>-->
+                    &lt;!&ndash;<enumeration id="state" enumType="STATE" itemRenderer="${stateRenderer}" sclass="span12" w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}"
+                                 value="@{vo.patient.contacts.postalAddress.stateProvinceGeo,save-when='save.onClick'}" style="width:200px;"/>&ndash;&gt;
                     <textbox  value="@{vo.patient.contacts.postalAddress.stateProvinceGeo,save-when='save.onClick', load-after='civilId.onBlur, civilId.onScanReload, afyaIdTxt.onBlur, patientAccountNumber.onDetailsPopulate'}" id="state" sclass="span12" readonly="true"/>
+                </div>-->
+                <div zclass="span2">
+                    <label value="Governorate" style="text-align:right" id="lblstate"/>
+                    <combobox sclass="span12" id="state" selectedItem="@{vo.patient.contacts.postalAddress.stateProvinceGeo,save-when='save.onClick', load-after='civilId.onBlur, civilId.onScanReload, afyaIdTxt.onBlur, patientAccountNumber.onDetailsPopulate'}"
+                              w:showError_="function(mesg){displayError(this,mesg);}" w:clearErrorMessage="function(revalidate, remainError){clearErrorMessage(remainError,this);}">
+                        <comboitem forEach="${allStates}" value="${each.state}" label="${each.state}"></comboitem>
+                    </combobox>
                 </div>
                 <div zclass="span2" >
                     <label value="Country" style="text-align:right" id="lblCountryCode" class="z-label-bold"/>
