@@ -55,7 +55,7 @@
 						<label value="@{patient.civilId}" />
 					</div>
 					<div style="margin-top: 10px;">
-						<label value="Afya Id: " />
+						<label value="CMM Id: " />
 						<label value="@{patient.afyaId}" />
 					</div>
 					<!--<div zclass="span12" visible="${schedule ne null}">

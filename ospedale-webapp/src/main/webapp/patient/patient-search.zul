@@ -22,7 +22,7 @@
                     <textbox id="civilId" value="@{patient.civilId}" width="90%" onOK='Events.postEvent("onClick",search,null)'/>
                 </div>
                 <div zclass="span1-2" style="margin-left: 10px;" width="10%">
-                    <label width="60%" class="z-label-bold">Afya ID</label>
+                    <label width="60%" class="z-label-bold">CMM ID</label>
                     <textbox id="afyaId" value="@{patient.afyaId}" width="90%" onOK='Events.postEvent("onClick",search,null)'/>
                 </div>
                 <div zclass="span1-2" style="margin-left: 10px;" width="10%">
@@ -86,7 +86,7 @@
                 <column width="15%"></column>
                 <column width="25%"><label value="Patient Name/Address/Mobile phone" style="font-weight:bold;font-size:14px"/></column>
                 <column width="30%"><label value="Gender/Date of Birth/Age/Patient Type" style="font-weight:bold;font-size:14px"/></column>
-                <column><label value="Afya ID" style="font-weight:bold;font-size:14px"/></column>
+                <column><label value="CMM ID" style="font-weight:bold;font-size:14px"/></column>
                 <column><label value="Civil ID" style="font-weight:bold;font-size:14px"/></column>
                 <column><label value="View" style="font-weight:bold;font-size:14px"/></column>
             </columns>

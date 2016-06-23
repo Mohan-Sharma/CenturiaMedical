@@ -180,7 +180,7 @@
                                                     </h:td>
                                                 </h:tr>
                                                 <h:tr>
-                                                    <h:td class="label">Afya ID:</h:td>
+                                                    <h:td class="label">CMM ID:</h:td>
                                                     <h:td>
                                                         <label value="${patient.afyaId}"></label>
                                                     </h:td>

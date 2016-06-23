@@ -118,7 +118,7 @@
                              sclass="whiteBackground" itemRenderer="${signinController}" width="100%" id="schedulesOfTheDayListBox" mold="paging" pageSize="20">
                         <listhead>
                             <listheader label="Appt No." style="font-weight:bold" sort="auto(id)"/>
-                            <listheader label="Afya Id" style="font-weight:bold" sort="auto(patient.afyaId)"/>
+                            <listheader label="CMM Id" style="font-weight:bold" sort="auto(patient.afyaId)"/>
                             <listheader label="Civil Id" style="font-weight:bold" sort="auto(patient.civilId)"/>
                             <listheader label="Patient Name" style="font-weight:bold" sort="auto(patient.firstName)"/>
                             <listheader label="Mobile No" style="font-weight:bold"/>

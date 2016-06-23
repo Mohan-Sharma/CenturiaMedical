@@ -52,7 +52,7 @@
 			</div>
 		</div>
 		<div zclass="row-fluid">
-			<div sclass="panelCont" >
+			<div sclass="panelCont" visible="false">
 			    <label value="Smart Service"/>
 			    <checkbox checked="@{visitTypeSoapModule.smartService,save-when='Save.onClick'}">
 			    	<attribute name="onClick">
@@ -61,7 +61,7 @@
 			    </checkbox>
 			</div>
 
-	   <div sclass="panelCont">
+	   <div sclass="panelCont" visible="false">
 		        <label value="Smart Service Display in Portal"/>
 		        <checkbox checked="@{visitTypeSoapModule.smartServiceDisplayInPortal,save-when='Save.onClick'}">
 		            <attribute name="onClick">

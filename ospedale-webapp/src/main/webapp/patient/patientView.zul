@@ -291,7 +291,7 @@
                                         <datebox sclass="span12" value="@{viewComposer.patient.expiryDate,save-when='updatePatient.onClick',load-after='civilId.onChange'}" id="expiryDate"/>
                                     </div>
                                     <div zclass="span2">
-                                        <label value="Afya ID" id="lblAfyaId"/>
+                                        <label value="CMM ID" id="lblAfyaId"/>
                                         <textbox value="@{viewComposer.patient.afyaId,save-when='updatePatient.onClick', load-after='updatePatient.onClick'}"
                                                  id="afyaId" readonly="true" maxlength="50" sclass="span12"/>
                                     </div>
