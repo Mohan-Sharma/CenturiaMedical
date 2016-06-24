@@ -153,7 +153,7 @@ public class CurrencyConverter {
 		try {
 			BigDecimal decimalNumber = new BigDecimal(number).setScale(3, BigDecimal.ROUND_HALF_UP);
 			if (decimalNumber.compareTo(BigDecimal.ZERO) < 1) {
-				answer = "Zero KD";
+				answer = "Zero PHP";
 				return answer;
 			}
 		} catch (Exception e) {
@@ -164,11 +164,11 @@ public class CurrencyConverter {
 			int right = Integer.parseInt( number.substring( (delimiterPos + 1), (delimiterPos + 1) + (precision) ) );
 			System.out.println(right);
 			if (StringUtils.isNotEmpty(convertNumber(right)))
-				answer = convertNumber(left) + " KD and " + convertNumber(right) + " Fils.";
+				answer = convertNumber(left) + " PHP and " + convertNumber(right) + " Fils.";
 			else
-				answer = convertNumber(left) + " KD.";
+				answer = convertNumber(left) + " PHP.";
 		} else {
-			answer = convertNumber(Integer.parseInt(number)) + " KD.";
+			answer = convertNumber(Integer.parseInt(number)) + " PHP.";
 		}
 		return Character.toUpperCase(answer.charAt(0)) + answer.substring(1);
 	}

@@ -411,7 +411,7 @@
                         <listcell>
                             <div style="margin-top:6px;" align="right">
                                 <label value="@{invoiceItem.factor}"/>
-                                <label value="KD"></label>
+                                <label value="PHP"></label>
                             </div>
                         </listcell>
                         <listcell>
@@ -444,7 +444,7 @@
                               		
                               		]]></attribute>
                                 </decimalbox>
-                                <label value="KD"></label>
+                                <label value="PHP"></label>
                             </div>
                         </listcell>
                         <listcell >
@@ -527,24 +527,24 @@
                                 <div style="margin-top:6px;" align="right">
                                     <label value="@{invoiceItem.priceValue,load-after='saveBtn.onClick'}"/>
                                     <!--<label value="@{invoiceItem.factorDescription}"></label>-->
-                                    <label value="KD"></label>
+                                    <label value="PHP"></label>
                                 </div>
                             </div>
                         </listcell>
                         <listcell>
                             <div style="margin-top:6px;" align="right">
                                 <label value="@{invoiceItem.copayAmountOrPercent}"/> <label value="@{invoiceItem.maxAmountDif}"/>
-                                <label  value="KD"></label>
+                                <label  value="PHP"></label>
                             </div>
                         </listcell>
                         <listcell>
                             <div style="margin-top:6px;" align="right">
-                                <label value="@{invoiceItem.insuranceAmount}"/> <label  value="KD"></label>
+                                <label value="@{invoiceItem.insuranceAmount}"/> <label  value="PHP"></label>
                             </div>
                         </listcell>
                         <listcell>
                             <div style="margin-top:6px;" align="right">
-                                <label value="@{invoiceItem.deductableAmountOrPercent}"/> <label  value="KD"></label>
+                                <label value="@{invoiceItem.deductableAmountOrPercent}"/> <label  value="PHP"></label>
                             </div>
                         </listcell>
                         <listcell>
@@ -632,7 +632,7 @@
                         <listfooter></listfooter>
                         <listfooter>
                             <div align="right">
-                                <label style="font-weight:bold;" value="@{billingController.totalGrossAmount}"/> <label style="font-weight:bold;" value="KD"/>
+                                <label style="font-weight:bold;" value="@{billingController.totalGrossAmount}"/> <label style="font-weight:bold;" value="PHP"/>
                             </div>
                         </listfooter>
                         <listfooter></listfooter>
@@ -642,7 +642,7 @@
                                        tooltiptext="@{billingController.invoice,converter='com.nzion.view.component.BillingAmountConverter'}"
                                        value="@{billingController.totalNetAmount,load-after='self.onReload'}"
                                        style="font-weight:bold"/>
-                                <label style="font-weight:bold" value="KD"></label>
+                                <label style="font-weight:bold" value="PHP"></label>
                             </div>
                         </listfooter>
 
@@ -650,21 +650,21 @@
                             <div align="right">
                                 <label style="font-weight:bold;" value="@{billingController.totalCopayPatient}"/>
                                 <label value="@{billingController.totalMaxCopayAmountStr}" style="font-weight:bold"/>
-                                <label style="font-weight:bold" value="KD"></label>
+                                <label style="font-weight:bold" value="PHP"></label>
                             </div>
                         </listfooter>
 
                         <listfooter>
                             <div align="right">
                                 <label style="font-weight:bold;" value="@{billingController.totalCopayInsurance}"/>
-                                <label style="font-weight:bold" value="KD"></label>
+                                <label style="font-weight:bold" value="PHP"></label>
                             </div>
                         </listfooter>
 
                         <listfooter>
                             <div align="right">
                                 <label style="font-weight:bold;" value="@{billingController.totalDeductable}"/>
-                                <label style="font-weight:bold" value="KD"></label>
+                                <label style="font-weight:bold" value="PHP"></label>
                             </div>
                         </listfooter>
 
@@ -681,7 +681,7 @@
                                        tooltiptext="@{billingController.invoice,converter='com.nzion.view.component.BillingAmountConverter'}"
                                        value="@{billingController.coPayment,load-after='self.onReload'}"
                                        style="font-weight:bold"/>
-                                <label value="KD" style="font-weight:bold"/>
+                                <label value="PHP" style="font-weight:bold"/>
                             </n:td>
                             <n:td>
                                 <label value="@{insuranceOrCorporate}" style="font-weight:bold"/>
@@ -689,7 +689,7 @@
                                        tooltiptext="@{billingController.invoice,converter='com.nzion.view.component.BillingAmountConverter'}"
                                        value="@{billingController.insurancePayment,load-after='self.onReload'}"
                                        style="font-weight:bold"/>
-                                <label value="KD" style="font-weight:bold"/>
+                                <label value="PHP" style="font-weight:bold"/>
                             </n:td>
                         </n:tr>
                     </n:table>
@@ -936,7 +936,7 @@
                             <div width="120px" align="right">
                                 <label value="Advance Amount" />
                             </div>
-                            <label value="@{billingController.advanceAmount}"/> <label value="KD"/>
+                            <label value="@{billingController.advanceAmount}"/> <label value="PHP"/>
                         </div>
 
 
@@ -957,14 +957,14 @@
                                     </attribute>
                                 </label>
                                 <!--<label value="@{billingController.invoice.totalAmount.currency.code}"/>-->
-                                <label value="KD"/>
+                                <label value="PHP"/>
                             </div>
                             <div style="margin-top:15px;" if="${billingController.isWriteOff()}">
                                 (<label value="Discounted Amount" style="font-weight:bold;"/>
                                 <label value="@{billingController.writeOffAmount}"
                                        style="font-weight:bold;color:red"/>
                                 <!--<label value="@{billingController.invoice.totalAmount.currency.code}"/>-->
-                                <label value="KD"/>)
+                                <label value="PHP"/>)
                             </div>
                             <div>
                                 <button id="addButton" label="Add"

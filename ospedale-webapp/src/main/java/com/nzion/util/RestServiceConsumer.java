@@ -127,13 +127,17 @@ public class RestServiceConsumer {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<String>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL+"/anon/getAllPharmacies", HttpMethod.GET, requestEntity, String.class);
-        String json = responseEntity.getBody();
-        Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
-        Type typeOfPharmacyDto = new TypeToken<List<PharmacyDto>>() {
-        }.getType();
-        List<PharmacyDto> pharmacyDtos = gson.fromJson(json, typeOfPharmacyDto);
-        return pharmacyDtos;
+        if(PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getAllPharmacies", HttpMethod.GET, requestEntity, String.class);
+            String json = responseEntity.getBody();
+            Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
+            Type typeOfPharmacyDto = new TypeToken<List<PharmacyDto>>() {
+            }.getType();
+            List<PharmacyDto> pharmacyDtos = gson.fromJson(json, typeOfPharmacyDto);
+            return pharmacyDtos;
+        }else {
+            return Collections.EMPTY_LIST;
+        }
     }
 
     public static CivilUserDto fetchUserByCivilId(String civilId) {
@@ -151,13 +155,17 @@ public class RestServiceConsumer {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<String>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL+"/anon/getAllLaboratories", HttpMethod.GET, requestEntity, String.class);
-        String json = responseEntity.getBody();
-        Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
-        Type typeOfPharmacyDto = new TypeToken<List<LabDto>>() {
-        }.getType();
-        List<LabDto> labDtos = gson.fromJson(json, typeOfPharmacyDto);
-        return labDtos;
+        if(PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getAllLaboratories", HttpMethod.GET, requestEntity, String.class);
+            String json = responseEntity.getBody();
+            Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd").create();
+            Type typeOfPharmacyDto = new TypeToken<List<LabDto>>() {
+            }.getType();
+            List<LabDto> labDtos = gson.fromJson(json, typeOfPharmacyDto);
+            return labDtos;
+        } else {
+            return Collections.EMPTY_LIST;
+        }
     }
 
     public static List<InsuranceCompanyDto> getAllInsuranceCompany() {
@@ -285,13 +293,17 @@ public class RestServiceConsumer {
             RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
             HttpHeaders httpHeaders = getHttpHeader();
             HttpEntity<String> requestEntity = new HttpEntity<String>(httpHeaders);
-            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL+"/anon/insuranceMaster/getHISModules", HttpMethod.GET, requestEntity, String.class);
-            String json = responseEntity.getBody();
+            if(PORTAL_AUTHENTICATION.equals("true")) {
+                ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/insuranceMaster/getHISModules", HttpMethod.GET, requestEntity, String.class);
+                String json = responseEntity.getBody();
 
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-            mapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
-            hisModuleDtos = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, HisModuleDto.class));
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+                mapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+                hisModuleDtos = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, HisModuleDto.class));
+            } else {
+                hisModuleDtos = Collections.EMPTY_LIST;
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -763,10 +775,14 @@ public class RestServiceConsumer {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getSMSSenderNameForGivenTenant?tenantId={tenantId}", HttpMethod.GET, requestEntity, String.class, tenantId);
-        String json = responseEntity.getBody();
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        return (Map<String, Object>) gson.fromJson(json, Map.class);
+        if (PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getSMSSenderNameForGivenTenant?tenantId={tenantId}", HttpMethod.GET, requestEntity, String.class, tenantId);
+            String json = responseEntity.getBody();
+            Gson gson = new GsonBuilder().serializeNulls().create();
+            return (Map<String, Object>) gson.fromJson(json, Map.class);
+        } else {
+            return Collections.EMPTY_MAP;
+        }
     }
 
     public static boolean checkIfSmsAvailableForTenant(String tenantId) {

@@ -219,14 +219,14 @@
                                                                                 </attribute>
                                                                             </a>
                                                                         </n:li>
-                                                                        <!--<n:li>
+                                                                        <n:li>
                                                                             <a label="List Of Referral Contract"  disabled="${!rvo.admin}"  visible="${!isJoinINPack}">
                                                                                 <attribute name="onClick">
                                                                                     setTitleAndActivateMenu("Referral Contract List","Search", people);
                                                                                     appendContent("referralContactList");
                                                                                 </attribute>
                                                                             </a>
-                                                                        </n:li>-->
+                                                                        </n:li>
                                                                     </n:ul>
                                                                 </n:li>
                                                                 <n:li class="bottomLine">
@@ -348,14 +348,14 @@
                                                                                 </attribute>
                                                                             </a>
                                                                         </n:li>
-                                                                        <!-- <n:li>
+                                                                         <n:li>
                                                                             <a  label="Organ Systems" >
                                                                                 <attribute name="onClick">
                                                                                     setTitleAndActivateMenu("Master List","Organ Systems", masterList);
                                                                                     appendContent("organSystem");
                                                                                 </attribute>
                                                                             </a>
-                                                                        </n:li> -->
+                                                                        </n:li>
                                                                         <n:li>
                                                                             <a  label="Speciality" >
                                                                                 <attribute name="onClick">
@@ -396,22 +396,22 @@
                                                                                 </attribute>
                                                                             </a>
                                                                         </n:li>
-                                                                        <!-- <n:li>
+                                                                         <n:li>
                                                                             <a  label="Unit of Measurement" >
                                                                                 <attribute name="onClick">
                                                                                     setTitleAndActivateMenu("Master List","Unit of Measurement", masterList);
                                                                                     appendContent("uom");
                                                                                 </attribute>
                                                                             </a>
-                                                                        </n:li> -->
-                                                                        <!--<n:li>
+                                                                        </n:li>
+                                                                        <n:li>
                                                                             <a  label="Vaccine" >
                                                                                 <attribute name="onClick">
                                                                                     setTitleAndActivateMenu("Master List","Vaccine", masterList);
                                                                                     appendContent("immunization");
                                                                                 </attribute>
                                                                             </a>
-                                                                        </n:li>-->
+                                                                        </n:li>
                                                                         <n:li>
                                                                             <a  label="Visit Type and Encounter Module Configuration" >
                                                                                 <attribute name="onClick">
@@ -432,7 +432,6 @@
                                                                     </n:ul>
                                                                 </n:li>
                                                                 
-                                                                <!-- 
                                                                 <n:li class="sub">
                                                                     <n:h5></n:h5>
                                                                     <n:ul>
@@ -491,7 +490,6 @@
                                                                     </n:ul> 
                                                                 </n:li>
                                                                 
-                                                                 -->
 
                                                                  
                                                                 <n:li class="sub">
@@ -598,7 +596,7 @@
                                                                             </a>
                                                                         </n:li>
                                                                     </n:ul>
-                                                                    <!-- <n:h5>Invoice</n:h5>
+                                                                     <n:h5>Invoice</n:h5>
                                                                     <n:ul>
                                                                         <n:li>
                                                                             <a  label="Consultation">
@@ -624,7 +622,7 @@
                                                                                 </attribute>
                                                                             </a>
                                                                         </n:li>
-                                                                    </n:ul> -->
+                                                                    </n:ul>
 
                                                                 </n:li>
                                                                 
@@ -715,17 +713,17 @@
                                                                                 </attribute>
                                                                             </a>
                                                                         </n:li>
-                                                                        <!-- <n:li>
+                                                                         <n:li>
                                                                             <a  label="Schedule Statuses" >
                                                                                 <attribute name="onClick">
                                                                                     setTitleAndActivateMenu("Setup","Schedule Statuses", setup);
                                                                                     appendContent("genericScheduleConfig");
                                                                                 </attribute>
                                                                             </a>
-                                                                        </n:li> -->
+                                                                        </n:li>
                                                                     </n:ul>
                                                                 </n:li>
-                                                                <!-- <n:li class="sub" >
+                                                                 <n:li class="sub" >
                                                                     <n:h5>Encounter Setup</n:h5>
                                                                     <n:ul>
                                                                         <n:li>
@@ -753,7 +751,7 @@
                                                                             </a>
                                                                         </n:li>
                                                                     </n:ul>
-                                                                </n:li> -->
+                                                                </n:li>
                                                                 <n:li class="bottomLine">
                                                                     <n:p>
                                                                         Setup
@@ -783,7 +781,7 @@
                                                                         </n:li>
                                                                     </n:ul>
                                                                 </n:li>
-                                                                <!--<n:li class="sub" >
+                                                                <n:li class="sub" >
                                                                     <n:ul>
                                                                         <n:h5>Agreement/Policy</n:h5>
                                                                         <n:li>
@@ -794,16 +792,16 @@
                                                                                 </attribute>
                                                                             </a>
                                                                         </n:li>
-                                                                        &lt;!&ndash;<n:li>
+                                                                        <n:li>
                                                                             <a  label="User Agreement" >
                                                                                 <attribute name="onClick">
                                                                                     setTitleAndActivateMenu("Security","User Agreement", securityMainMenu);
                                                                                     appendContent("userAgreement");
                                                                                 </attribute>
                                                                             </a>
-                                                                        </n:li>&ndash;&gt;
+                                                                        </n:li>
                                                                     </n:ul>
-                                                                </n:li>-->
+                                                                </n:li>
                                                                 <n:li class="bottomLine">
                                                                     <n:p>
                                                                         Security
