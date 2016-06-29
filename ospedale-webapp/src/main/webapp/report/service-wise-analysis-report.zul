@@ -409,7 +409,7 @@
                 <listheader label="Service Type" width="100px" />
                 <listheader label="Service Name" width="180px" hflex="3" />
                 <listheader label="Civil Id" width="100px" />
-                <listheader label="Afya Id" width="100px" />
+                <listheader label="CMM Id" width="100px" />
                 <listheader label="File No." width="90px" />
                 <listheader label="Patient Name" width="120px"/>
                 <listheader label="Visit Date" width="100px"/>
@@ -514,7 +514,7 @@
                 <listheader label="Service Type" width="100px" />
                 <listheader label="Service Name" width="180px" hflex="3" />
                 <listheader label="Civil Id" width="100px"/>
-                <listheader label="Afya Id" width="100px" />
+                <listheader label="CMM Id" width="100px" />
                 <listheader label="File No." width="90px"/>
                 <listheader label="Patient Name" width="120px"/>
                 <listheader label="Visit Date" width="100px"/>
@@ -614,7 +614,7 @@
                 <listheader label="Service Type" width="100px" />
                 <listheader label="Service Name" width="180px" hflex="3" />
                 <listheader label="Civil Id" width="100px" />
-                <listheader label="Afya Id" width="100px" />
+                <listheader label="CMM Id" width="100px" />
                 <listheader label="File No." width="90px" />
                 <listheader label="Patient Name" width="120px" />
                 <listheader label="Visit Date" width="100px"/>
@@ -708,7 +708,7 @@
             header = new StringBuilder(content.substring(0, content.length() - 1));
             exporter.exportWithHeader(header,items,
             new String[]{"itemType.description","description","invoice.patient.civilId","invoice.patient.afyaId","invoice.patient.fileNo","invoice.patient",
-            "invoice.invoiceDate","invoice.consultant","invoiceStatusForReport","netPrice","referralClnicName"}, new String[]{"Service Type","Service Name","Civil Id","Afya Id",
+            "invoice.invoiceDate","invoice.consultant","invoiceStatusForReport","netPrice","referralClnicName"}, new String[]{"Service Type","Service Name","Civil Id","CMM Id",
             "File No.","Patient Name","Visit Date", "Doctor Name", "Service Status","Service Amount","Referred by"}, "ServiceWiseAnalysisReport.xlsx","SERVICE WISE ANALYSIS REPORT",null);
 
         }

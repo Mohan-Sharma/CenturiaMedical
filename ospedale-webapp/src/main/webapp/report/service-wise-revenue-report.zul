@@ -398,7 +398,7 @@
     			  <listheader label="Service Name" width="180px"  />
     			   <listheader label="Invoice Date" width="100px"/>
     			   <listheader label="Civil Id" width="100px" />
-                   <listheader label="Afya Id" width="70px" />
+                   <listheader label="CMM Id" width="70px" />
                    <listheader label="File No." width="90px" />
                    <listheader label="Name" width="100px"/>
                    <listheader label="Doctor Name" width="100px"/>
@@ -574,7 +574,7 @@
                                        		       <listheader label="Service Name" width="180px"  />
                                        		       <listheader label="Invoice Date" width="100px"  />
                                        		       <listheader label="Civil Id" width="100px" />
-                                       		       <listheader label="Afya Id"  width="70px" />
+                                       		       <listheader label="CMM Id"  width="70px" />
                                        		       <listheader label="File No." width="90px"  />
                                        		       <listheader label="Name" width="100px"  />
                                        		       <listheader label="Doctor Name" width="100px" />
@@ -720,7 +720,7 @@
                                         <listheader label="Service Name" width="180px"  />
                                         <listheader label="Invoice Date" width="100px" />
                                         <listheader label="Civil Id" width="100px" />
-                                        <listheader label="Afya Id" width="70px" />
+                                        <listheader label="CMM Id" width="70px" />
                                         <listheader label="File No." width="90px" />
                                         <listheader label="Name" width="100px" />
                                         <listheader label="Doctor Name" width="100px" />
@@ -867,7 +867,7 @@
                          exporter.exportWithHeader(header,items,
                          new String[]{"itemType.description","description","invoice.invoiceDate","invoice.patient.civilId","invoice.patient.afyaId","invoice.patient.fileNo",
                          "invoice.patient","invoice.consultant","invoice.invoiceNumber","invoice.invoiceStatus","price","concessionAmount","netPrice","insurancePayable","patientPayable","invoice.totalReferralAmountTobePaid","referralClnicName","netIncome"},
-                         new String[]{"Service Type","Service Name","Invoice Date", "Civil Id","Afya Id","File No.","Patient Name","Doctor Name",
+                         new String[]{"Service Type","Service Name","Invoice Date", "Civil Id","CMM Id","File No.","Patient Name","Doctor Name",
                         "Invoice No.","Invoice Status", "Gross Amount", "Concession Amount","Net Amount","Insurance Pay","Patient Payable","Referral Amount","Referred by","Net Income"}, "ServiceWiseRevenueReport.xlsx","SERVICE WISE REVENUE REPORT",null);
                     }
                     <!--java.math.BigDecimal sumOfGrossAmountBillItemsAmts(Set invs){

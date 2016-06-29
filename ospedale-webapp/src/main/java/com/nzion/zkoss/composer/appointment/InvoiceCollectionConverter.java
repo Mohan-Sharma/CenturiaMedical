@@ -17,7 +17,7 @@ public class InvoiceCollectionConverter implements Converter{
             	buffer.toString();
             }else{
             	buffer.append(val);
-            	buffer.append(" KD ");
+            	buffer.append(" PHP ");
             }
         }
         return buffer.toString();

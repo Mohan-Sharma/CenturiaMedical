@@ -479,7 +479,7 @@
                            <listheader label="Referred Doctor" width="110px" />
                            <listheader label="Doctor Name"
                                         onCreate='billingSearchController.setAscendingComparator(self,"consultant.firstName");billingSearchController.setDescendingComparator(self,"consultant.firstName")' />
-							<listheader label="Afya ID" />
+							<listheader label="CMM ID" />
 							<listheader label="Patient Name"/>
 							<listheader label="Civil ID" />
 							<listheader label="File No." />
@@ -624,7 +624,7 @@
                                             <listheader label="Invoice Status" />
                                             <listheader label="Invoice Number" />
                                             <listheader label="Invoice Date" />
-                                            <listheader label="Afya Id" />
+                                            <listheader label="CMM Id" />
                                             <listheader label="Service" />
                                             <listheader label="Insurance Payable"/>
                                             <listheader label="Patient Payable"/>
@@ -774,7 +774,7 @@
                                             <listheader label="Invoice Status" />
                                             <listheader label="Invoice Number" />
                                             <listheader label="Invoice Date" />
-                                            <listheader label="Afya Id" />
+                                            <listheader label="CMM Id" />
                                             <listheader label="Service" />
                                             <listheader label="Insurance Payable"/>
                                             <listheader label="Patient Payable"/>
@@ -1150,7 +1150,7 @@
 						header = new StringBuilder(content.substring(0, content.length() - 1));
 				exporter.exportWithHeader(header,items,
 										new String[]{"invoiceDate", "invoiceNumber","patient","patient.afyaId","patient.civilId","consultant",
-			 							"totalAmount.amount"}, new String[]{"Invoice Date","Invoice Number","Patient Name","Afya Id","Civil Id","Doctor Name",
+			 							"totalAmount.amount"}, new String[]{"Invoice Date","Invoice Number","Patient Name","CMM Id","Civil Id","Doctor Name",
             							"Total Amount"}, "encounters.xlsx","INVOICE REPORT",null);
 		   }
             java.math.BigDecimal sumOfInvoiceAmts(List invs){

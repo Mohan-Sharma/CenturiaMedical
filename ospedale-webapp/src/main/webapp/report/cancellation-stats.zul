@@ -391,7 +391,7 @@
                    <listheader label="Service Type"/>
     			   <listheader label="Service Name"/>
     			   <listheader label="Civil Id" />
-                   <listheader label="Afya Id"/>
+                   <listheader label="CMM Id"/>
                    <listheader label="FileNo."/>
                    <listheader label="Patient Name"/>
                    <listheader label="Doctor Name"/>
@@ -569,7 +569,7 @@
                                        		       <listheader label="Service Name"  />
                                        		       <listheader label="Invoice Date"  />
                                        		       <listheader label="Civil Id"  />
-                                       		       <listheader label="Afya Id"  />
+                                       		       <listheader label="CMM Id"  />
                                        		       <listheader label="FileNo."  />
                                        		       <listheader label="Name"  />
                                        		       <listheader label="Doctor Name"  />
@@ -691,7 +691,7 @@
                                         <listheader label="Service Name"  />
                                         <listheader label="Invoice Date"  />
                                         <listheader label="Civil Id"  />
-                                        <listheader label="Afya Id"  />
+                                        <listheader label="CMM Id"  />
                                         <listheader label="FileNo."  />
                                         <listheader label="Name"  />
                                         <listheader label="Doctor Name"  />
@@ -810,7 +810,7 @@
                          exporter.exportWithHeader(header,items,
                          new String[]{"invoice.invoiceDate","itemType.description","description","invoice.patient.civilId","invoice.patient.afyaId","invoice.patient.fileNo",
                          "invoice.patient","invoice.consultant","cancelReason","cancelAuthoriser"},
-                         new String[]{"Service Date","Service Type","Service Name", "Civil Id","Afya Id","File No.","Patient Name","Doctor Name",
+                         new String[]{"Service Date","Service Type","Service Name", "Civil Id","CMM Id","File No.","Patient Name","Doctor Name",
                         "Cancelled reason","Authorized By"}, "cancellationStatsReport.xlsx","CANCELLATION STATS REPORT",null);
                     }
                     <!--java.math.BigDecimal sumOfGrossAmountBillItemsAmts(Set invs){

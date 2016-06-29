@@ -171,7 +171,7 @@
                 <listhead>
                 	<listheader label="Invoice No"/>
                 	<listheader label="Invoice Date"/>
-                    <listheader label="Afya ID"/>
+                    <listheader label="CMM ID"/>
                     <listheader label="File Number"/>
                     <listheader label="Civil ID"/>
                     <listheader label="Doctor Name"/>
@@ -252,7 +252,7 @@
         	exporter.exportWithHeader(header,invoiceItemByConcession,
                     new String[]{"invoice.invoiceNumber","invoice.invoiceDate","invoice.patient.afyaId","invoice.patient.fileNo","invoice.patient.civilId","invoice.consultant",
         			"invoice.patient","description","price.amount","updatedBy","invoice.patient.patientType","invoice.schedule.status.description"},
-        			new String[]{"Invoice Number","Invoice Date","Afya ID","File Number",
+        			new String[]{"Invoice Number","Invoice Date","CMM ID","File Number",
                     "Civil ID","Doctor Name","Patient Name","Service Name", "Net Amount", "User Name","Patient Type","Appointment Status"},
                     "cancellation.xlsx","CANCELLATION REPORT",null);
                    

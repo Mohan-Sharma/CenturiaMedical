@@ -176,7 +176,7 @@
         <listbox  id="searchResultGrid" model="@{billingSearchController.invoiceItems,load-after='searchButton.onClick'}" mold="paging" paginal="${listboxPaging}" >
             <listhead>
                 <listheader label="City" width="180px"  />
-                <listheader label="Afya Id"  />
+                <listheader label="CMM Id"  />
                 <listheader label="Civil Id" width="110px" />
                 <listheader label="File No." width="110px" />
                 <listheader label="Patient Name" width="110px" />

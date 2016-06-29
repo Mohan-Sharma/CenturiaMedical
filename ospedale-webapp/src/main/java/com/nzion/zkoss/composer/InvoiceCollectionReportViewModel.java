@@ -191,19 +191,19 @@ public class InvoiceCollectionReportViewModel {
         //------patient advance deposit and refund amount end-----
 
  		StringBuffer buffer1 = new StringBuffer();
- 		buffer1.append("Total Collectable = " + totalPaidAmount + " KD ");
- 		buffer1.append("Payments from Patient Account = " + totalPatientAccount + " KD ");
- 		buffer1.append("Net Collection = " + totalPaidAmount.subtract(totalPatientAccount) + " KD ");
+ 		buffer1.append("Total Collectable = " + totalPaidAmount + " PHP ");
+ 		buffer1.append("Payments from Patient Account = " + totalPatientAccount + " PHP ");
+ 		buffer1.append("Net Collection = " + totalPaidAmount.subtract(totalPatientAccount) + " PHP ");
  		
  		StringBuffer buffer2 = new StringBuffer();
- 		//buffer2.append("Total Collection = " + totalPaidAmount.add(totalInsuranceAmount).add(totalCorporateAmount) + " KD ");
- 		buffer2.append("Cash Collected = " + totalCashCollection + " KD ");
- 		buffer2.append("Debit Card = " + totalDebitCardCollection + " KD ");
- 		buffer2.append("Credit Card = " + totalCreditCardCollection + " KD ");
- 		buffer2.append("Insurance Credit = " + totalInsuranceAmount + " KD ");
- 		buffer2.append("Corporate Credit = " + totalCorporateAmount + " KD ");
+ 		//buffer2.append("Total Collection = " + totalPaidAmount.add(totalInsuranceAmount).add(totalCorporateAmount) + " PHP ");
+ 		buffer2.append("Cash Collected = " + totalCashCollection + " PHP ");
+ 		buffer2.append("Debit Card = " + totalDebitCardCollection + " PHP ");
+ 		buffer2.append("Credit Card = " + totalCreditCardCollection + " PHP ");
+ 		buffer2.append("Insurance Credit = " + totalInsuranceAmount + " PHP ");
+ 		buffer2.append("Corporate Credit = " + totalCorporateAmount + " PHP ");
 
-        buffer2.append("Check Collected = " + totalCheckCollection + " KD ");
+        buffer2.append("Check Collected = " + totalCheckCollection + " PHP ");
  		
  		totalDescriptionFooter1 = buffer1.toString();
  		totalDescriptionFooter2 = buffer2.toString();

@@ -35,7 +35,7 @@
 		List invoiceItemByConcession = null;
 		BigDecimal totalInvoiceAmount = BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);
         BigDecimal totalConcessionAmount = BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP);
-        String totalAmountDisplayString = "0.000 KD";
+        String totalAmountDisplayString = "0.000 PHP";
         boolean admin = com.nzion.domain.Roles.hasRole(com.nzion.domain.Roles.ADMIN);
       //  boolean provider = com.nzion.domain.Roles.hasRole(com.nzion.domain.Roles.PROVIDER);
         List consultant = new ArrayList();
@@ -138,7 +138,7 @@
            					 }
                         totalConcessionAmount = totalConcessionAmount.add(concessionAmount);
                      }
-                     totalAmountDisplayString = "Total Invoice Amount= "+ totalInvoiceAmount.setScale(3, RoundingMode.HALF_UP) + " KD   Total Concession Amount= "+ totalConcessionAmount.setScale(3, RoundingMode.HALF_UP)+" KD";
+                     totalAmountDisplayString = "Total Invoice Amount= "+ totalInvoiceAmount.setScale(3, RoundingMode.HALF_UP) + " PHP   Total Concession Amount= "+ totalConcessionAmount.setScale(3, RoundingMode.HALF_UP)+" PHP";
                     	   	searchResults.setVisible(true);
 							searchResultsSplitter.setVisible(true);
 													
@@ -183,7 +183,7 @@
              </div>
             <listbox id="groupByForInvoiceItems" model="@{invoiceItemByConcession,load-after='searchButton.onClick'}">
                 <listhead>
-                    <listheader label="Afya ID"/>
+                    <listheader label="CMM ID"/>
                     <listheader label="Civil ID"/>
                     <listheader label="File No."/>
                     <listheader label="Doctor Name" />
@@ -270,7 +270,7 @@
         	exporter.exportWithHeader(header,invoiceItemByConcession,
                     new String[]{"invoice.patient.afyaId","invoice.patient.civilId","invoice.patient.fileNo","invoice.consultant","invoice.patient","invoice.invoiceNumber",
         			"price.amount","concessionAmount","concessionAuthoriser","concessionReason","updatedBy"}, 
-        			new String[]{"Afya Id","Civil Id","File No.","Doctor Name","Patient Name",
+        			new String[]{"CMM Id","Civil Id","File No.","Doctor Name","Patient Name",
                     "Invoice Number","Invoice Amount","Concession Amount", "Authorizer", "Concession Reason", "User"}, 
                     "concession.xlsx","CONCESSION ANALYSIS REPORT",null);
                    

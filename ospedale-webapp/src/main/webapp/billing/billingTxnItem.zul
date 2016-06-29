@@ -162,7 +162,7 @@
             <div zclass="span4">
                 <div zclass="form-horizontal">
                     <div zclass="container-fluid">
-                        <label zclass="control-label" value="Afya ID :"/>
+                        <label zclass="control-label" value="CMM ID :"/>
                         <div zclass="controls">
                             <label value="@{billingController.invoice.patient.afyaId}"/>
                         </div>

@@ -106,7 +106,7 @@
         <listbox model="@bind(vm.paymentList)" id="searchListbox">
         	<listhead>
         		<listheader label="Date"/>
-        		<listheader label="Afya ID"/>
+        		<listheader label="CMM ID"/>
         		<listheader label="Civil ID"/>
 				<listheader label="File No."/>
         		<listheader label="Patient Name"/>
@@ -183,7 +183,7 @@
                             <listbox model="@bind(doctorGroup.value)" >
                                 <listhead>
 					        		<listheader label="Date"/>
-					        		<listheader label="Afya ID"/>
+					        		<listheader label="CMM ID"/>
 					        		<listheader label="Civil ID"/>
 					        		<listheader label="Patient Name"/>
 					        		<listheader label="Specialty"/>
@@ -264,7 +264,7 @@
                             <listbox model="@bind(refGroup.value)" >
                                 <listhead>
 					        		<listheader label="Date"/>
-					        		<listheader label="Afya ID"/>
+					        		<listheader label="CMM ID"/>
 					        		<listheader label="Civil ID"/>
 					        		<listheader label="Patient Name"/>
 					        		<listheader label="Specialty"/>
@@ -356,7 +356,7 @@
 	        builder.append("Income Report");
 	        if(com.nzion.util.UtilValidator.isNotEmpty(vm.paymentList))
 	        	exporter.exportWithHeader(builder,vm.paymentList,null,
-	        		new String[]{"Date", "Afya ID", "Civil ID","File Number", "Patient Name","Specialty", "Doctor Name","Referral Name", "Paid Amount", "Insurance Amount", "Corporate Amount"},
+	        		new String[]{"Date", "CMM ID", "Civil ID","File Number", "Patient Name","Specialty", "Doctor Name","Referral Name", "Paid Amount", "Insurance Amount", "Corporate Amount"},
 	        		"incomeReport.xlsx","INCOME REPORT",keySet);
         }
     </zscript>

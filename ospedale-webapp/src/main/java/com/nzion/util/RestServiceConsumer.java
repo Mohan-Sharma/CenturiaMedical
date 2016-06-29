@@ -565,12 +565,16 @@ public class RestServiceConsumer {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<String>(httpHeaders);
+        if (PORTAL_AUTHENTICATION.equals("true")) {
         ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL+"/anon/insuranceMaster/getAllPayers", HttpMethod.GET, requestEntity, String.class);
         String json = responseEntity.getBody();
         List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
         Gson gson = new GsonBuilder().serializeNulls().create();
         result = (List<Map<String, Object>>) gson.fromJson(json, result.getClass());
         return result;
+        } else {
+            return Collections.emptyList();
+        }
 
     }
 
@@ -579,79 +583,98 @@ public class RestServiceConsumer {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<String>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL+"/anon/insuranceMaster/getAllCorporates", HttpMethod.GET, requestEntity, String.class);
-        String json = responseEntity.getBody();
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        result = (List<Map<String, Object>>) gson.fromJson(json, result.getClass());
-        return result;
-
+        if (PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/insuranceMaster/getAllCorporates", HttpMethod.GET, requestEntity, String.class);
+            String json = responseEntity.getBody();
+            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+            Gson gson = new GsonBuilder().serializeNulls().create();
+            result = (List<Map<String, Object>>) gson.fromJson(json, result.getClass());
+            return result;
+        } else {
+            return Collections.EMPTY_LIST;
+        }
     }
 
     public static List<Map<String,Object>> getAllHealthPolicy() {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<String>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL+"/anon/insuranceMaster/getAllHealthPolicy", HttpMethod.GET, requestEntity, String.class);
-        String json = responseEntity.getBody();
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        result = (List<Map<String, Object>>) gson.fromJson(json, result.getClass());
-        return result;
+        if (PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/insuranceMaster/getAllHealthPolicy", HttpMethod.GET, requestEntity, String.class);
+            String json = responseEntity.getBody();
+            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+            Gson gson = new GsonBuilder().serializeNulls().create();
+            result = (List<Map<String, Object>>) gson.fromJson(json, result.getClass());
+            return result;
+        } else {
+            return Collections.EMPTY_LIST;
+        }
     }
 
     public static List<GroupDto> getAllGroups() {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<String>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL+"/anon/insuranceMaster/getAllGroups", HttpMethod.GET, requestEntity, String.class);
-        String json = responseEntity.getBody();
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        mapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
-        List<GroupDto> groupDtos = null;
-        try {
-            groupDtos = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, GroupDto.class));
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/insuranceMaster/getAllGroups", HttpMethod.GET, requestEntity, String.class);
+            String json = responseEntity.getBody();
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            mapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+            List<GroupDto> groupDtos = null;
+            try {
+                groupDtos = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, GroupDto.class));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return groupDtos;
+        } else {
+            return Collections.EMPTY_LIST;
         }
-        return groupDtos;
     }
 
     public static List<InsuranceGroupDto> getPolicyForIndividuals() {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<String>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL+"/anon/insuranceMaster/getPolicyForIndividual", HttpMethod.GET, requestEntity, String.class);
-        String json = responseEntity.getBody();
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        mapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
-        List<InsuranceGroupDto> policyDtos = null;
-        try {
-            policyDtos = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, InsuranceGroupDto.class));
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/insuranceMaster/getPolicyForIndividual", HttpMethod.GET, requestEntity, String.class);
+            String json = responseEntity.getBody();
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            mapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+            List<InsuranceGroupDto> policyDtos = null;
+            try {
+                policyDtos = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, InsuranceGroupDto.class));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return policyDtos;
+        } else {
+            return Collections.EMPTY_LIST;
         }
-        return policyDtos;
     }
 
     public static List<InsuranceGroupDto> getPolicyByGroupId(String groupId) {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<String>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL+"/anon/insuranceMaster/getPolicyByGroupId?groupId={groupId}", HttpMethod.GET, requestEntity, String.class,groupId);
-        String json = responseEntity.getBody();
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        mapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
-        List<InsuranceGroupDto> policyDtos = null;
-        try {
-            policyDtos = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, InsuranceGroupDto.class));
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/insuranceMaster/getPolicyByGroupId?groupId={groupId}", HttpMethod.GET, requestEntity, String.class, groupId);
+            String json = responseEntity.getBody();
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            mapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+            List<InsuranceGroupDto> policyDtos = null;
+            try {
+                policyDtos = mapper.readValue(json, mapper.getTypeFactory().constructCollectionType(List.class, InsuranceGroupDto.class));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return policyDtos;
+        } else {
+            return Collections.EMPTY_LIST;
         }
-        return policyDtos;
     }
 
     public static InsuranceForTpaDto  getPayerById(String payerId) {
