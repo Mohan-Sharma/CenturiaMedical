@@ -179,8 +179,8 @@ public class UserLoginDto {
     public static Set<String> getRoleOfTheLoggedInUser(UserLogin userLogin) {
         Set<String> roles = new HashSet<>();
         RolesValueObject rolesValueObject = new RolesValueObject(userLogin.getAuthorization());
-        if(rolesValueObject.isAdjustor())
-            roles.add(Role.ADJUSTER.toString());
+        if(rolesValueObject.isCenturiaReception())
+            roles.add(Role.CENTURIA_RECEPTION.toString());
         if(rolesValueObject.isHouseKeeping())
             roles.add(Role.HOUSE_KEEPING.toString());
         if(rolesValueObject.isMedicalAssistant())

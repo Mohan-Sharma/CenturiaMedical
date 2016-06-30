@@ -85,12 +85,12 @@ public class RolesValueObject {
 	public void setCaseManager(boolean caseManager){
 	append(Roles.CASE_MANAGER, caseManager);
 	}
-	public boolean isAdjustor(){
-	return authorization.hasRole(Roles.ADJUSTER);
+	public boolean isCenturiaReception(){
+	return authorization.hasRole(Roles.CENTURIA_RECEPTION);
 	}
 
-	public void setAdjustor(boolean adjustor){
-	append(Roles.ADJUSTER, adjustor);
+	public void setCenturiaReception(boolean centuriaReception){
+	append(Roles.CENTURIA_RECEPTION, centuriaReception);
 	}
 	public boolean isPatient(){
 	return authorization.hasRole(Roles.PATIENT);

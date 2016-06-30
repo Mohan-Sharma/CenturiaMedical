@@ -34,10 +34,10 @@ public enum Role {
         public String toString() {
             return "PROVIDER";
         }
-    }, ADJUSTER{
+    }, CENTURIA_RECEPTION{
         @Override
         public String toString() {
-            return "ADJUSTER";
+            return "CENTURIA_RECEPTION";
         }
     }, HOUSE_KEEPING{
         @Override
