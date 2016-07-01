@@ -958,11 +958,15 @@ public class RestServiceConsumer {
         RestTemplate restTemplate = new RestTemplate(getHttpComponentsClientHttpRequestFactory());
         HttpHeaders httpHeaders = getHttpHeader();
         HttpEntity<String> requestEntity = new HttpEntity<>(httpHeaders);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getPatientContactsFromAfyaId?afyaId={afyaId}&filter=|ALTERNATE_CONTACT|", HttpMethod.GET, requestEntity, String.class, afyaId);
-        String json = responseEntity.getBody();
-        List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        return (List<Map<String, Object>>) gson.fromJson(json, result.getClass());
+        if (PORTAL_AUTHENTICATION.equals("true")) {
+            ResponseEntity<String> responseEntity = restTemplate.exchange(PORTAL_URL + "/anon/getPatientContactsFromAfyaId?afyaId={afyaId}&filter=|ALTERNATE_CONTACT|", HttpMethod.GET, requestEntity, String.class, afyaId);
+            String json = responseEntity.getBody();
+            List<Map<String, Object>> result = new ArrayList<Map<String, Object>>();
+            Gson gson = new GsonBuilder().serializeNulls().create();
+            return (List<Map<String, Object>>) gson.fromJson(json, result.getClass());
+        } else {
+            return Collections.EMPTY_LIST;
+        }
     }
 
     public static boolean addPatientAlternateContact(Patient patient, String contactType, String contactValue) {

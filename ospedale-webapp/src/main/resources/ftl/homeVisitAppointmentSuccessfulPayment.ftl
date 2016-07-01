@@ -58,11 +58,11 @@
                             <td>
 
                                 <p style="font-family:Arial, Helvetica, sans-serif; font-size:14px; margin:3px; margin-bottom:9px;">Respected ${afyaId} ${firstName} ${lastName},<br/><br/>
-                               Your payment for ${collectedAmount} is received and the Home visit Appointment is confirmed.<br/> Kindly find attached receipt for your reference.
+                               Your Appointment for ${transactionDate} is confirmed.<br/>
                                </p>
                                 <p style="font-family:Arial, Helvetica, sans-serif; font-size:14px; margin:3px; margin-bottom:9px; line-height:24px;">&nbsp;</p>
                                 <p style="font-family:Arial, Helvetica, sans-serif; font-size:14px; margin:3px; margin-bottom:9px; line-height:24px;">Kind Regards, </p>
-                                <p style="font-family:Arial, Helvetica, sans-serif; font-size:14px; margin:3px; margin-bottom:9px; line-height:24px;"> <strong>Afya Community Care.</strong><br /> </p>
+                                <p style="font-family:Arial, Helvetica, sans-serif; font-size:14px; margin:3px; margin-bottom:9px; line-height:24px;"> <strong>Centuria Community Care.</strong><br /> </p>
                                 </td>
                         </tr>
                     </table>		   </td>
@@ -79,7 +79,7 @@
             <tr>
                 <td colspan="3"><table width="595" border="0" cellpadding="5" align="center">
                     <tr>
-                        <td width="519" style="border-bottom:solid 1px #CCCCCC;"><p style="margin:0px; text-align:center; font-family:Arial, Helvetica, sans-serif; font-size:14px;"> <a style="color:#3399CC; text-decoration:none;" href="http://www.afyaarabia.com/" target="_blank">www.afyaarabia.com</a> </p></td>
+                        <td width="519" style="border-bottom:solid 1px #CCCCCC;"><p style="margin:0px; text-align:center; font-family:Arial, Helvetica, sans-serif; font-size:14px;"> <a style="color:#3399CC; text-decoration:none;" href="http://www.centuriamedical.com.ph/" target="_blank">http://www.centuriamedical.com.ph/</a> </p></td>
                     </tr>
                     <tr>
                         <td><p style="margin:0px; text-align:center; font-family:Arial, Helvetica, sans-serif; font-size:14px;"> <a style="color:#3399CC; text-decoration:none;" href="https://www.afyaarabia.com/afya-portal/#/AfyaServices/member-support">Customer Support</a> | <a style="color:#3399CC; text-decoration:none;" href="https://www.afyaarabia.com/afya-portal/#/AfyaServices/afya-mobile-app">Download App</a> | <a style="color:#3399CC; text-decoration:none;" href="https://www.afyaarabia.com/afya-portal/#/AboutAfya/contact-afya">Feedback</a> | <a style="color:#3399CC; text-decoration:none;" href="https://www.afyaarabia.com/afya-portal/#/AboutAfya/contact-afya">Contact Us </a></p> </td>
@@ -89,8 +89,8 @@
                     </tr>
                     <tr>
                         <td>
-                            <p style="font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:20px; text-align:center;"><strong>&copy; 2015, afyaarabia.com &ndash; All Rights  Reserved</strong><br />
-                                HQ: Alqiblla, Ali Al-Salem Street, Al-Fares Complex. Kuwait City, P.O Box 29897 Safat, 13159 Kuwait</p>
+                            <p style="font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:20px; text-align:center;"><strong>&copy; 2015, centuriamedical.com.ph &ndash; All Rights  Reserved</strong><br />
+                                HQ: G/F Centuria Medical Makati, Century City, Kalayaan Ave. cor. Salamanca St. Brgy. Poblacion, Makati Cit</p>
                             <p style="font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:16px; color:#999999;">Disclaimer:
                                 This notification is not designed to and does not provide medical advice, professional diagnosis, opinion, treatment but is a mere facilitator for medical related services to you. Through this notification and linkages to other sites, Afyaarabia provides general information for facilitation of services requested only. Afyaarabia is not liable or responsible for any advice, course of treatment, diagnosis or any other information, services or product you obtain through this notification.</p>
                             <p style="font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:16px; color:#999999;">&nbsp;</p></td>

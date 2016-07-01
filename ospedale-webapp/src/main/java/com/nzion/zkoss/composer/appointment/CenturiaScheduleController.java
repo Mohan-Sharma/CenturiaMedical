@@ -14,6 +14,7 @@ import com.nzion.repository.ScheduleRepository;
 import com.nzion.repository.notifier.utility.SmsUtil;
 import com.nzion.repository.notifier.utility.TemplateNames;
 import com.nzion.util.*;
+import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.quartz.SchedulerException;
 import org.zkoss.zhtml.Messagebox;
@@ -908,17 +909,36 @@ public class CenturiaScheduleController extends OspedaleAutowirableComposer {
 	}
 
 	private void sentAppointmentConfirmationEmail(Schedule schedule) throws ClassNotFoundException, NoSuchMethodException, SchedulerException, ParseException {
-		NotificationSetup notificationSetup = commonCrudService.findUniqueByEquality(NotificationSetup.class, new String[] { "status" }, new Object[] { NotificationSetup.STATUS.SCHEDULED });
-		String cronExpression = CronExpressionGenerator.generateCronExpressionGivenDateParameters(true, new Date(), notificationSetup.getTriggetPointValue());
-		if (notificationSetup.isNotificationRequired() && notificationSetup.isPatientRole()) {
-			Practice practice = commonCrudService.getAll(Practice.class) != null ? commonCrudService.getAll(Practice.class).get(0) : null;
-			if (practice != null) {
-				Map<String, Object> clinicDetails = RestServiceConsumer.getClinicDetailsByClinicId(String.valueOf(practice.getTenantId()));
-				boolean sendSMS = Boolean.FALSE;
+		try {
+			NotificationSetup notificationSetup = commonCrudService.findUniqueByEquality(NotificationSetup.class, new String[]{"status"}, new Object[]{NotificationSetup.STATUS.SCHEDULED});
+			//String cronExpression = CronExpressionGenerator.generateCronExpressionGivenDateParameters(true, new Date(), notificationSetup.getTriggetPointValue());
+			if (notificationSetup.isNotificationRequired() && notificationSetup.isPatientRole()) {
+				Practice practice = commonCrudService.getAll(Practice.class) != null ? commonCrudService.getAll(Practice.class).get(0) : null;
+				if (practice != null) {
+					//Map<String, Object> clinicDetails = RestServiceConsumer.getClinicDetailsByClinicId(String.valueOf(practice.getTenantId()));
+					Map<String, Object> clinicDetails = new HashMap<String, Object>();
+					String date = constructDate(schedule.getStartTime(), schedule.getStartDate());
+					String time = constructTime(schedule.getStartTime(), schedule.getStartDate());
+					clinicDetails.put("transactionDate", date + " " + time);
+
+					clinicDetails.put("languagePreference", "en");
+					clinicDetails.put("afyaId", schedule.getPatient().getAfyaId());
+					clinicDetails.put("firstName", schedule.getPatient().getFirstName());
+					clinicDetails.put("lastName", schedule.getPatient().getLastName());
+					clinicDetails.put("subject", "Appointment Confirmation");
+					clinicDetails.put("template", "HOME_VISIT_APPOINTMENT_SUCCESS_PAYMENT_EMAIL_FOR_PATIENT");
+					clinicDetails.put("email", schedule.getPatient().getContacts().getEmail());
+					clinicDetails.put("attachment", new Boolean(false));
+					clinicDetails.put("patient", schedule.getPatient());
+					EmailUtil.sendNetworkContractStatusMail(clinicDetails);
+				/*boolean sendSMS = Boolean.FALSE;
 				if (notificationSetup.isBySMS() && !schedule.isWalkinAppointment())
 					sendSMS = Boolean.TRUE;
-				notificationTaskExecutor.prepareDetailsAndNotifyAppointmentSchedule(schedule, cronExpression, notificationSetup.isByEmail(), sendSMS, clinicDetails);
+				notificationTaskExecutor.prepareDetailsAndNotifyAppointmentSchedule(schedule, cronExpression, notificationSetup.isByEmail(), sendSMS, clinicDetails);*/
+				}
 			}
+		} catch (Exception e){
+			e.printStackTrace();
 		}
 	}
 
@@ -2219,5 +2239,29 @@ public class CenturiaScheduleController extends OspedaleAutowirableComposer {
             e.printStackTrace();
         }
     }
+
+	private static String constructTime(Date date, Date scheduleDate){
+		LocalDate localDate = new LocalDate(scheduleDate);
+		Calendar calendar = Calendar.getInstance(Locale.ENGLISH);
+		calendar.setTime(date);
+		calendar.set(Calendar.YEAR, localDate.getYear());
+		calendar.set(Calendar.MONTH, localDate.getMonthOfYear());
+		calendar.set(Calendar.DAY_OF_MONTH, localDate.getDayOfMonth());
+		Date furnishedDate = calendar.getTime();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("h:mm a");
+		return dateFormat.format(furnishedDate);
+	}
+
+	private static String constructDate(Date date, Date scheduleDate){
+		LocalDate localDate = new LocalDate(scheduleDate);
+		Calendar calendar = Calendar.getInstance(Locale.ENGLISH);
+		calendar.setTime(date);
+		calendar.set(Calendar.YEAR, localDate.getYear());
+		calendar.set(Calendar.MONTH, localDate.getMonthOfYear()-1);
+		calendar.set(Calendar.DAY_OF_MONTH, localDate.getDayOfMonth());
+		Date furnishedDate = calendar.getTime();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE dd,MMMM yyyy");
+		return dateFormat.format(furnishedDate);
+	}
 
 }

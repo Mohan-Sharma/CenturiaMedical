@@ -379,32 +379,25 @@
 	                       	  if (oldPatient == null){
                                 Patient patient = new Patient();
                                 patient.setFirstName(currentSchedule.getPatient().getFirstName());
+                                patient.setLastName(currentSchedule.getPatient().getLastName());
+                                patient.setDateOfBirth(currentSchedule.getPatient().getDateOfBirth());
+                                patient.setPatientType("CASH PAYING");
 
-            //patient.setLastName(patientDetailsFromPortal.get("lastName").toString());
-            patient.setPatientType("CASH PAYING");
-
-            patient.setDateOfBirth(currentSchedule.getPatient().getDateOfBirth());
-
-            /*ContactFields contactFields = new ContactFields();
-            contactFields.setMobileNumber(currentSchedule.getPatient().getContacts);
-
-            if (patientDetailsFromPortal.get("emailId") != null){
-                contactFields.setEmail(patientDetailsFromPortal.get("emailId").toString());
-            }
+            ContactFields contactFields = new ContactFields();
+            contactFields.setMobileNumber(currentSchedule.getPatient().getContacts().getMobileNumber());
+            contactFields.setEmail(currentSchedule.getPatient().getContacts().getEmail());
 
             patient.setContacts(contactFields);
-            if (patientDetailsFromPortal.get("gender") != null){
-                Enumeration gender = getGenderEnumerationForPatient(patientDetailsFromPortal.get("gender").toString());
-                patient.setGender(gender);
-            }*/
+            patient.setGender(currentSchedule.getPatient().getGender());
+
             //String afyaId = RestServiceConsumer.checkIfPatientExistInPortalAndCreateIfNotExist(patient, tenantId);
             patient.setAfyaId(currentSchedule.getPatient().getAfyaId());
             //patient.setCivilId(labOrderDto.getCivilId());
             patient.setNotificationRequired("YES");
 
-            //Enumeration enumeration = commonCrudService.findUniqueByEquality(Enumeration.class, new String[]{"enumType", "enumCode"}, new Object[]{"LANGUAGE", labOrderDto.getPreferredLanguage()});
+            Enumeration enumeration = commonCrudService.findUniqueByEquality(Enumeration.class, new String[]{"enumType", "enumCode"}, new Object[]{"LANGUAGE", "en"});
 
-            //patient.setLanguage(enumeration);
+            patient.setLanguage(enumeration);
             patient = commonCrudService.save(patient);
             currentSchedule.setPatient(patient);
 	                       	  } else {

@@ -709,6 +709,7 @@
                 <attribute name="onClick">
                     <![CDATA[
 					//String patientTypeStr = patientTypeCombo.getSelectedItem().getValue();
+					patientComposer.getPatientVO().getPatient().setPatientType("CASH PAYING");
 					String patientTypeStr = "CASH PAYING";
 					if("CASH PAYING".equals(patientTypeStr)){
 						if(tariffCategoryCombo.getSelectedItem() == null || UtilValidator.isEmpty(tariffCategoryCombo.getSelectedItem().getValue())){
