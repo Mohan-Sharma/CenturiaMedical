@@ -138,7 +138,7 @@
 							            cookies[i].setMaxAge(0);
 							    	}
     	
-                                	Executions.sendRedirect("/ospedale/logout");
+                                	Executions.sendRedirect("/logout");
 							    	]]></attribute>
                                 </a>
                             </n:td>
