@@ -77,6 +77,7 @@
         VisitTypeSoapModule visitTypeSoapModule = null;
         
         List invoiceCancelReasons = commonCrudService.findByEquality(CancelReasons.class,new String[]{"cancelReasonsType"},new Object[]{com.nzion.domain.emr.CancelReasons.CancelReasonsType.APPOINTMENT_CANCEL.toString()});
+        com.nzion.domain.SlotType slotType = commonCrudService.findUniqueByEquality(com.nzion.domain.SlotType.class,new String[]{"id"},new Object[]{Long.parseLong("10005")});
         List referralClinicDoctorList = new ArrayList();
         String referralDocMobile = "";
         ]]>
@@ -411,6 +412,7 @@
                                     currentSchedule.setStartDate(com.nzion.util.UtilDateTime.getDayStart(appointmentDate.getValue()));
                                     currentSchedule.setSequenceNum(slot.getSequenceNum());
                                     currentSchedule.setPriorityMailSent(false);
+                                    currentSchedule.setVisitType(slotType);
                                     //f("Tentative".equals(currentSchedule.getTentativeStatus()) && !currentSchedule.isRequestForAppointment()){
 									    currentSchedule.setRequestForAppointment(true);
 									//}
